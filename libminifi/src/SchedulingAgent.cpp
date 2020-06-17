@@ -22,6 +22,7 @@
 #include <thread>
 #include <utility>
 #include <memory>
+#include <random>
 #include "core/Processor.h"
 #include "utils/GeneralUtils.h"
 #include "utils/gsl.h"
@@ -81,7 +82,15 @@ std::future<utils::TaskRescheduleInfo> SchedulingAgent::disableControllerService
 }
 
 bool SchedulingAgent::hasTooMuchOutGoing(std::shared_ptr<core::Processor> processor) {
-  return processor->flowFilesOutGoingFull();
+  // the probability of execution goes down the more
+  // this processor contributes to the congestion in the
+  // outgoing connections
+  double prob = processor->getExecutionProbability();
+  if (prob == 1.0) return false;
+
+  std::random_device rd{};
+  std::uniform_real_distribution<double> dis(0.0, 1.0);
+  return dis(rd) > prop;
 }
 
 bool SchedulingAgent::onTrigger(const std::shared_ptr<core::Processor> &processor, const std::shared_ptr<core::ProcessContext> &processContext,
@@ -98,6 +107,7 @@ bool SchedulingAgent::onTrigger(const std::shared_ptr<core::Processor> &processo
     // No work to do, yield
     return true;
   }
+
   if (hasTooMuchOutGoing(processor)) {
     logger_->log_debug("backpressure applied because too much outgoing for %s", processor->getUUIDStr());
     // need to apply backpressure

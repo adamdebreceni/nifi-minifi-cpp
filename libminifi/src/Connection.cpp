@@ -242,6 +242,8 @@ std::shared_ptr<core::FlowFile> Connection::poll(std::set<std::shared_ptr<core::
         std::shared_ptr<Connectable> connectable = std::static_pointer_cast<Connectable>(shared_from_this());
         item->setOriginalConnection(connectable);
         logger_->log_debug("Dequeue flow file UUID %s from connection %s", item->getUUIDStr(), name_);
+        ++temp_removed_item_count_;
+        temp_removed_data_size_ += item->getSize();
         return item;
       }
     } else {
@@ -255,6 +257,8 @@ std::shared_ptr<core::FlowFile> Connection::poll(std::set<std::shared_ptr<core::
       std::shared_ptr<Connectable> connectable = std::static_pointer_cast<Connectable>(shared_from_this());
       item->setOriginalConnection(connectable);
       logger_->log_debug("Dequeue flow file UUID %s from connection %s", item->getUUIDStr(), name_);
+      ++temp_removed_item_count_;
+      temp_removed_data_size_ += item->getSize();
       return item;
     }
   }
@@ -275,6 +279,25 @@ void Connection::drain() {
   }
   queued_data_size_ = 0;
   logger_->log_debug("Drain connection %s", name_);
+}
+
+Connection::Congestion Connection::getCongestion() {
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  uint64_t item_count = queue_.size() + temp_removed_item_count_;
+  uint64_t data_size = queued_data_size_ + temp_removed_data_size_;
+
+  double sizeCongestion = 1;
+  if (max_queue_size_ > 0 && item_count >= max_queue_size_) {
+    sizeCongestion = static_cast<double>(item_count) / max_queue_size_;
+  }
+
+  double countCongestion = 1;
+  if (max_data_queue_size_ > 0 && data_size >= max_data_queue_size_) {
+    countCongestion = static_cast<double>(data_size) / max_data_queue_size_;
+  }
+
+  return Congestion{std::max(sizeCongestion, countCongestion)};
 }
 
 }  // namespace minifi

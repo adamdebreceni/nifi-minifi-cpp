@@ -858,6 +858,12 @@ void ProcessSession::commit() {
       cq.first->multiPut(cq.second);
     }
 
+    for (auto& it : connection_transactions_) {
+      it.second->commit();
+    }
+
+    connection_transactions_.clear();
+
     // All done
     _updatedFlowFiles.clear();
     _addedFlowFiles.clear();
@@ -899,6 +905,12 @@ void ProcessSession::rollback() {
       cq.first->multiPut(cq.second);
     }
 
+    for (auto& it : connection_transactions_) {
+      it.second->rollback();
+    }
+
+    connection_transactions_.clear();
+
     _originalFlowFiles.clear();
 
     _clonedFlowFiles.clear();
@@ -927,7 +939,8 @@ std::shared_ptr<core::FlowFile> ProcessSession::get() {
 
   do {
     std::set<std::shared_ptr<core::FlowFile> > expired;
-    std::shared_ptr<core::FlowFile> ret = current->poll(expired);
+    auto& transaction = connection_transactions_.emplace(current, current).first->second;
+    std::shared_ptr<core::FlowFile> ret = transaction->poll(expired);
     if (!expired.empty()) {
       // Remove expired flow record
       for (const auto& record : expired) {

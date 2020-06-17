@@ -232,6 +232,27 @@ bool Processor::flowFilesOutGoingFull() {
   return false;
 }
 
+double Processor::getExecutionProbability() {
+  std::lock_guard<std::mutex> lock(backpressure_mutex_);
+
+  std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> curr_backpressures = calculateBackpressures();
+
+  bool increasedCongestion = std::any_of(curr_backpressures.begin(), curr_backpressures.end(), [&](const std::pair<std::shared_ptr<Connection>, Connection::Congestion>& pressure) {
+    return pressure.second.getValue() > backpressures_[pressure.first].getValue();
+  });
+  bool decreasedCongestion = std::all_of(curr_backpressures.begin(), curr_backpressures.end(), [&](const std::pair<std::shared_ptr<Connection>, Connection::Congestion>& pressure) {
+    // steadily increase the execution probability if all connections are non-full
+    return pressure.second.isFree() || pressure.second.getValue() < backpressures_[pressure.first].getValue();
+  });
+  if (increasedCongestion) {
+    execution_probability_ /= 2;
+  } else if (decreasedCongestion) {
+    execution_probability_ = std::min(execution_probability_ * 2, 1.0);
+  }
+  backpressures_ = curr_backpressures;
+  return execution_probability_;
+}
+
 void Processor::onTrigger(ProcessContext *context, ProcessSessionFactory *sessionFactory) {
   auto session = sessionFactory->createSession();
 
@@ -255,8 +276,13 @@ void Processor::onTrigger(const std::shared_ptr<ProcessContext> &context, const 
 
   try {
     // Call the virtual trigger function
+    auto currentBackpressures = calculateBackpressures();
     onTrigger(context, session);
     session->commit();
+    {
+      std::lock_guard<std::mutex> guard(backpressure_mutex_);
+      backpressures_ = currentBackpressures;
+    }
   } catch (std::exception &exception) {
     logger_->log_warn("Caught Exception %s during Processor::onTrigger of processor: %s (%s)", exception.what(), getUUIDStr(), getName());
     session->rollback();

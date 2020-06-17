@@ -33,6 +33,7 @@
 #include <stack>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "ConfigurableComponent.h"
 #include "Connectable.h"
@@ -268,6 +269,8 @@ class Processor : public Connectable, public ConfigurableComponent, public std::
     return false;
   }
 
+  double getExecutionProbability();
+
  protected:
   virtual void notifyStop() {
   }
@@ -306,6 +309,27 @@ class Processor : public Connectable, public ConfigurableComponent, public std::
 
  private:
   std::shared_ptr<logging::Logger> logger_;
+
+  std::mutex backpressure_mutex_;
+  std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> backpressures_{};
+  double execution_probability_{1.0};
+
+  std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> getBackpressures() {
+    std::lock_guard<std::mutex> guard(backpressure_mutex_);
+    return backpressures_;
+  }
+
+  std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> calculateBackpressures() {
+    std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> backpressures;
+    for (auto& outgoing : out_going_connections_) {
+      for (auto& conn : outgoing.second) {
+        auto connection = std::dynamic_pointer_cast<Connection>(conn);
+        if (!connection) continue;
+        backpressures[connection] = connection->getCongestion();
+      }
+    }
+    return backpressures;
+  }
 };
 
 }  // namespace core

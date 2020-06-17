@@ -42,7 +42,12 @@ namespace nifi {
 namespace minifi {
 // Connection Class
 
+namespace core {
+class ProcessSession;
+}
+
 class Connection : public core::Connectable, public std::enable_shared_from_this<Connection> {
+  friend class Transaction;
  public:
   // Constructor
   /*
@@ -161,6 +166,72 @@ class Connection : public core::Connectable, public std::enable_shared_from_this
     }
   }
 
+  class Transaction{
+    friend class core::ProcessSession;
+    enum class State{
+      ACTIVE,
+      COMMITTED,
+      ROLLED_BACK,
+      INVALID
+    };
+    Transaction(const std::shared_ptr<Connection>& connection) : connection_(connection) {}
+    Transaction(Transaction&&) = delete;
+    Transaction(const Transaction&) = delete;
+    Transaction& operator=(Transaction&&) = delete;
+    Transaction& operator=(const Transaction&) = delete;
+
+    std::shared_ptr<core::FlowFile> poll(std::set<std::shared_ptr<core::FlowFile>>& expired) {
+      if (state_ != State::ACTIVE) {
+        state_ = State::INVALID;
+        throw std::runtime_error("Fatal error: cannot modify connection through a non-active transaction");
+      }
+      auto flowFile = connection_->poll(expired);
+      if (flowFile) {
+        removed_data_size_ += flowFile->getSize();
+        ++removed_item_count_;
+      }
+    }
+
+    void commit() {
+      if (state_ != State::ACTIVE) {
+        state_ = State::INVALID;
+        throw std::runtime_error("Fatal error: cannot commit non-active transaction");
+      }
+      std::lock_guard<std::mutex> lock(connection_->mutex_);
+      connection_->temp_removed_item_count_ -= removed_item_count_;
+      connection_->temp_removed_data_size_ -= removed_data_size_;
+      state_ = State::COMMITTED;
+    }
+
+    void rollback() {
+      if (state_ != State::ACTIVE) {
+        state_ = State::INVALID;
+        throw std::runtime_error("Fatal error: cannot rollback non-active transaction");
+      }
+      state_ = State::ROLLED_BACK;
+    }
+
+    ~Transaction() {
+      if (state_ == State::ACTIVE) {
+        throw std::runtime_error("Fatal error: transaction was neither committed nor rolled back");
+      }
+    }
+
+    std::shared_ptr<Connection> connection_;
+    State state_{State::ACTIVE};
+    uint64_t removed_data_size_{0};
+    uint64_t removed_item_count_{0};
+  };
+
+  struct Congestion{
+    Congestion() = default;
+    explicit Congestion(double value): value{value} {}
+    double getValue() const {return value;}
+    bool isFree() const {return value == 1.0;}
+   private:
+    double value{1.0};
+  };
+
   // Put the flow file into queue
   void put(std::shared_ptr<core::FlowFile> flow);
 
@@ -180,6 +251,8 @@ class Connection : public core::Connectable, public std::enable_shared_from_this
   bool isRunning() override {
     return true;
   }
+
+  Congestion getCongestion();
 
  protected:
   // Source Processor UUID
@@ -211,6 +284,9 @@ class Connection : public core::Connectable, public std::enable_shared_from_this
   std::atomic<uint64_t> queued_data_size_;
   // Queue for the Flow File
   std::queue<std::shared_ptr<core::FlowFile>> queue_;
+  // Session
+  std::atomic<uint64_t> temp_removed_data_size_{0};
+  std::atomic<uint64_t> temp_removed_item_count_{0};
   // flow repository
   // Logger
   std::shared_ptr<logging::Logger> logger_;

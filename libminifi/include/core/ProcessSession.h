@@ -132,13 +132,13 @@ class ProcessSession : public ReferenceContainer {
   // Restore content previously stashed to a key
   void restore(const std::string &key, const std::shared_ptr<core::FlowFile> &flow);
 
-// Prevent default copy constructor and assignment operation
-// Only support pass by reference or pointer
+  // Prevent default copy constructor and assignment operation
+  // Only support pass by reference or pointer
   ProcessSession(const ProcessSession &parent) = delete;
   ProcessSession &operator=(const ProcessSession &parent) = delete;
 
  protected:
-// FlowFiles being modified by current process session
+  // FlowFiles being modified by current process session
   std::map<std::string, std::shared_ptr<core::FlowFile> > _updatedFlowFiles;
   // Copy of the original FlowFiles being modified by current process session as above
   std::map<std::string, std::shared_ptr<core::FlowFile> > _originalFlowFiles;
@@ -152,7 +152,8 @@ class ProcessSession : public ReferenceContainer {
   std::map<std::string, std::shared_ptr<core::FlowFile> > _clonedFlowFiles;
 
  private:
-// Clone the flow file during transfer to multiple connections for a relationship
+  std::unordered_map<std::shared_ptr<Connection>, std::unique_ptr<Connection::Transaction>> connection_transactions_;
+  // Clone the flow file during transfer to multiple connections for a relationship
   std::shared_ptr<core::FlowFile> cloneDuringTransfer(std::shared_ptr<core::FlowFile> &parent);
   // ProcessContext
   std::shared_ptr<ProcessContext> process_context_;
