@@ -271,6 +271,20 @@ class Processor : public Connectable, public ConfigurableComponent, public std::
 
   double getExecutionProbability();
 
+  std::unordered_map<std::shared_ptr<Connection>, double> getIncomingWeights() {
+    std::lock_guard<std::mutex> guard(mutex_);
+    return incoming_connection_weights_;
+  }
+
+  double updateAndFetchExecutionProbability();
+
+  void pushPolledConnections(std::unordered_set<std::shared_ptr<Connection>>&& polled_conns) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    curr_polled_connections_.emplace_back(std::move(polled_conns));
+  }
+
+  std::shared_ptr<Connectable> pickRandomIncomingConnection(bool& random);
+
  protected:
   virtual void notifyStop() {
   }
@@ -310,30 +324,72 @@ class Processor : public Connectable, public ConfigurableComponent, public std::
  private:
   std::shared_ptr<logging::Logger> logger_;
 
-  std::mutex backpressure_mutex_;
-  std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> backpressures_{};
-  double execution_probability_{1.0};
+  enum class CongestionChange{
+    INCREASE,
+    DECREASE,
+    CONSTANT
+  };
 
-  std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> getBackpressures() {
-    std::lock_guard<std::mutex> guard(backpressure_mutex_);
-    return backpressures_;
+  struct HistoryItem{
+    HistoryItem(
+        std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion>&& incoming,
+        std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion>&& outgoing,
+        std::vector<std::unordered_set<std::shared_ptr<Connection>>>&& polled)
+        : incoming(std::move(incoming)), outgoing(std::move(outgoing)), polled(std::move(polled)) {}
+
+    std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> incoming;
+    std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> outgoing;
+    std::vector<std::unordered_set<std::shared_ptr<Connection>>> polled;
+  };
+
+  std::deque<HistoryItem> congestion_history_{};
+  std::vector<std::unordered_set<std::shared_ptr<Connection>>> curr_polled_connections_{};
+
+  double execution_probability_{1.0};
+  std::unordered_map<std::shared_ptr<Connection>, double> incoming_connection_weights_{};
+
+  std::atomic_bool weights_initialized{false};
+  void initialize_connection_weights() {
+    bool initialized = false;
+    if (weights_initialized.compare_exchange_strong(initialized, true)) {
+      std::lock_guard<std::mutex> lock(mutex_);
+      double total_weight = 0.0;
+      for (auto& incoming : _incomingConnections) {
+        auto conn = std::dynamic_pointer_cast<Connection>(incoming);
+        if (!conn) continue;
+        incoming_connection_weights_.emplace(conn, 1.0);
+        total_weight += 1.0;
+      }
+      for (auto& weighted : incoming_connection_weights_) {
+        weighted.second /= total_weight;
+      }
+    }
   }
 
-  std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> calculateBackpressures() {
-    std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> backpressures;
+  std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> calculateIncomingCongestions() {
+    std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> congestions;
+    for (auto& conn : _incomingConnections) {
+      auto connection = std::dynamic_pointer_cast<Connection>(conn);
+      if (!connection) continue;
+      congestions[connection] = connection->getCongestion();
+    }
+    return congestions;
+  }
+
+  std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> calculateOutgoingCongestions() {
+    std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> congestions;
     for (auto& outgoing : out_going_connections_) {
       for (auto& conn : outgoing.second) {
         auto connection = std::dynamic_pointer_cast<Connection>(conn);
         if (!connection) continue;
-        backpressures[connection] = connection->getCongestion();
+        congestions[connection] = connection->getCongestion();
       }
     }
-    return backpressures;
+    return congestions;
   }
 };
 
 }  // namespace core
-/* namespace core */
 }  // namespace minifi
 }  // namespace nifi
 }  // namespace apache

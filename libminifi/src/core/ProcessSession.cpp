@@ -32,6 +32,7 @@
 
 #include "core/ProcessSessionReadCallback.h"
 #include "utils/gsl.h"
+#include "core/Processor.h"
 
 /* This implementation is only for native Windows systems.  */
 #if (defined _WIN32 || defined __WIN32__) && !defined __CYGWIN__
@@ -859,8 +860,10 @@ void ProcessSession::commit() {
     }
 
     for (auto& it : connection_transactions_) {
-      it.second->commit();
+      it.second.commit();
     }
+
+    std::static_pointer_cast<Processor>(process_context_->getProcessorNode()->getProcessor())->pushPolledConnections(std::move(polled_connections_));
 
     connection_transactions_.clear();
 
@@ -906,7 +909,7 @@ void ProcessSession::rollback() {
     }
 
     for (auto& it : connection_transactions_) {
-      it.second->rollback();
+      it.second.rollback();
     }
 
     connection_transactions_.clear();
@@ -928,19 +931,11 @@ void ProcessSession::rollback() {
 }
 
 std::shared_ptr<core::FlowFile> ProcessSession::get() {
-  std::shared_ptr<Connectable> first = process_context_->getProcessorNode()->getNextIncomingConnection();
-
-  if (first == nullptr) {
-    logger_->log_trace("Get is null for %s", process_context_->getProcessorNode()->getName());
-    return nullptr;
-  }
-
-  std::shared_ptr<Connection> current = std::static_pointer_cast<Connection>(first);
-
-  do {
+  bool random = false;
+  while(std::shared_ptr<Connection> current = std::static_pointer_cast<Connection>(process_context_->getProcessorNode()->pickRandomIncomingConnnection(random))) {
     std::set<std::shared_ptr<core::FlowFile> > expired;
     auto& transaction = connection_transactions_.emplace(current, current).first->second;
-    std::shared_ptr<core::FlowFile> ret = transaction->poll(expired);
+    std::shared_ptr<core::FlowFile> ret = transaction.poll(expired);
     if (!expired.empty()) {
       // Remove expired flow record
       for (const auto& record : expired) {
@@ -965,10 +960,13 @@ std::shared_ptr<core::FlowFile> ProcessSession::get() {
       snapshot = ret;
       // save a snapshot
       _originalFlowFiles[snapshot->getUUIDStr()] = snapshot;
+      if (random) {
+        // we are accessing this connection by chance, it is subject to weight adjustment
+        polled_connections_.emplace(current);
+      }
       return ret;
     }
-    current = std::static_pointer_cast<Connection>(process_context_->getProcessorNode()->getNextIncomingConnection());
-  } while (current != nullptr && current != first);
+  }
 
   return nullptr;
 }

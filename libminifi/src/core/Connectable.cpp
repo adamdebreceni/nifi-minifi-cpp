@@ -22,6 +22,7 @@
 #include <set>
 #include "core/logging/LoggerConfiguration.h"
 #include "core/Relationship.h"
+#include "utils/GeneralUtils.h"
 
 namespace org {
 namespace apache {

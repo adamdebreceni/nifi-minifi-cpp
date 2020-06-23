@@ -44,10 +44,9 @@ namespace minifi {
 
 namespace core {
 class ProcessSession;
-}
+}  // namespace core
 
 class Connection : public core::Connectable, public std::enable_shared_from_this<Connection> {
-  friend class Transaction;
  public:
   // Constructor
   /*
@@ -174,12 +173,10 @@ class Connection : public core::Connectable, public std::enable_shared_from_this
       ROLLED_BACK,
       INVALID
     };
-    Transaction(const std::shared_ptr<Connection>& connection) : connection_(connection) {}
-    Transaction(Transaction&&) = delete;
-    Transaction(const Transaction&) = delete;
-    Transaction& operator=(Transaction&&) = delete;
-    Transaction& operator=(const Transaction&) = delete;
+   public:
+    explicit Transaction(const std::shared_ptr<Connection>& connection) : connection_(connection) {}
 
+   private:
     std::shared_ptr<core::FlowFile> poll(std::set<std::shared_ptr<core::FlowFile>>& expired) {
       if (state_ != State::ACTIVE) {
         state_ = State::INVALID;
@@ -190,6 +187,7 @@ class Connection : public core::Connectable, public std::enable_shared_from_this
         removed_data_size_ += flowFile->getSize();
         ++removed_item_count_;
       }
+      return flowFile;
     }
 
     void commit() {
@@ -211,12 +209,21 @@ class Connection : public core::Connectable, public std::enable_shared_from_this
       state_ = State::ROLLED_BACK;
     }
 
+   public:
+    Transaction(Transaction&&) = default;
+
+    Transaction(const Transaction&) = delete;
+    Transaction& operator=(Transaction&&) = delete;
+    Transaction& operator=(const Transaction&) = delete;
+
     ~Transaction() {
       if (state_ == State::ACTIVE) {
-        throw std::runtime_error("Fatal error: transaction was neither committed nor rolled back");
+        logger_->log_error("Fatal error: transaction was neither committed nor rolled back");
       }
     }
 
+   private:
+    std::shared_ptr<logging::Logger> logger_{logging::LoggerFactory<Transaction>::getLogger()};
     std::shared_ptr<Connection> connection_;
     State state_{State::ACTIVE};
     uint64_t removed_data_size_{0};
@@ -285,8 +292,8 @@ class Connection : public core::Connectable, public std::enable_shared_from_this
   // Queue for the Flow File
   std::queue<std::shared_ptr<core::FlowFile>> queue_;
   // Session
-  std::atomic<uint64_t> temp_removed_data_size_{0};
-  std::atomic<uint64_t> temp_removed_item_count_{0};
+  uint64_t temp_removed_data_size_{0};
+  uint64_t temp_removed_item_count_{0};
   // flow repository
   // Logger
   std::shared_ptr<logging::Logger> logger_;

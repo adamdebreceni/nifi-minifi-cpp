@@ -284,16 +284,17 @@ void Connection::drain() {
 Connection::Congestion Connection::getCongestion() {
   std::lock_guard<std::mutex> lock(mutex_);
 
+  // adjust the content based on the currently
   uint64_t item_count = queue_.size() + temp_removed_item_count_;
   uint64_t data_size = queued_data_size_ + temp_removed_data_size_;
 
-  double sizeCongestion = 1;
-  if (max_queue_size_ > 0 && item_count >= max_queue_size_) {
+  double sizeCongestion = 0;
+  if (max_queue_size_ > 0) {
     sizeCongestion = static_cast<double>(item_count) / max_queue_size_;
   }
 
-  double countCongestion = 1;
-  if (max_data_queue_size_ > 0 && data_size >= max_data_queue_size_) {
+  double countCongestion = 0;
+  if (max_data_queue_size_ > 0) {
     countCongestion = static_cast<double>(data_size) / max_data_queue_size_;
   }
 

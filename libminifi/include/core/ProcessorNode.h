@@ -228,6 +228,8 @@ class ProcessorNode : public ConfigurableComponent, public Connectable {
     return processor_->getOutGoingConnections(relationship);
   }
 
+  std::shared_ptr<Connectable> pickRandomIncomingConnnection(bool& random);
+
   /**
    * Get next incoming connection
    * @return next incoming connection

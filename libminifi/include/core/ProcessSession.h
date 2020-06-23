@@ -152,7 +152,9 @@ class ProcessSession : public ReferenceContainer {
   std::map<std::string, std::shared_ptr<core::FlowFile> > _clonedFlowFiles;
 
  private:
-  std::unordered_map<std::shared_ptr<Connection>, std::unique_ptr<Connection::Transaction>> connection_transactions_;
+  std::unordered_map<std::shared_ptr<Connection>, Connection::Transaction> connection_transactions_;
+  // Keeps a tab on which connections were accessed during this session
+  std::unordered_set<std::shared_ptr<Connection>> polled_connections_;
   // Clone the flow file during transfer to multiple connections for a relationship
   std::shared_ptr<core::FlowFile> cloneDuringTransfer(std::shared_ptr<core::FlowFile> &parent);
   // ProcessContext

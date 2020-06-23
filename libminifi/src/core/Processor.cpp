@@ -19,8 +19,8 @@
  */
 #include "core/Processor.h"
 
-#include <time.h>
-
+#include <ctime>
+#include <random>
 #include <chrono>
 #include <functional>
 #include <map>
@@ -233,24 +233,264 @@ bool Processor::flowFilesOutGoingFull() {
 }
 
 double Processor::getExecutionProbability() {
-  std::lock_guard<std::mutex> lock(backpressure_mutex_);
-
-  std::unordered_map<std::shared_ptr<Connection>, Connection::Congestion> curr_backpressures = calculateBackpressures();
-
-  bool increasedCongestion = std::any_of(curr_backpressures.begin(), curr_backpressures.end(), [&](const std::pair<std::shared_ptr<Connection>, Connection::Congestion>& pressure) {
-    return pressure.second.getValue() > backpressures_[pressure.first].getValue();
-  });
-  bool decreasedCongestion = std::all_of(curr_backpressures.begin(), curr_backpressures.end(), [&](const std::pair<std::shared_ptr<Connection>, Connection::Congestion>& pressure) {
-    // steadily increase the execution probability if all connections are non-full
-    return pressure.second.isFree() || pressure.second.getValue() < backpressures_[pressure.first].getValue();
-  });
-  if (increasedCongestion) {
-    execution_probability_ /= 2;
-  } else if (decreasedCongestion) {
-    execution_probability_ = std::min(execution_probability_ * 2, 1.0);
-  }
-  backpressures_ = curr_backpressures;
+  std::lock_guard<std::mutex> lock(mutex_);
   return execution_probability_;
+}
+
+double Processor::updateAndFetchExecutionProbability() {
+  initialize_connection_weights();
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  congestion_history_.emplace_front(HistoryItem(calculateIncomingCongestions(), calculateOutgoingCongestions(), std::move(curr_polled_connections_)));
+
+  if(congestion_history_.size() < 50) return execution_probability_;
+
+  // serialize history for debugging
+  std::stringstream ss;
+  for(auto& item : congestion_history_) {
+    ss << "Outgoing:\n";
+    for(auto& out : item.outgoing) {
+      ss << "\t" << out.first->getName() << ": " << out.second.getValue() << "\n";
+    }
+    ss << "Incoming:\n";
+    for(auto& in : item.incoming) {
+      ss << "\t" << in.first->getName() << ": " << in.second.getValue() << "\n";
+    }
+    ss << "Polled:\n";
+    for(auto& session: item.polled) {
+      ss << "\t[";
+      for(auto& conn : session){
+        ss << conn->getName() << ", ";
+      }
+      ss << "]\n";
+    }
+  }
+
+  std::ofstream{"/Users/adamdebreceni/work/debug"} << ss.str();
+
+  // establish correlation between which incoming we pick and if we make things worse
+
+  struct Configuration{
+    std::shared_ptr<Connection> polled;
+    std::shared_ptr<Connection> not_polled;
+    bool operator==(const Configuration& other) const {
+      return polled == other.polled && not_polled == other.not_polled;
+    }
+  };
+
+  struct conf_hash {
+    std::size_t operator () (const Configuration& p) const {
+      auto h1 = std::hash<std::shared_ptr<Connection>>{}(p.polled);
+      auto h2 = std::hash<std::shared_ptr<Connection>>{}(p.not_polled);
+      return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
+    }
+  };
+
+  struct Votes{
+    int makes_it_worse = 0;
+    int makes_it_better = 0;
+    int neither = 0;
+  };
+
+  std::vector<std::shared_ptr<Connection>> incoming;
+  for (auto& conn : _incomingConnections) {
+    auto connection = std::dynamic_pointer_cast<Connection>(conn);
+    if(connection)incoming.emplace_back(connection);
+  }
+
+  // picked the first item but did not pick the second
+  std::unordered_map<Configuration, Votes, conf_hash> discriminator;
+
+  auto didPoll = [](const std::vector<std::unordered_set<std::shared_ptr<Connection>>>& polled, const std::shared_ptr<Connection>& conn) -> bool {
+    for (const auto& set : polled){
+      if(set.find(conn) != set.end())return true;
+    }
+    return false;
+  };
+
+  bool trigger_makes_worse = false;
+  bool some_not_getting_better = false;
+
+  struct Statistics{
+    double n = 0;
+    double sum_X = 0;
+    double sum_Y = 0;
+    double sum_X_sqr = 0;
+    double sum_XY = 0;
+    double a = 0;
+    double b = 0;
+  };
+  std::unordered_map<std::shared_ptr<Connection>, Statistics> stats{};
+
+  for (std::size_t idx = 0; idx < congestion_history_.size() - 1; ++idx) {
+    auto& curr = congestion_history_[idx];
+    auto& prev = congestion_history_[idx + 1];
+
+    for (auto& conn : curr.outgoing) {
+      auto &stat = stats[conn.first];
+      ++stat.n;
+      stat.sum_X += idx;
+      stat.sum_Y += conn.second.getValue();
+      stat.sum_X_sqr += idx * idx;
+      stat.sum_XY += conn.second.getValue() * idx;
+    }
+    // check if worse better or the same
+    // on the outgoing connections
+    bool increasedOutgoingCongestion = std::any_of(curr.outgoing.begin(), curr.outgoing.end(), [&](const std::pair<std::shared_ptr<Connection>, Connection::Congestion>& outgoing){
+        return outgoing.second.getValue() > prev.outgoing[outgoing.first].getValue();
+    });
+    // through our execution we could mess up our incoming connection (if we have a loop)
+    /*bool increasedIncomingCongestion = std::any_of(curr.incoming.begin(), curr.incoming.end(), [&](const std::pair<std::shared_ptr<Connection>, Connection::Congestion>& incoming){
+      // if (didPoll(curr.polled, incoming.first)) return false;
+      return incoming.second.getValue() > prev.incoming[incoming.first].getValue();
+    }); */
+    bool decreasedOutgoingCongestion = std::all_of(curr.outgoing.begin(), curr.outgoing.end(), [&](const std::pair<std::shared_ptr<Connection>, Connection::Congestion>& outgoing){
+        // steadily increase probability in case all of them are not full
+        return outgoing.second.getValue() < prev.outgoing[outgoing.first].getValue();
+    });
+    for (auto& polled : incoming) {
+      for (auto& not_polled : incoming) {
+        if(polled == not_polled) continue;
+        int discriminatorCount = std::count_if(curr.polled.begin(), curr.polled.end(), [&](const std::unordered_set<std::shared_ptr<Connection>>& polledSet){
+            // this is the proper discriminator configuration, one is polled and one is not
+          return polledSet.find(polled) != polledSet.end() && polledSet.find(not_polled) == polledSet.end();
+        });
+        // this is the proper discriminator configuration, one is polled and one is not
+        if (increasedOutgoingCongestion) {
+          // should penalize polled
+          discriminator[Configuration{polled, not_polled}].makes_it_worse += discriminatorCount;
+        } else if (decreasedOutgoingCongestion) {
+          // we did good polling these connections, we should give a chance for other connections as well
+          discriminator[Configuration{polled, not_polled}].makes_it_better += discriminatorCount;
+        } else {
+          // neither good nor bad, maintain the status quo
+          discriminator[Configuration{polled, not_polled}].neither += discriminatorCount;
+        }
+      }
+    }
+  }
+
+  // fit line
+  for (auto& statIt : stats) {
+    auto& stat = statIt.second;
+    double det = stat.sum_X * stat.sum_X - stat.sum_X_sqr * stat.n;
+    // ax + b = y
+    double a = (stat.sum_X * stat.sum_Y  - stat.n * stat.sum_XY) / det;
+    double b = (-stat.sum_X_sqr * stat.sum_Y + stat.sum_X * stat.sum_XY) / det;
+
+    stat.a = a;
+    stat.b = b;
+
+    std::stringstream ss;
+    ss << statIt.first->getName() << " : [a=" << a << "]x + [b=" << b << "]";
+    std::string st = ss.str();
+
+    if (a < -0.0001) {
+      trigger_makes_worse = true;
+      some_not_getting_better = true;
+    }
+    if (a < 0.0001 || b > 1.0001) {
+      some_not_getting_better = true;
+    }
+  }
+
+  bool shouldMakeProcessorLevelDecision = true;
+  std::vector<std::shared_ptr<Connection>> penalized_connections{};
+  // check if we can act on the votes on a connection-level
+  ([&]() {
+      for (auto &polled : incoming) {
+        for (auto &not_polled : incoming) {
+          if (polled == not_polled) continue;
+          shouldMakeProcessorLevelDecision = false;
+          auto &polledVotes = discriminator[Configuration{polled, not_polled}];
+          auto &notPolledVotes = discriminator[Configuration{not_polled, polled}];
+          int penalize_polled = polledVotes.makes_it_worse + polledVotes.makes_it_better;
+          int penalize_not_polled = notPolledVotes.makes_it_worse + notPolledVotes.makes_it_better;
+          int neither = polledVotes.neither + notPolledVotes.neither;
+          int totalVotes = penalize_polled + penalize_not_polled + neither;
+          if (totalVotes == neither) continue;
+          if (penalize_polled > 2 * penalize_not_polled) {
+            // what if all of them are "makes_it_better"? => then we make a processor-level decision to increase the
+            // execution prob
+            // penalize polled
+            penalized_connections.emplace_back(polled);
+          } else if (penalize_not_polled <= 2 * penalize_polled) {
+            // we couldn't decide which one to penalize
+            shouldMakeProcessorLevelDecision = true;
+            return;
+          }
+        }
+      }
+  })();
+
+  if (penalized_connections.size() == 0) {
+    shouldMakeProcessorLevelDecision = true;
+  }
+
+  if (shouldMakeProcessorLevelDecision) {
+    if (trigger_makes_worse) {
+      execution_probability_ /= 2;
+    } else if (!some_not_getting_better) {
+      execution_probability_ = std::min(execution_probability_ * 2, 1.0);
+    }
+  } else {
+    for (auto& conn : penalized_connections) {
+      auto& weight = incoming_connection_weights_[conn];
+      weight /= 2;
+    }
+    // adjust the weight
+    double weight_sum = 0.0;
+    for (auto& incoming : incoming_connection_weights_) {
+      weight_sum += incoming.second;
+    }
+    for (auto& incoming : incoming_connection_weights_) {
+      incoming.second /= weight_sum;
+    }
+  }
+
+  // discard old items
+  congestion_history_.erase(congestion_history_.begin() + 25, congestion_history_.end());
+
+  return execution_probability_;
+}
+
+std::shared_ptr<Connectable> Processor::pickRandomIncomingConnection(bool& random) {
+  initialize_connection_weights();
+  double weight_sum = 0.0;
+  std::unordered_map<std::shared_ptr<Connectable>, double> weights;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto &conn : _incomingConnections) {
+      auto connection = std::dynamic_pointer_cast<Connection>(conn);
+      if (!connection) {
+        continue;
+      }
+      if(connection->isEmpty()){
+        continue;
+      }
+      double weight = incoming_connection_weights_[connection];
+      weight_sum += weight;
+      weights[conn] = weight;
+    }
+  }
+  if (weights.empty()) {
+    return nullptr;
+  }
+  if (weights.size() == 1) {
+    random = false;
+  } else {
+    random = true;
+  }
+  std::random_device rd{};
+  std::uniform_real_distribution<double> dis(0.0, weight_sum);
+  double rand = dis(rd);
+  for (auto& conn : weights) {
+    if (rand <= conn.second) {
+      return conn.first;
+    }
+    rand -= conn.second;
+  }
+  return weights.cbegin()->first;
 }
 
 void Processor::onTrigger(ProcessContext *context, ProcessSessionFactory *sessionFactory) {
@@ -258,8 +498,17 @@ void Processor::onTrigger(ProcessContext *context, ProcessSessionFactory *sessio
 
   try {
     // Call the virtual trigger function
+    //auto currentOutgoing = calculateOutgoingCongestions();
+    //auto currentIncoming = calculateIncomingCongestions();
     onTrigger(context, session.get());
     session->commit();
+    {
+      //std::lock_guard<std::mutex> guard(mutex_);
+      //++trigger_count_;
+      //outgoing_congestions_ = currentOutgoing;
+      //incoming_congestions_ = currentIncoming;
+      //got_triggered_ = true;
+    }
   } catch (std::exception &exception) {
     logger_->log_warn("Caught Exception %s during Processor::onTrigger of processor: %s (%s)", exception.what(), getUUIDStr(), getName());
     session->rollback();
@@ -276,13 +525,15 @@ void Processor::onTrigger(const std::shared_ptr<ProcessContext> &context, const 
 
   try {
     // Call the virtual trigger function
-    auto currentBackpressures = calculateBackpressures();
+    //auto currentOutgoing = calculateOutgoingCongestions();
+    //auto currentIncoming = calculateIncomingCongestions();
     onTrigger(context, session);
     session->commit();
-    {
-      std::lock_guard<std::mutex> guard(backpressure_mutex_);
-      backpressures_ = currentBackpressures;
-    }
+    /*{
+      std::lock_guard<std::mutex> guard(mutex_);
+      outgoing_congestions_ = currentOutgoing;
+      incoming_congestions_ = currentIncoming;
+    }*/
   } catch (std::exception &exception) {
     logger_->log_warn("Caught Exception %s during Processor::onTrigger of processor: %s (%s)", exception.what(), getUUIDStr(), getName());
     session->rollback();

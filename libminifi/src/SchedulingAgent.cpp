@@ -85,12 +85,12 @@ bool SchedulingAgent::hasTooMuchOutGoing(std::shared_ptr<core::Processor> proces
   // the probability of execution goes down the more
   // this processor contributes to the congestion in the
   // outgoing connections
-  double prob = processor->getExecutionProbability();
+  double prob = processor->updateAndFetchExecutionProbability();
   if (prob == 1.0) return false;
 
   std::random_device rd{};
   std::uniform_real_distribution<double> dis(0.0, 1.0);
-  return dis(rd) > prop;
+  return dis(rd) > prob;
 }
 
 bool SchedulingAgent::onTrigger(const std::shared_ptr<core::Processor> &processor, const std::shared_ptr<core::ProcessContext> &processContext,

@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 
+#include "core/Processor.h"
 #include "core/ProcessorNode.h"
 #include <memory>
 #include <utility>
+
 namespace org {
 namespace apache {
 namespace nifi {
@@ -55,6 +57,15 @@ bool ProcessorNode::isWorkAvailable() {
 
 bool ProcessorNode::isRunning() {
   return processor_->isRunning();
+}
+
+std::shared_ptr<Connectable> ProcessorNode::pickRandomIncomingConnnection(bool& random) {
+  auto proc = std::dynamic_pointer_cast<Processor>(processor_);
+  if (proc) {
+    return proc->pickRandomIncomingConnection(random);
+  }
+  random = false;
+  return processor_->getNextIncomingConnection();
 }
 
 } /* namespace core */
