@@ -1,1 +1,11 @@
-
+name: "test"
+on: [push]
+jobs:
+  ubuntu-16.04:
+    name: "ubuntu-16.04"
+    runs-on: ubuntu-16.04
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: build
+        run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS= -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4   && sudo make test ARGS="-j2 --output-on-failure"
