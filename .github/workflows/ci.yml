@@ -7,5 +7,15 @@ jobs:
     steps:
       - id: checkout
         uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: ${{github.ref}}-ccache-${{github.sha}}
+          restore-keys: ${{github.ref}}-ccache-
+      - id: install_deps
+        run: |
+          sudo apt install ccache
+          echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
       - id: build
         run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS= -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4   && sudo make test ARGS="-j2 --output-on-failure"
