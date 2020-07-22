@@ -1,24 +1,18 @@
 name: "test"
 on: [push]
 jobs:
-  ubuntu-16_04:
-    name: "ubuntu-16.04"
-    runs-on: ubuntu-16.04
+  windows:
+    name: "windows-2016"
+    runs-on: windows-2016
     steps:
       - id: checkout
         uses: actions/checkout@v2
-      - id: cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.ccache
-          key: ${{github.ref}}-ccache-${{github.sha}}
-          restore-keys: ${{github.ref}}-ccache-
-      - id: install_deps
-        run: |
-          sudo apt install ccache
-          echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
       - id: build
         run: |
-          du -khs ~/.ccache
-          ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS= -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4   && sudo make test ARGS="-j2 --output-on-failure"
-          du -khs ~/.ccache
+          $env:PATH += ";C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\"
+          $env:PATH += ";C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\\MSBuild\15.0\bin"
+          $env:PATH += ";C:\Program Files (x86)\Windows Kits\10\bin\x86"
+          $env:PATH += ";C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\VC\VCPackages"
+          $env:PATH += ";C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\bin\HostX86\x86"
+          $env:PATH += ";C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"
+          win_build_vs.bat build /CI
