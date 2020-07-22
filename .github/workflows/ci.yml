@@ -15,4 +15,6 @@ jobs:
           $env:PATH += ";C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\VC\VCPackages"
           $env:PATH += ";C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\bin\HostX86\x86"
           $env:PATH += ";C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"
+          $pwd.Path
+          ls
           win_build_vs.bat build /CI
