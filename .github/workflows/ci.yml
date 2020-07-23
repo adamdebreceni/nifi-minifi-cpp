@@ -9,11 +9,12 @@ jobs:
         uses: actions/checkout@v2
       - id: cache
         uses: actions/cache@v2
-        path: |
-          ~/.ccache
-          ~/Library/Caches/Homebrew
-        key: ${{github.ref}}-xcode10.3-ccache-${{github.sha}}
-        restore-keys: ${{github.ref}}-xcode10.3-ccache-
+        with:
+          path: |
+            ~/.ccache
+            ~/Library/Caches/Homebrew
+          key: ${{github.ref}}-xcode10.3-ccache-${{github.sha}}
+          restore-keys: ${{github.ref}}-xcode10.3-ccache-
       - id: install_dependencies
         run: brew install ccache ossp-uuid boost flex openssl doxygen graphviz python lua libusb libpng libpcap xz libssh2
       - id: setup_env
