@@ -1,8 +1,8 @@
 name: "test"
 on: [push]
 jobs:
-  macos:
-    name: "xcode10.3"
+  macos_xcode_10_3:
+    name: "macos-xcode10.3"
     runs-on: macos-10.15
     steps:
       - id: checkout
@@ -13,8 +13,10 @@ jobs:
           path: |
             ~/.ccache
             ~/Library/Caches/Homebrew
-          key: ${{github.ref}}-xcode10.3-ccache-${{github.sha}}
-          restore-keys: ${{github.ref}}-xcode10.3-ccache-
+          key: xcode10.3-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            xcode10.3-ccache-${{github.ref}}-
+            xcode10.3-ccache-
       - id: install_dependencies
         run: brew install ccache ossp-uuid boost flex openssl doxygen graphviz python lua libusb libpng libpcap xz libssh2
       - id: setup_env
@@ -22,6 +24,32 @@ jobs:
           echo -e "127.0.0.1\t$HOSTNAME" | sudo tee -a /etc/hosts > /dev/null
           echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE -DENABLE_LUA_SCRIPTING=1"
           sudo xcode-select -switch /Applications/Xcode_10.3.app
+          echo "::set-env name=PATH::`brew --prefix`/opt/ccache/libexec:$PATH"
+      - id: build
+        run: ./bootstrap.sh -e -t && cd build  && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4 && sudo make test ARGS="-j4 --output-on-failure" && make linter
+  macos_xcode_11_2_1:
+    name: "macos-xcode11.2.1"
+    runs-on: macos-10.15
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.ccache
+            ~/Library/Caches/Homebrew
+          key: xcode11.2.1-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            xcode11.2.1-ccache-${{github.ref}}-
+            xcode11.2.1-ccache-
+      - id: install_dependencies
+        run: brew install ccache ossp-uuid boost flex openssl doxygen graphviz python lua libusb libpng libpcap xz libssh2
+      - id: setup_env
+        run: |
+          echo -e "127.0.0.1\t$HOSTNAME" | sudo tee -a /etc/hosts > /dev/null
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE -DENABLE_LUA_SCRIPTING=1"
+          sudo xcode-select -switch /Applications/Xcode_11.2.1.app
           echo "::set-env name=PATH::`brew --prefix`/opt/ccache/libexec:$PATH"
       - id: build
         run: ./bootstrap.sh -e -t && cd build  && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4 && sudo make test ARGS="-j4 --output-on-failure" && make linter
