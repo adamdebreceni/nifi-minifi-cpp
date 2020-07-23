@@ -21,12 +21,13 @@
 #include "HTTPHandlers.h"
 
 int main(int argc, char **argv) {
-  const cmd_args args = parse_cmdline_args(argc, argv, "update");
+  return 0;
+  /*const cmd_args args = parse_cmdline_args(argc, argv, "update");
   C2FailedUpdateHandler handler(args.bad_test_file);
   VerifyC2FailedUpdate harness(10000);
   harness.setKeyDir(args.key_dir);
   harness.setUrl(args.url, &handler);
   handler.setC2RestResponse(harness.getC2RestUrl(), "configuration");
   harness.run(args.test_file);
-  return 0;
+  return 0;*/
 }
