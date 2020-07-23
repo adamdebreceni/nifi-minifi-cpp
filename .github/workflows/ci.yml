@@ -13,5 +13,7 @@ jobs:
         run: |
           echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
           echo "::set-env name=CMAKE_BUILD_OPTIONS::${CMAKE_BUILD_OPTIONS} -DENABLE_LUA_SCRIPTING=1"
+          sudo xcode-select --print-path
+          sudo xcode-select -switch /Applications/Xcode_10.3.app
       - id: build
         run: which g++ && g++ --version && env
