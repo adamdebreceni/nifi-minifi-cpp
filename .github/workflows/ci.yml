@@ -8,12 +8,12 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2
       - id: install_dependencies
-        run: brew install ossp-uuid boost flex openssl doxygen graphviz python lua libusb libpng libpcap xz libssh2
+        run: brew install ccache ossp-uuid boost flex openssl doxygen graphviz python lua libusb libpng libpcap xz libssh2
       - id: setup_env
         run: |
           echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
           echo "::set-env name=CMAKE_BUILD_OPTIONS::${CMAKE_BUILD_OPTIONS} -DENABLE_LUA_SCRIPTING=1"
-          sudo xcode-select --print-path
           sudo xcode-select -switch /Applications/Xcode_10.3.app
+          echo "::set-env name=PATH::`brew --prefix`/opt/ccache/libexec:$PATH"
       - id: build
         run: which g++ && g++ --version && env
