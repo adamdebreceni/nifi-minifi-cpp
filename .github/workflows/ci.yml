@@ -7,13 +7,19 @@ jobs:
     steps:
       - id: checkout
         uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        path: |
+          ~/.ccache
+          ~/Library/Caches/Homebrew
+        key: ${{github.ref}}-xcode10.3-ccache-${{github.sha}}
+        restore-keys: ${{github.ref}}-xcode10.3-ccache-
       - id: install_dependencies
         run: brew install ccache ossp-uuid boost flex openssl doxygen graphviz python lua libusb libpng libpcap xz libssh2
       - id: setup_env
         run: |
-          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
-          echo "::set-env name=CMAKE_BUILD_OPTIONS::${CMAKE_BUILD_OPTIONS} -DENABLE_LUA_SCRIPTING=1"
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE -DENABLE_LUA_SCRIPTING=1"
           sudo xcode-select -switch /Applications/Xcode_10.3.app
           echo "::set-env name=PATH::`brew --prefix`/opt/ccache/libexec:$PATH"
       - id: build
-        run: which g++ && g++ --version && env
+        run: ./bootstrap.sh -e -t && cd build  && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4 && sudo make test ARGS="-j4 --output-on-failure" && make linter
