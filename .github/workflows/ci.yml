@@ -141,7 +141,7 @@ jobs:
           sudo apt install -y software-properties-common
           sudo apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
           sudo apt update
-          sudo apt install -y wget gcc-4.8 g++-4.8 bison flex libboost-all-dev uuid-dev doxygen openssl libcurl4-openssl-dev ccache libpython3-dev liblua5.1-0-dev libusb-1.0-0-dev libpng12-dev libpcap-dev libssh2-1-dev
+          sudo apt install -y wget patch gcc-4.8 g++-4.8 bison flex libboost-all-dev uuid-dev doxygen openssl libcurl4-openssl-dev ccache libpython3-dev liblua5.1-0-dev libusb-1.0-0-dev libpng12-dev libpcap-dev libssh2-1-dev
           sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-4.8 /usr/bin/gcc
           sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-4.8 /usr/bin/g++
           cd $HOME
@@ -171,7 +171,7 @@ jobs:
       - id: install_deps
         run: |
           echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
-          sudo apt install -y wget ccache
+          sudo apt install -y wget ccache patch
           cd $HOME
           wget https://github.com/Kitware/CMake/releases/download/v3.18.0/cmake-3.18.0-Linux-x86_64.sh
           chmod a+x cmake-3.18.0-Linux-x86_64.sh
