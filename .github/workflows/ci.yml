@@ -182,10 +182,9 @@ jobs:
           echo "::set-env name=PATH::/usr/lib/ccache:$CMAKE_HOME/bin:$PATH"
       - id: build
         run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS= -DSTRICT_GSL_CHECKS=ON .. && make -j4 VERBOSE=1  && sudo make test ARGS="-j2 --output-on-failure"
-  ubuntu_14_04_all:
-    name: "ubuntu-14.04-all"
-    runs-on: ubuntu-18.04
-    container: ubuntu:14.04
+  ubuntu_16_04_all:
+    name: "ubuntu-16.04-all"
+    runs-on: ubuntu-16.04
     steps:
       - id: checkout
         uses: actions/checkout@v2
@@ -193,24 +192,16 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: ubuntu-14.04-all-ccache-${{github.ref}}
+          key: ubuntu-16.04-all-ccache-${{github.ref}}
           restore-keys: |
-            ubuntu-14.04-all-ccache-
+            ubuntu-16.04-all-ccache-
       - id: install_deps
         run: |
           echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
-          sudo apt install -y software-properties-common
           sudo apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
           sudo apt update
-          sudo apt install -y wget ccache openjdk-8-jdk maven
-          cd $HOME
-          wget https://github.com/Kitware/CMake/releases/download/v3.18.0/cmake-3.18.0-Linux-x86_64.sh
-          chmod a+x cmake-3.18.0-Linux-x86_64.sh
-          export CMAKE_HOME=$HOME/opt/cmake
-          mkdir -p $CMAKE_HOME
-          ./cmake-3.18.0-Linux-x86_64.sh --prefix=$CMAKE_HOME --skip-license
-          echo "::set-env name=CMAKE_ROOT::$CMAKE_HOME/share/cmake-3.18"
-          echo "::set-env name=PATH::/usr/lib/ccache:$CMAKE_HOME/bin:$PATH"
+          sudo apt install -y ccache openjdk-8-jdk maven
+          echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
       - id: build
         run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS= -DENABLE_LIBRDKAFKA=ON -DENABLE_OPC=ON -DENABLE_SFTP=ON -DENABLE_MQTT=ON -DENABLE_COAP=ON -DENABLE_PYTHON=ON -DSTRICT_GSL_CHECKS=AUDIT .. &&  cmake --build . --parallel 4  && sudo make test ARGS="-j8 --output-on-failure"
   debian:
