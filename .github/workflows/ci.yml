@@ -13,8 +13,9 @@ jobs:
           path: |
             ~/.ccache
             ~/Library/Caches/Homebrew
-          key: xcode10.3-ccache-${{github.ref}}
+          key: xcode10.3-ccache-${{github.ref}}-${{github.sha}}
           restore-keys: |
+            xcode10.3-ccache-${{github.ref}}-
             xcode10.3-ccache-
       - id: install_dependencies
         run: brew install ccache ossp-uuid boost flex openssl doxygen graphviz python lua libusb libpng libpcap xz libssh2
@@ -38,8 +39,9 @@ jobs:
           path: |
             ~/.ccache
             ~/Library/Caches/Homebrew
-          key: xcode11.2.1-ccache-${{github.ref}}
+          key: xcode11.2.1-ccache-${{github.ref}}-${{github.sha}}
           restore-keys: |
+            xcode11.2.1-ccache-${{github.ref}}-
             xcode11.2.1-ccache-
       - id: install_dependencies
         run: brew install ccache ossp-uuid boost flex openssl doxygen graphviz python lua libusb libpng libpcap xz libssh2
@@ -87,8 +89,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: ubuntu-16.04-ccache-${{github.ref}}
+          key: ubuntu-16.04-ccache-${{github.ref}}-${{github.sha}}
           restore-keys: |
+            ubuntu-16.04-ccache-${{github.ref}}-
             ubuntu-16.04-ccache-
       - id: install_deps
         run: |
@@ -107,8 +110,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: ubuntu-16.04-gcc-4.8-ccache-${{github.ref}}
+          key: ubuntu-16.04-gcc-4.8-ccache-${{github.ref}}-${{github.sha}}
           restore-keys: |
+            ubuntu-16.04-gcc-4.8-ccache-${{github.ref}}-
             ubuntu-16.04-gcc-4.8-ccache-
       - id: install_deps
         run: |
@@ -132,8 +136,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: ubuntu-14.04-gcc-4.8-ccache-${{github.ref}}
+          key: ubuntu-14.04-gcc-4.8-ccache-${{github.ref}}-${{github.sha}}
           restore-keys: |
+            ubuntu-14.04-gcc-4.8-ccache-${{github.ref}}-
             ubuntu-14.04-gcc-4.8-ccache-
       - id: install_deps
         run: |
@@ -165,8 +170,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: ubuntu-14.04-ccache-${{github.ref}}
+          key: ubuntu-14.04-ccache-${{github.ref}}-${{github.sha}}
           restore-keys: |
+            ubuntu-14.04-ccache-${{github.ref}}-
             ubuntu-14.04-ccache-
       - id: install_deps
         run: |
@@ -192,8 +198,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: ubuntu-16.04-all-ccache-${{github.ref}}
+          key: ubuntu-16.04-all-ccache-${{github.ref}}-${{github.sha}}
           restore-keys: |
+            ubuntu-16.04-all-ccache-${{github.ref}}-
             ubuntu-16.04-all-ccache-
       - id: install_deps
         run: |
@@ -214,8 +221,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: debian-ccache-${{github.ref}}
+          key: debian-ccache-${{github.ref}}-${{github.sha}}
           restore-keys: |
+            debian-ccache-${{github.ref}}-
             debian-ccache-
       - id: install_deps
         run: |
@@ -234,8 +242,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: centos-ccache-${{github.ref}}
+          key: centos-ccache-${{github.ref}}-${{github.sha}}
           restore-keys: |
+            centos-ccache-${{github.ref}}-
             centos-ccache-
       - id: install_deps
         run: |
@@ -254,8 +263,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: fedora-ccache-${{github.ref}}
+          key: fedora-ccache-${{github.ref}}-${{github.sha}}
           restore-keys: |
+            fedora-ccache-${{github.ref}}-
             fedora-ccache-
       - id: install_deps
         run: |
@@ -274,8 +284,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: ubuntu-18.04-ccache-${{github.ref}}
+          key: ubuntu-18.04-ccache-${{github.ref}}-${{github.sha}}
           restore-keys: |
+            ubuntu-18.04-ccache-${{github.ref}}-
             ubuntu-18.04-ccache-
       - id: install_deps
         run: |
@@ -294,8 +305,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: ubuntu-16.04-shared-ccache-${{github.ref}}
+          key: ubuntu-16.04-shared-ccache-${{github.ref}}-${{github.sha}}
           restore-keys: |
+            ubuntu-16.04-shared-ccache-${{github.ref}}-
             ubuntu-16.04-shared-ccache-
       - id: install_deps
         run: |
