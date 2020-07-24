@@ -4,6 +4,7 @@ jobs:
   macos_xcode_10_3:
     name: "macos-xcode10.3"
     runs-on: macos-10.15
+    timeout-minutes: 60
     steps:
       - id: checkout
         uses: actions/checkout@v2
@@ -30,6 +31,7 @@ jobs:
   macos_xcode_11_2_1:
     name: "macos-xcode11.2.1"
     runs-on: macos-10.15
+    timeout-minutes: 60
     steps:
       - id: checkout
         uses: actions/checkout@v2
@@ -56,6 +58,7 @@ jobs:
   windows:
     name: "windows"
     runs-on: windows-2016
+    timeout-minutes: 90
     steps:
       - id: checkout
         uses: actions/checkout@v2
@@ -82,6 +85,7 @@ jobs:
   ubuntu_16_04:
     name: "ubuntu-16.04"
     runs-on: ubuntu-16.04
+    timeout-minutes: 60
     steps:
       - id: checkout
         uses: actions/checkout@v2
@@ -103,6 +107,7 @@ jobs:
   ubuntu_16_04_gcc_4_8:
     name: "ubuntu-16.04-gcc-4.8"
     runs-on: ubuntu-16.04
+    timeout-minutes: 60
     steps:
       - id: checkout
         uses: actions/checkout@v2
@@ -129,6 +134,7 @@ jobs:
     name: "ubuntu-14.04-gcc-4.8"
     runs-on: ubuntu-18.04
     container: ubuntu:14.04
+    timeout-minutes: 60
     steps:
       - id: checkout
         uses: actions/checkout@v2
@@ -163,6 +169,7 @@ jobs:
     name: "ubuntu-14.04"
     runs-on: ubuntu-18.04
     container: ubuntu:14.04
+    timeout-minutes: 60
     steps:
       - id: checkout
         uses: actions/checkout@v2
@@ -191,6 +198,7 @@ jobs:
   ubuntu_16_04_all:
     name: "ubuntu-16.04-all"
     runs-on: ubuntu-16.04
+    timeout-minutes: 60
     steps:
       - id: checkout
         uses: actions/checkout@v2
@@ -214,6 +222,7 @@ jobs:
   debian:
     name: "debian"
     runs-on: ubuntu-18.04
+    timeout-minutes: 60
     steps:
       - id: checkout
         uses: actions/checkout@v2
@@ -235,6 +244,7 @@ jobs:
   centos:
     name: "centos"
     runs-on: ubuntu-18.04
+    timeout-minutes: 60
     steps:
       - id: checkout
         uses: actions/checkout@v2
@@ -256,6 +266,7 @@ jobs:
   fedora:
     name: "fedora"
     runs-on: ubuntu-18.04
+    timeout-minutes: 60
     steps:
       - id: checkout
         uses: actions/checkout@v2
@@ -277,6 +288,7 @@ jobs:
   ubuntu_18_04:
     name: "ubuntu-18.04"
     runs-on: ubuntu-18.04
+    timeout-minutes: 60
     steps:
       - id: checkout
         uses: actions/checkout@v2
@@ -298,6 +310,7 @@ jobs:
   ubuntu_16_04_shared:
     name: "ubuntu-16.04-shared"
     runs-on: ubuntu-16.04
+    timeout-minutes: 60
     steps:
       - id: checkout
         uses: actions/checkout@v2
