@@ -93,7 +93,7 @@ jobs:
       - id: install_deps
         run: |
           echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
-          sudo apt install ccache
+          sudo apt install -y ccache
           echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
       - id: build
         run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS= -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4   && sudo make test ARGS="-j2 --output-on-failure"
@@ -115,7 +115,7 @@ jobs:
           echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
           sudo apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
           sudo apt update
-          sudo apt install gcc-4.8 g++-4.8 bison flex libboost-all-dev uuid-dev doxygen openssl libcurl4-openssl-dev ccache libpython3-dev liblua5.1-0-dev libusb-1.0-0-dev libpng12-dev libpcap-dev libssh2-1-dev
+          sudo apt install -y gcc-4.8 g++-4.8 bison flex libboost-all-dev uuid-dev doxygen openssl libcurl4-openssl-dev ccache libpython3-dev liblua5.1-0-dev libusb-1.0-0-dev libpng12-dev libpcap-dev libssh2-1-dev
           echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
           sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-4.8 /usr/bin/gcc
           sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-4.8 /usr/bin/g++
@@ -141,7 +141,7 @@ jobs:
           sudo apt install -y software-properties-common
           sudo apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
           sudo apt update
-          sudo apt install wget gcc-4.8 g++-4.8 bison flex libboost-all-dev uuid-dev doxygen openssl libcurl4-openssl-dev ccache libpython3-dev liblua5.1-0-dev libusb-1.0-0-dev libpng12-dev libpcap-dev libssh2-1-dev
+          sudo apt install -y wget gcc-4.8 g++-4.8 bison flex libboost-all-dev uuid-dev doxygen openssl libcurl4-openssl-dev ccache libpython3-dev liblua5.1-0-dev libusb-1.0-0-dev libpng12-dev libpcap-dev libssh2-1-dev
           sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-4.8 /usr/bin/gcc
           sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-4.8 /usr/bin/g++
           wget https://github.com/Kitware/CMake/releases/download/v3.18.0/cmake-3.18.0-Linux-x86_64.sh -o $HOME/cmake-3.18.0-Linux-x86_64.sh
@@ -170,7 +170,7 @@ jobs:
       - id: install_deps
         run: |
           echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
-          sudo apt install wget ccache
+          sudo apt install -y wget ccache
           wget https://github.com/Kitware/CMake/releases/download/v3.18.0/cmake-3.18.0-Linux-x86_64.sh -o $HOME/cmake-3.18.0-Linux-x86_64.sh
           chmod a+x $HOME/cmake-3.18.0-Linux-x86_64.sh
           export CMAKE_HOME=$HOME/opt/cmake
@@ -200,7 +200,7 @@ jobs:
           sudo apt install -y software-properties-common
           sudo apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
           sudo apt update
-          sudo apt install wget ccache openjdk-8-jdk maven
+          sudo apt install -y wget ccache openjdk-8-jdk maven
           wget https://github.com/Kitware/CMake/releases/download/v3.18.0/cmake-3.18.0-Linux-x86_64.sh -o $HOME/cmake-3.18.0-Linux-x86_64.sh
           chmod a+x $HOME/cmake-3.18.0-Linux-x86_64.sh
           export CMAKE_HOME=$HOME/opt/cmake
@@ -226,7 +226,7 @@ jobs:
       - id: install_deps
         run: |
           echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
-          sudo apt install ccache
+          sudo apt install -y ccache
           echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
       - id: build
         run: mkdir -p build && cd build && cmake -DSTRICT_GSL_CHECKS=ON .. && make debian
@@ -246,7 +246,7 @@ jobs:
       - id: install_deps
         run: |
           echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
-          sudo apt install ccache
+          sudo apt install -y ccache
           echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
       - id: build
         run: mkdir -p build && cd build && cmake -DSTRICT_GSL_CHECKS=ON .. && make centos
@@ -266,7 +266,7 @@ jobs:
       - id: install_deps
         run: |
           echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
-          sudo apt install ccache
+          sudo apt install -y ccache
           echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
       - id: build
         run: mkdir -p build && cd build && cmake -DSTRICT_GSL_CHECKS=ON .. && make fedora
@@ -286,7 +286,7 @@ jobs:
       - id: install_deps
         run: |
           echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
-          sudo apt install ccache
+          sudo apt install -y ccache
           echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
       - id: build
         run: mkdir -p build && cd build && cmake -DSTRICT_GSL_CHECKS=ON .. && make u18
@@ -306,7 +306,7 @@ jobs:
       - id: install_deps
         run: |
           echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
-          sudo apt install ccache
+          sudo apt install -y ccache
           echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
       - id: build
         run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS=ON -DSTRICT_GSL_CHECKS=AUDIT .. &&  cmake --build . --parallel 4  && sudo make test ARGS="-j4 --output-on-failure"
