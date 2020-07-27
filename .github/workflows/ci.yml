@@ -55,6 +55,11 @@ jobs:
           echo "::set-env name=PATH::`brew --prefix`/opt/ccache/libexec:$PATH"
       - id: build
         run: ./bootstrap.sh -e -t && cd build  && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4 && sudo make test ARGS="--timeout 300 -j4 --output-on-failure" && make linter
+      - id: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos-xcode11.2.1-${{github.ref}}-${{github.sha}}
+          path: ./build/
   windows:
     name: "windows"
     runs-on: windows-2016
@@ -82,6 +87,11 @@ jobs:
           PATH=C:\Windows\System32\;%path%
           win_build_vs.bat build /CI
         shell: cmd
+      - id: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-${{github.ref}}-${{github.sha}}
+          path: ./build/
   ubuntu_16_04:
     name: "ubuntu-16.04"
     runs-on: ubuntu-16.04
@@ -130,6 +140,11 @@ jobs:
           sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-4.8 /usr/bin/g++
       - id: build
         run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS= -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4   && sudo make test ARGS="--timeout 300 -j2 --output-on-failure"
+      - id: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: ubuntu-16.04-gcc-4.8-${{github.ref}}-${{github.sha}}
+          path: ./build/
   ubuntu_14_04_gcc_4_8:
     name: "ubuntu-14.04-gcc-4.8"
     runs-on: ubuntu-18.04
