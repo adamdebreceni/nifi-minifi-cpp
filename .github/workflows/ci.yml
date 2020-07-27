@@ -1,6 +1,66 @@
 name: "test"
 on: [push]
 jobs:
+  macos_xcode_10_3:
+    name: "macos-xcode10.3"
+    runs-on: macos-10.15
+    timeout-minutes: 60
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.ccache
+            ~/Library/Caches/Homebrew
+          key: xcode10.3-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            xcode10.3-ccache-${{github.ref}}-
+            xcode10.3-ccache-
+      - id: install_dependencies
+        run: brew install ccache ossp-uuid boost flex openssl doxygen graphviz python lua libusb libpng libpcap xz libssh2
+      - id: setup_env
+        run: |
+          echo -e "127.0.0.1\t$HOSTNAME" | sudo tee -a /etc/hosts > /dev/null
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE -DENABLE_LUA_SCRIPTING=1"
+          sudo xcode-select -switch /Applications/Xcode_10.3.app
+          echo "::set-env name=PATH::`brew --prefix`/opt/ccache/libexec:$PATH"
+      - id: build
+        run: ./bootstrap.sh -e -t && cd build  && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4 && sudo make test ARGS="--timeout 300 -j4 --output-on-failure" && make linter
+  macos_xcode_11_2_1:
+    name: "macos-xcode11.2.1"
+    runs-on: macos-10.15
+    timeout-minutes: 60
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.ccache
+            ~/Library/Caches/Homebrew
+          key: xcode11.2.1-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            xcode11.2.1-ccache-${{github.ref}}-
+            xcode11.2.1-ccache-
+      - id: install_dependencies
+        run: brew install ccache ossp-uuid boost flex openssl doxygen graphviz python lua libusb libpng libpcap xz libssh2
+      - id: setup_env
+        run: |
+          echo -e "127.0.0.1\t$HOSTNAME" | sudo tee -a /etc/hosts > /dev/null
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE -DENABLE_LUA_SCRIPTING=1"
+          sudo xcode-select -switch /Applications/Xcode_11.2.1.app
+          echo "::set-env name=PATH::`brew --prefix`/opt/ccache/libexec:$PATH"
+      - id: build
+        run: ./bootstrap.sh -e -t && cd build  && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4 && sudo make test ARGS="--timeout 300 -j4 --output-on-failure" && make linter
+      - id: upload
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: macos-xcode11_2_1-${{github.sha}}
+          path: ./build/
   windows:
     name: "windows"
     runs-on: windows-2016
@@ -26,5 +86,264 @@ jobs:
           PATH=C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\bin\HostX86\x86;%path%
           PATH=C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;%path%
           PATH=C:\Windows\System32\;%path%
-          TailFileTests.exe
+          win_build_vs.bat build /CI
         shell: cmd
+      - id: upload
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: windows-${{github.sha}}
+          path: ./build/
+  ubuntu_16_04:
+    name: "ubuntu-16.04"
+    runs-on: ubuntu-16.04
+    timeout-minutes: 60
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: ubuntu-16.04-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            ubuntu-16.04-ccache-${{github.ref}}-
+            ubuntu-16.04-ccache-
+      - id: install_deps
+        run: |
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
+          sudo apt install -y ccache
+          echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
+      - id: build
+        run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS= -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4   && sudo make test ARGS="--timeout 300 -j2 --output-on-failure"
+  ubuntu_16_04_gcc_4_8:
+    name: "ubuntu-16.04-gcc-4.8"
+    runs-on: ubuntu-16.04
+    timeout-minutes: 60
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: ubuntu-16.04-gcc-4.8-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            ubuntu-16.04-gcc-4.8-ccache-${{github.ref}}-
+            ubuntu-16.04-gcc-4.8-ccache-
+      - id: install_deps
+        run: |
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
+          sudo apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
+          sudo apt update
+          sudo apt install -y gcc-4.8 g++-4.8 bison flex libboost-all-dev uuid-dev doxygen openssl libcurl4-openssl-dev ccache libpython3-dev liblua5.1-0-dev libusb-1.0-0-dev libpng12-dev libpcap-dev libssh2-1-dev
+          echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
+          sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-4.8 /usr/bin/gcc
+          sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-4.8 /usr/bin/g++
+      - id: build
+        run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS= -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4   && sudo make test ARGS="--timeout 300 -j2 --output-on-failure"
+      - id: upload
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: ubuntu-16_04-gcc-4_8-${{github.sha}}
+          path: ./build/
+  ubuntu_14_04_gcc_4_8:
+    name: "ubuntu-14.04-gcc-4.8"
+    runs-on: ubuntu-18.04
+    container: ubuntu:14.04
+    timeout-minutes: 60
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: ubuntu-14.04-gcc-4.8-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            ubuntu-14.04-gcc-4.8-ccache-${{github.ref}}-
+            ubuntu-14.04-gcc-4.8-ccache-
+      - id: install_deps
+        run: |
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
+          sudo apt install -y software-properties-common
+          sudo apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
+          sudo apt update
+          sudo apt install -y wget patch gcc-4.8 g++-4.8 bison flex libboost-all-dev uuid-dev doxygen openssl libcurl4-openssl-dev ccache libpython3-dev liblua5.1-0-dev libusb-1.0-0-dev libpng12-dev libpcap-dev libssh2-1-dev
+          sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-4.8 /usr/bin/gcc
+          sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-4.8 /usr/bin/g++
+          cd $HOME
+          wget https://github.com/Kitware/CMake/releases/download/v3.18.0/cmake-3.18.0-Linux-x86_64.sh
+          chmod a+x cmake-3.18.0-Linux-x86_64.sh
+          export CMAKE_HOME=$HOME/opt/cmake
+          mkdir -p $CMAKE_HOME
+          ./cmake-3.18.0-Linux-x86_64.sh --prefix=$CMAKE_HOME --skip-license
+          echo "::set-env name=CMAKE_ROOT::$CMAKE_HOME/share/cmake-3.18"
+          echo "::set-env name=PATH::/usr/lib/ccache:$CMAKE_HOME/bin:$PATH"
+      - id: build
+        run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS= -DSTRICT_GSL_CHECKS=ON .. && make -j4 VERBOSE=1  && sudo make test ARGS="--timeout 300 -j2 --output-on-failure"
+  ubuntu_14_04:
+    name: "ubuntu-14.04"
+    runs-on: ubuntu-18.04
+    container: ubuntu:14.04
+    timeout-minutes: 60
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: ubuntu-14.04-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            ubuntu-14.04-ccache-${{github.ref}}-
+            ubuntu-14.04-ccache-
+      - id: install_deps
+        run: |
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
+          sudo apt install -y wget ccache patch
+          cd $HOME
+          wget https://github.com/Kitware/CMake/releases/download/v3.18.0/cmake-3.18.0-Linux-x86_64.sh
+          chmod a+x cmake-3.18.0-Linux-x86_64.sh
+          export CMAKE_HOME=$HOME/opt/cmake
+          mkdir -p $CMAKE_HOME
+          ./cmake-3.18.0-Linux-x86_64.sh --prefix=$CMAKE_HOME --skip-license
+          echo "::set-env name=CMAKE_ROOT::$CMAKE_HOME/share/cmake-3.18"
+          echo "::set-env name=PATH::/usr/lib/ccache:$CMAKE_HOME/bin:$PATH"
+      - id: build
+        run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS= -DSTRICT_GSL_CHECKS=ON .. && make -j4 VERBOSE=1  && sudo make test ARGS="--timeout 300 -j2 --output-on-failure"
+  ubuntu_16_04_all:
+    name: "ubuntu-16.04-all"
+    runs-on: ubuntu-16.04
+    timeout-minutes: 60
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: ubuntu-16.04-all-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            ubuntu-16.04-all-ccache-${{github.ref}}-
+            ubuntu-16.04-all-ccache-
+      - id: install_deps
+        run: |
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
+          sudo apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
+          sudo apt update
+          sudo apt install -y ccache openjdk-8-jdk maven
+          echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
+      - id: build
+        run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS= -DENABLE_LIBRDKAFKA=ON -DENABLE_OPC=ON -DENABLE_SFTP=ON -DENABLE_MQTT=ON -DENABLE_COAP=ON -DENABLE_PYTHON=ON -DSTRICT_GSL_CHECKS=AUDIT .. &&  cmake --build . --parallel 4  && sudo make test ARGS="--timeout 300 -j8 --output-on-failure"
+  debian:
+    name: "debian"
+    runs-on: ubuntu-18.04
+    timeout-minutes: 60
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: debian-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            debian-ccache-${{github.ref}}-
+            debian-ccache-
+      - id: install_deps
+        run: |
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
+          sudo apt install -y ccache
+          echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
+      - id: build
+        run: mkdir -p build && cd build && cmake -DSTRICT_GSL_CHECKS=ON .. && make debian
+  centos:
+    name: "centos"
+    runs-on: ubuntu-18.04
+    timeout-minutes: 60
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: centos-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            centos-ccache-${{github.ref}}-
+            centos-ccache-
+      - id: install_deps
+        run: |
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
+          sudo apt install -y ccache
+          echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
+      - id: build
+        run: mkdir -p build && cd build && cmake -DSTRICT_GSL_CHECKS=ON .. && make centos
+  fedora:
+    name: "fedora"
+    runs-on: ubuntu-18.04
+    timeout-minutes: 60
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: fedora-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            fedora-ccache-${{github.ref}}-
+            fedora-ccache-
+      - id: install_deps
+        run: |
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
+          sudo apt install -y ccache
+          echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
+      - id: build
+        run: mkdir -p build && cd build && cmake -DSTRICT_GSL_CHECKS=ON .. && make fedora
+  ubuntu_18_04:
+    name: "ubuntu-18.04"
+    runs-on: ubuntu-18.04
+    timeout-minutes: 60
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: ubuntu-18.04-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            ubuntu-18.04-ccache-${{github.ref}}-
+            ubuntu-18.04-ccache-
+      - id: install_deps
+        run: |
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
+          sudo apt install -y ccache
+          echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
+      - id: build
+        run: mkdir -p build && cd build && cmake -DSTRICT_GSL_CHECKS=ON .. && make u18
+  ubuntu_16_04_shared:
+    name: "ubuntu-16.04-shared"
+    runs-on: ubuntu-16.04
+    timeout-minutes: 60
+    steps:
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.ccache
+          key: ubuntu-16.04-shared-ccache-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            ubuntu-16.04-shared-ccache-${{github.ref}}-
+            ubuntu-16.04-shared-ccache-
+      - id: install_deps
+        run: |
+          echo "::set-env name=CMAKE_BUILD_OPTIONS::-DENABLE_PCAP=TRUE"
+          sudo apt install -y ccache
+          echo "::set-env name=PATH::/usr/lib/ccache:$PATH"
+      - id: build
+        run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS=ON -DSTRICT_GSL_CHECKS=AUDIT .. &&  cmake --build . --parallel 4  && sudo make test ARGS="--timeout 300 -j4 --output-on-failure"
