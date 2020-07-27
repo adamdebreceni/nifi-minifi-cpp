@@ -59,7 +59,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: macos-xcode11.2.1-${{github.ref}}-${{github.sha}}
+          name: macos-xcode11_2_1-${{github.sha}}
           path: ./build/
   windows:
     name: "windows"
@@ -92,7 +92,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: windows-${{github.ref}}-${{github.sha}}
+          name: windows-${{github.sha}}
           path: ./build/
   ubuntu_16_04:
     name: "ubuntu-16.04"
@@ -146,7 +146,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: ubuntu-16.04-gcc-4.8-${{github.ref}}-${{github.sha}}
+          name: ubuntu-16_04-gcc-4_8-${{github.sha}}
           path: ./build/
   ubuntu_14_04_gcc_4_8:
     name: "ubuntu-14.04-gcc-4.8"
