@@ -25,6 +25,7 @@ class TestControllerWithFlow: public TestController{
     LogTestController::getInstance().setTrace<processors::TestProcessor>();
     LogTestController::getInstance().setTrace<processors::TestFlowFileGenerator>();
     LogTestController::getInstance().setTrace<minifi::Connection>();
+    LogTestController::getInstance().setTrace<TestControllerWithFlow>();
 
     char format[] = "/tmp/flowTest.XXXXXX";
     std::string dir = createTempDirectory(format);
