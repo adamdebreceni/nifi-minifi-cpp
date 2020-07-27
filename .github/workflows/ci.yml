@@ -86,14 +86,8 @@ jobs:
           PATH=C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\bin\HostX86\x86;%path%
           PATH=C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;%path%
           PATH=C:\Windows\System32\;%path%
-          win_build_vs.bat build /CI
+          TailFileTests.exe
         shell: cmd
-      - id: upload
-        uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: windows-${{github.sha}}
-          path: ./build/
   ubuntu_16_04:
     name: "ubuntu-16.04"
     runs-on: ubuntu-16.04
