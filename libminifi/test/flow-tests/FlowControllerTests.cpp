@@ -135,7 +135,9 @@ TEST_CASE("Flow shutdown waits for a while", "[TestFlow2]") {
   // wait for the source processor to enqueue its flowFiles
   int tryCount = 0;
   while (tryCount++ < 10 && root->getTotalFlowFileCount() != 3) {
+    logging::LoggerFactory<TestControllerWithFlow>::getLogger()->log_debug("[1] Condition not yet satisfied, going to sleep");
     std::this_thread::sleep_for(std::chrono::milliseconds{20});
+    logging::LoggerFactory<TestControllerWithFlow>::getLogger()->log_debug("[1] Lets check the condition again");
   }
 
   REQUIRE(root->getTotalFlowFileCount() == 3);
@@ -175,7 +177,9 @@ TEST_CASE("Flow stopped after grace period", "[TestFlow3]") {
   // wait for the source processor to enqueue its flowFiles
   int tryCount = 0;
   while (tryCount++ < 10 && root->getTotalFlowFileCount() != 3) {
+    logging::LoggerFactory<TestControllerWithFlow>::getLogger()->log_debug("[2] Condition not yet satisfied, going to sleep");
     std::this_thread::sleep_for(std::chrono::milliseconds{20});
+    logging::LoggerFactory<TestControllerWithFlow>::getLogger()->log_debug("[2] Lets check the condition again");
   }
 
   REQUIRE(root->getTotalFlowFileCount() == 3);
@@ -217,7 +221,9 @@ TEST_CASE("Extend the waiting period during shutdown", "[TestFlow4]") {
   // wait for the source processor to enqueue its flowFiles
   int tryCount = 0;
   while (tryCount++ < 10 && root->getTotalFlowFileCount() != 3) {
+    logging::LoggerFactory<TestControllerWithFlow>::getLogger()->log_debug("[3] Condition not yet satisfied, going to sleep");
     std::this_thread::sleep_for(std::chrono::milliseconds{20});
+    logging::LoggerFactory<TestControllerWithFlow>::getLogger()->log_debug("[3] Lets check the condition again");
   }
 
   REQUIRE(root->getTotalFlowFileCount() == 3);
