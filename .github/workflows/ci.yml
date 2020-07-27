@@ -57,6 +57,7 @@ jobs:
         run: ./bootstrap.sh -e -t && cd build  && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4 && sudo make test ARGS="--timeout 300 -j4 --output-on-failure" && make linter
       - id: upload
         uses: actions/upload-artifact@v2
+        if: failure()
         with:
           name: macos-xcode11.2.1-${{github.ref}}-${{github.sha}}
           path: ./build/
@@ -89,6 +90,7 @@ jobs:
         shell: cmd
       - id: upload
         uses: actions/upload-artifact@v2
+        if: failure()
         with:
           name: windows-${{github.ref}}-${{github.sha}}
           path: ./build/
@@ -142,6 +144,7 @@ jobs:
         run: ./bootstrap.sh -e -t && cd build  && cmake -DUSE_SHARED_LIBS= -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=ON .. && cmake --build . --parallel 4   && sudo make test ARGS="--timeout 300 -j2 --output-on-failure"
       - id: upload
         uses: actions/upload-artifact@v2
+        if: failure()
         with:
           name: ubuntu-16.04-gcc-4.8-${{github.ref}}-${{github.sha}}
           path: ./build/
