@@ -62,6 +62,10 @@ core::Property MergeContent::KeepPath(
   core::PropertyBuilder::createProperty("Keep Path")
   ->withDescription("If using the Zip or Tar Merge Format, specifies whether or not the FlowFiles' paths should be included in their entry")
   ->withDefaultValue(false)->build());
+core::Property MergeContent::Lazy(
+  core::PropertyBuilder::createProperty("Lazy")
+  ->withDescription("Specifies if the merged content should actually be generated and stored or be materialized on demand")
+  ->withDefaultValue(false)->build());
 core::Relationship MergeContent::Merge("merged", "The FlowFile containing the merged content");
 const char *BinaryConcatenationMerge::mimeType = "application/octet-stream";
 const char *TarMerge::mimeType = "application/tar";
@@ -84,6 +88,7 @@ void MergeContent::initialize() {
   properties.insert(Footer);
   properties.insert(Demarcator);
   properties.insert(KeepPath);
+  properties.insert(Lazy);
   setSupportedProperties(properties);
   // Set the supported relationships
   std::set<core::Relationship> relationships;

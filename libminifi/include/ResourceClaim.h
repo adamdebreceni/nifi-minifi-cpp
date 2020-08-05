@@ -58,7 +58,7 @@ class ResourceClaim : public std::enable_shared_from_this<ResourceClaim> {
   explicit ResourceClaim(const std::string path, std::shared_ptr<core::StreamManager<ResourceClaim>> claim_manager, bool deleted = false);
 
   // Destructor
-  ~ResourceClaim() = default;
+  virtual ~ResourceClaim() = default;
   // increaseFlowFileRecordOwnedCount
   void increaseFlowFileRecordOwnedCount() {
     claim_manager_->incrementStreamCount(shared_from_this());
@@ -115,8 +115,8 @@ class ResourceClaim : public std::enable_shared_from_this<ResourceClaim> {
   std::shared_ptr<logging::Logger> logger_;
   // Prevent default copy constructor and assignment operation
   // Only support pass by reference or pointer
-  ResourceClaim(const ResourceClaim &parent);
-  ResourceClaim &operator=(const ResourceClaim &parent);
+  ResourceClaim(const ResourceClaim &parent) = delete;
+  ResourceClaim &operator=(const ResourceClaim &parent) = delete;
 
   static utils::NonRepeatingStringGenerator non_repeating_string_generator_;
 };

@@ -287,6 +287,7 @@ class MergeContent : public processors::BinFiles {
   static core::Property Header;
   static core::Property Footer;
   static core::Property Demarcator;
+  static core::Property Lazy;
 
   // Supported Relationships
   static core::Relationship Merge;
