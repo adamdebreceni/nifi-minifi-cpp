@@ -688,6 +688,9 @@ if(WIN32)
         endif()
 
         if (NOT VCRUNTIME_X86_REDIST_CRT_DIR OR NOT VCRUNTIME_X64_REDIST_CRT_DIR)
+            message("CMAKE_VS_PLATFORM_TOOLSET=${CMAKE_VS_PLATFORM_TOOLSET}")
+            message("VCRUNTIME_X86_REDIST_CRT_DIR=${VCRUNTIME_X86_REDIST_CRT_DIR}")
+            message("VCRUNTIME_X64_REDIST_CRT_DIR=${VCRUNTIME_X64_REDIST_CRT_DIR}")
             message(FATAL_ERROR "Could not find the VC Redistributable. Please set VCRUNTIME_X86_REDIST_CRT_DIR and VCRUNTIME_X64_REDIST_CRT_DIR manually!")
         endif()
 
