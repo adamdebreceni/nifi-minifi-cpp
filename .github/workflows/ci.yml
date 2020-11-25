@@ -54,7 +54,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
       - id: build
         run: |
-          PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\MSVC\14.16.27023;%path%
+          PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\MSVC\14.16.27023\bin\Hostx64\x64;%path%
           win_build_vs.bat build /2019 /64 /CI
         shell: cmd
   ubuntu_16_04:
