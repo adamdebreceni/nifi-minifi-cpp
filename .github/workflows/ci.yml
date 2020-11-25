@@ -53,7 +53,7 @@ jobs:
       - id: build
         run: |
           set
-          win_build_vs.bat build /2019 /64 /CI
+          where cl
         shell: cmd
   ubuntu_16_04:
     name: "ubuntu-16.04"
