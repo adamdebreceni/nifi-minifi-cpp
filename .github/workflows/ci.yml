@@ -54,8 +54,8 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
       - id: build
         run: |
-          CXX=C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\MSVC\14.25.28610\bin\Hostx64\x64\cl.exe
-          CC=%cxx%
+          set CXX=C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\MSVC\14.25.28610\bin\Hostx64\x64\cl.exe
+          set CC=%cxx%
           win_build_vs.bat build /2019 /64 /CI
         shell: cmd
   ubuntu_16_04:
