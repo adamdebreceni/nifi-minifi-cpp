@@ -50,10 +50,13 @@ jobs:
     steps:
       - id: checkout
         uses: actions/checkout@v2
+      - name: Setup PATH
+        uses: microsoft/setup-msbuild@v1.0.2
       - id: build
         run: |
-          set
-          where cmake
+          CXX=C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\MSVC\14.25.28610\bin\Hostx64\x64\cl.exe
+          CC=%cxx%
+          win_build_vs.bat build /2019 /64 /CI
         shell: cmd
   ubuntu_16_04:
     name: "ubuntu-16.04"
