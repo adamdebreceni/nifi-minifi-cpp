@@ -58,7 +58,7 @@ jobs:
           PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\;%path%
           PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\\MSBuild\Current\Bin;%path%
           PATH=C:\Windows\system32;%path%
-          run: win_build_vs.bat build /2019 /64 /CI
+          win_build_vs.bat build /2019 /64 /CI
         shell: cmd
   ubuntu_16_04:
     name: "ubuntu-16.04"
