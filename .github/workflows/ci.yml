@@ -52,9 +52,8 @@ jobs:
         uses: actions/checkout@v2
       - id: build
         run: |
-          where cl
-          where cmake
-          set
+          set VCToolsVersion=14.25.28610
+          win_build_vs.bat build /2019 /64 /CI
         shell: cmd
   ubuntu_16_04:
     name: "ubuntu-16.04"
