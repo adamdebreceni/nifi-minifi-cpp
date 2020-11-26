@@ -190,11 +190,6 @@ endfunction()
 # Find patch executable
 find_package(Patch REQUIRED)
 
-message("C_COMPILER: ${CMAKE_C_COMPILER}")
-message("CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
-message("env_cc: ${$ENV{CC}}")
-message("env_cxx: ${$ENV{CXX}}")
-
 # Setup passthrough args
 set(PASSTHROUGH_CMAKE_ARGS -DANDROID_ABI=${ANDROID_ABI}
 		-DANDROID_PLATFORM=${ANDROID_PLATFORM}
@@ -686,9 +681,10 @@ if(WIN32)
         message("Creating installer with redistributables ${VCRUNTIME_REDIST_DIR}")
         file(GLOB COMPILER_DIRS "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/MSVC/*")
         message("COMPILER_DIRS=${COMPILER_DIRS}")
-        set(VCRUNTIME_REDIST_DIR "${VCRUNTIME_REDIST_DIR}/../14.16.27012")
+        set(VCRUNTIME_REDIST_DIR "${VCRUNTIME_REDIST_DIR}/../")
         file(GLOB redist_stuff "${VCRUNTIME_REDIST_DIR}/*")
         message("redist_stuff=${redist_stuff}")
+	message("CMAKE_VS_PLATFORM_TOOLSET=${CMAKE_VS_PLATFORM_TOOLSET}")
         if(CMAKE_VS_PLATFORM_TOOLSET STREQUAL "v141")
             file(GLOB VCRUNTIME_X86_REDIST_CRT_DIR "${VCRUNTIME_REDIST_DIR}/x86/Microsoft.VC141.CRT")
             file(GLOB VCRUNTIME_X64_REDIST_CRT_DIR "${VCRUNTIME_REDIST_DIR}/x64/Microsoft.VC141.CRT")
