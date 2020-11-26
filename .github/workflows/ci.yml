@@ -41,7 +41,7 @@ jobs:
       - name: Setup PATH
         uses: microsoft/setup-msbuild@v1.0.2
       - id: build
-        run: set
+        run: win_build_vs.bat build /CI
         shell: cmd
   windows_VS2019:
     name: "windows-vs2019"
@@ -53,7 +53,7 @@ jobs:
       - name: Setup PATH
         uses: microsoft/setup-msbuild@v1.0.2
       - id: build
-        run: win_build_vs.bat build /2019 /64 /CI
+        run: set
         shell: cmd
   ubuntu_16_04:
     name: "ubuntu-16.04"
