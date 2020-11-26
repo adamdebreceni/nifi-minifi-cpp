@@ -53,6 +53,8 @@ jobs:
       - id: build
         run: |
           set VCToolsVersion=14.25.28610
+          set VCToolsRedistDir=C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Redist\MSVC\14.25.28508
+          PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin
           win_build_vs.bat build /2019 /64 /CI
         shell: cmd
   ubuntu_16_04:
