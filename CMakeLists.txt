@@ -192,8 +192,8 @@ find_package(Patch REQUIRED)
 
 message("C_COMPILER: ${CMAKE_C_COMPILER}")
 message("CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
-message("env_cc: ${ENV{CC}}")
-message("env_cxx: ${ENV{CXX}}")
+message("env_cc: ${$ENV{CC}}")
+message("env_cxx: ${$ENV{CXX}}")
 
 # Setup passthrough args
 set(PASSTHROUGH_CMAKE_ARGS -DANDROID_ABI=${ANDROID_ABI}
