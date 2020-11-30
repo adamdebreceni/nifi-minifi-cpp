@@ -637,7 +637,7 @@ if(WIN32)
 		set(VCRUNTIME_REDIST_DIR $ENV{VCToolsRedistDir})
 	else()
 		# Try to fall back to a redist dir relative to the MSVC compiler
-		string(REGEX REPLACE "/VC/Tools/([0-9]+\\.[0-9]+).*" "/VC/Redist/MSVC/\\1" VCRUNTIME_REDIST_BASE_DIR ${CMAKE_C_COMPILER})
+		string(REGEX REPLACE "/VC/Tools/MSVC/([0-9]+\\.[0-9]+).*" "/VC/Redist/MSVC/\\1" VCRUNTIME_REDIST_BASE_DIR ${CMAKE_C_COMPILER})
 		message("VCRUNTIME_REDIST_BASE_DIR: ${VCRUNTIME_REDIST_BASE_DIR}")
 		file(GLOB VCRUNTIME_REDIST_VERSIONS "${VCRUNTIME_REDIST_BASE_DIR}*")
 		if (NOT VCRUNTIME_REDIST_VERSIONS)
