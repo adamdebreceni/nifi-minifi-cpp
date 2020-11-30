@@ -638,6 +638,7 @@ if(WIN32)
 	else()
 		# Try to fall back to a redist dir relative to the MSVC compiler
 		string(REGEX REPLACE "/VC/Tools/([0-9]+\\.[0-9]+).*" "/VC/Redist/MSVC/\\1" VCRUNTIME_REDIST_BASE_DIR ${CMAKE_C_COMPILER})
+		message("VCRUNTIME_REDIST_BASE_DIR: ${VCRUNTIME_REDIST_BASE_DIR}")
 		file(GLOB VCRUNTIME_REDIST_VERSIONS "${VCRUNTIME_REDIST_BASE_DIR}*")
 		if (NOT VCRUNTIME_REDIST_VERSIONS)
 			message(FATAL_ERROR "Could not find the VC Redistributable Merge Modules. Please set VCRUNTIME_X86_MERGEMODULE_PATH and VCRUNTIME_X64_MERGEMODULE_PATH manually!")
