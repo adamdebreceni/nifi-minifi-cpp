@@ -53,7 +53,9 @@ jobs:
       - name: Setup PATH
         uses: microsoft/setup-msbuild@v1.0.2
       - id: build
-        run: set
+        run: |
+          set
+          win_build_vs.bat build /2019 /64 /CI
         shell: cmd
   ubuntu_16_04:
     name: "ubuntu-16.04"
