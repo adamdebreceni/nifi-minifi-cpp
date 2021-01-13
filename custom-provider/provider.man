@@ -10,8 +10,8 @@
 			<provider name="CustomProvider"
 				 symbol="CustomProvider"
 				 guid="{10ABB82A-BB5A-45FF-A7D6-D7369B235DD8}"
-				 resourceFileName="D:\a\nifi-minifi-cpp\nifi-minifi-cpp\provider.dll"
-				 messageFileName="D:\a\nifi-minifi-cpp\nifi-minifi-cpp\provider.dll">  
+				 resourceFileName="D:\a\nifi-minifi-cpp\nifi-minifi-cpp\custom-provider\provider.dll"
+				 messageFileName="D:\a\nifi-minifi-cpp\nifi-minifi-cpp\custom-provider\provider.dll">  
 				<events>
 					<event symbol="CustomEvent" value="10000" version="1" channel="CustomProvider/Log" template="CustomTemplate" />
 				</events>
