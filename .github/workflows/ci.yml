@@ -10,13 +10,13 @@ jobs:
         uses: actions/checkout@v2
       - name: Setup PATH
         uses: microsoft/setup-msbuild@v1.0.2
-      - id: checkenv
+      - id: check-env
         run: |
           C:
           cd C:\Program Files (x86)\Windows Kits\10\bin
           dir
         shell: cmd
-      - id: build
+      - id: create-provider
         run: |
           cd custom-provider
           PATH %PATH%;C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x86
@@ -26,6 +26,11 @@ jobs:
           csc /target:library /unsafe /win32res:provider.res provider.cs
           wevtutil im provider.man
         shell: cmd
+      - id: verify
+        run: |
+          New-WinEvent -ProviderName CustomProvider -Id 10000 -Payload @("Hello There")
+          Get-WinEvent -Listlog "CustomProvider/Log"
+        shell: ps
   windows_VS2019:
     name: "windows-vs2019"
     runs-on: windows-2019
@@ -51,3 +56,8 @@ jobs:
           csc /target:library /unsafe /win32res:provider.res provider.cs
           wevtutil im provider.man
         shell: cmd
+      - id: verify
+        run: |
+          New-WinEvent -ProviderName CustomProvider -Id 10000 -Payload @("Hello There")
+          Get-WinEvent -Listlog "CustomProvider/Log"
+        shell: ps
