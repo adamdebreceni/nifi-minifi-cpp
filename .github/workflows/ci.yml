@@ -29,6 +29,7 @@ jobs:
       - id: verify
         run: |
           New-WinEvent -ProviderName CustomProvider -Id 10000 -Payload @("Hello There")
+          sleep 1
           Get-WinEvent -Listlog "CustomProvider/Log"
         shell: powershell
   windows_VS2019:
@@ -59,5 +60,6 @@ jobs:
       - id: verify
         run: |
           New-WinEvent -ProviderName CustomProvider -Id 10000 -Payload @("Hello There")
+          sleep 1
           Get-WinEvent -Listlog "CustomProvider/Log"
         shell: powershell
