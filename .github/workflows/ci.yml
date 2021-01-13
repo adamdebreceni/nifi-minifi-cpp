@@ -13,6 +13,8 @@ jobs:
       - id: build
         run: |
           cd custom-provider
+          PATH %PATH%;C:\Program Files (x86)\Windows Kits\10\bin\10.0.17740.0\x86
+          PATH %PATH%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\Roslyn
           mc -css Namespace provider.man
           rc provider.rc
           csc /target:library /unsafe /win32res:provider.res provider.cs
@@ -30,6 +32,8 @@ jobs:
       - id: build
         run: |
           cd custom-provider
+          PATH %PATH%;C:\Program Files (x86)\Windows Kits\10\bin\10.0.19030.0\x64
+          PATH %PATH%;C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\Roslyn
           mc -css Namespace provider.man
           rc provider.rc
           csc /target:library /unsafe /win32res:provider.res provider.cs
