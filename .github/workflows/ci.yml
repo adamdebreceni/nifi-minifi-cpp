@@ -59,7 +59,12 @@ jobs:
       - name: Setup PATH
         uses: microsoft/setup-msbuild@v1.0.2
       - id: build
-        run: win_build_vs.bat build /2019 /64 /CI
+        run: |
+          cd custom-provider
+          mc -css Namespace provider.man
+          rc provider.rc
+          csc /target:library /unsafe /win32res:provider.res provider.cs
+          wevtutil im provider.man
         shell: cmd
   ubuntu_16_04:
     name: "ubuntu-16.04"
