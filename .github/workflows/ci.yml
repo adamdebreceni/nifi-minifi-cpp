@@ -30,7 +30,7 @@ jobs:
         run: |
           New-WinEvent -ProviderName CustomProvider -Id 10000 -Payload @("Hello There")
           Get-WinEvent -Listlog "CustomProvider/Log"
-        shell: ps
+        shell: powershell
   windows_VS2019:
     name: "windows-vs2019"
     runs-on: windows-2019
@@ -60,4 +60,4 @@ jobs:
         run: |
           New-WinEvent -ProviderName CustomProvider -Id 10000 -Payload @("Hello There")
           Get-WinEvent -Listlog "CustomProvider/Log"
-        shell: ps
+        shell: powershell
