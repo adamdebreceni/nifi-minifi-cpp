@@ -305,7 +305,6 @@ add_disabled_option SFTP_ENABLED ${FALSE} "ENABLE_SFTP"
 add_dependency SFTP_ENABLED "libssh2"
 
 add_disabled_option SQL_ENABLED ${FALSE} "ENABLE_SQL"
-set_incompatible_with SQL_ENABLED SQLITE_ENABLED
 
 add_disabled_option OPENWSMAN_ENABLED ${FALSE} "ENABLE_OPENWSMAN"
 
@@ -321,9 +320,9 @@ add_disabled_option OPC_ENABLED ${FALSE} "ENABLE_OPC"
 add_dependency OPC_ENABLED "mbedtls"
 
 USE_SHARED_LIBS=${TRUE}
-TESTS_DISABLED=${FALSE}
 ASAN_ENABLED=${FALSE}
 FAIL_ON_WARNINGS=${FALSE}
+TESTS_ENABLED=${TRUE}
 
 ## name, default, values
 add_multi_option BUILD_PROFILE "RelWithDebInfo" "RelWithDebInfo" "Debug" "MinSizeRel" "Release"
@@ -339,7 +338,7 @@ OVERRIDE_BUILD_IDENTIFIER=${BUILD_IDENTIFIER}
 load_state
 
 if [ "$USER_DISABLE_TESTS" == "${TRUE}" ]; then
-   ToggleFeature TESTS_DISABLED
+   ToggleFeature TESTS_ENABLED
 fi
 
 
@@ -453,11 +452,11 @@ build_cmake_command(){
     CMAKE_BUILD_COMMAND="${CMAKE_BUILD_COMMAND} -DCMAKE_BUILD_TYPE=RelWithDebInfo"
   fi
 
-  if [ "${TESTS_DISABLED}" = "${TRUE}" ]; then
-    CMAKE_BUILD_COMMAND="${CMAKE_BUILD_COMMAND} -DSKIP_TESTS=true "
-  else
+  if [ "${TESTS_ENABLED}" = "${TRUE}" ]; then
     # user may have disabled tests previously, so let's force them to be re-enabled
     CMAKE_BUILD_COMMAND="${CMAKE_BUILD_COMMAND} -DSKIP_TESTS= "
+  else
+    CMAKE_BUILD_COMMAND="${CMAKE_BUILD_COMMAND} -DSKIP_TESTS=true "
   fi
 
   if [ "${ASAN_ENABLED}" = "${TRUE}" ]; then
