@@ -47,6 +47,7 @@ class YamlConnectionParser {
   void configureConnectionSourceRelationshipsFromYaml(const std::shared_ptr<minifi::Connection>& connection) const;
   uint64_t getWorkQueueSizeFromYaml() const;
   uint64_t getWorkQueueDataSizeFromYaml() const;
+  uint64_t getSwapThresholdFromYaml() const;
   utils::Identifier getSourceUUIDFromYaml() const;
   utils::Identifier getDestinationUUIDFromYaml() const;
   uint64_t getFlowFileExpirationFromYaml() const;

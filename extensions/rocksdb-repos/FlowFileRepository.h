@@ -29,6 +29,8 @@
 #include "core/logging/LoggerConfiguration.h"
 #include "concurrentqueue.h"
 #include "RocksDatabase.h"
+#include "SwapManager.h"
+#include "FlowFileLoader.h"
 
 namespace org {
 namespace apache {
@@ -53,7 +55,7 @@ namespace repository {
  * Flow File repository
  * Design: Extends Repository and implements the run function, using rocksdb as the primary substrate.
  */
-class FlowFileRepository : public core::Repository, public std::enable_shared_from_this<FlowFileRepository> {
+class FlowFileRepository : public core::Repository, public SwapManager, public std::enable_shared_from_this<FlowFileRepository> {
  public:
   // Constructor
 
@@ -72,16 +74,16 @@ class FlowFileRepository : public core::Repository, public std::enable_shared_fr
     db_ = NULL;
   }
 
-  virtual bool isNoop() {
+  bool isNoop() override {
     return false;
   }
 
-  virtual void flush();
+  void flush() override;
 
   virtual void printStats();
 
   // initialize
-  virtual bool initialize(const std::shared_ptr<Configure> &configure) {
+  bool initialize(const std::shared_ptr<Configure> &configure) override {
     std::string value;
 
     if (configure->get(Configure::nifi_flowfile_repository_directory_default, value)) {
@@ -122,9 +124,13 @@ class FlowFileRepository : public core::Repository, public std::enable_shared_fr
     }
   }
 
-  virtual void run();
+  SwapManager* castToSwapManager() override {
+    return static_cast<SwapManager*>(this);
+  }
 
-  virtual bool Put(std::string key, const uint8_t *buf, size_t bufLen) {
+  void run() override;
+
+  bool Put(std::string key, const uint8_t *buf, size_t bufLen) override {
     // persistent to the DB
     auto opendb = db_->open();
     if (!opendb) {
@@ -135,7 +141,7 @@ class FlowFileRepository : public core::Repository, public std::enable_shared_fr
     return ExecuteWithRetry(operation);
   }
 
-  virtual bool MultiPut(const std::vector<std::pair<std::string, std::unique_ptr<minifi::io::BufferStream>>>& data) {
+  bool MultiPut(const std::vector<std::pair<std::string, std::unique_ptr<minifi::io::BufferStream>>>& data) override {
     auto opendb = db_->open();
     if (!opendb) {
       return false;
@@ -158,7 +164,7 @@ class FlowFileRepository : public core::Repository, public std::enable_shared_fr
    * Deletes the key
    * @return status of the delete operation
    */
-  virtual bool Delete(std::string key) {
+  bool Delete(std::string key) override {
     keys_to_delete.enqueue(key);
     return true;
   }
@@ -166,7 +172,7 @@ class FlowFileRepository : public core::Repository, public std::enable_shared_fr
    * Sets the value from the provided key
    * @return status of the get operation.
    */
-  virtual bool Get(const std::string &key, std::string &value) {
+  bool Get(const std::string &key, std::string &value) override {
     auto opendb = db_->open();
     if (!opendb) {
       return false;
@@ -174,9 +180,9 @@ class FlowFileRepository : public core::Repository, public std::enable_shared_fr
     return opendb->Get(rocksdb::ReadOptions(), key, &value).ok();
   }
 
-  virtual void loadComponent(const std::shared_ptr<core::ContentRepository> &content_repo);
+  void loadComponent(const std::shared_ptr<core::ContentRepository> &content_repo) override;
 
-  void start() {
+  void start() override {
     if (this->purge_period_ <= 0) {
       return;
     }
@@ -186,6 +192,24 @@ class FlowFileRepository : public core::Repository, public std::enable_shared_fr
     running_ = true;
     thread_ = std::thread(&FlowFileRepository::run, shared_from_this());
     logger_->log_debug("%s Repository Monitor Thread Start", getName());
+    swap_loader.start();
+  }
+
+  void stop() override {
+    swap_loader.stop();
+    core::Repository::stop();
+  }
+
+  void store(std::vector<std::shared_ptr<core::FlowFile>> flow_files) override {
+    for (auto& flow_file : flow_files) {
+      if (!flow_file->isStored()) {
+        throw Exception(FLOW_EXCEPTION, "A flow file that is being swapped out is not stored in the flow repository");
+      }
+    }
+  }
+
+  std::future<std::vector<std::shared_ptr<core::FlowFile>>> load(std::vector<SwappedFlowFile> flow_files) override {
+    return swap_loader.load(std::move(flow_files));
   }
 
  private:
@@ -213,6 +237,7 @@ class FlowFileRepository : public core::Repository, public std::enable_shared_fr
   std::shared_ptr<core::ContentRepository> content_repo_;
   std::unique_ptr<minifi::internal::RocksDatabase> db_;
   std::unique_ptr<rocksdb::Checkpoint> checkpoint_;
+  FlowFileLoader swap_loader;
   std::shared_ptr<logging::Logger> logger_;
 };
 

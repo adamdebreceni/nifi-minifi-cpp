@@ -33,6 +33,7 @@
 #include "FlowController.h"
 #include "properties/Configure.h"
 #include "provenance/Provenance.h"
+#include "SwapManager.h"
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -225,7 +226,8 @@ class TestFlowRepository : public core::Repository {
     }
   }
 
-  void loadComponent(const std::shared_ptr<core::ContentRepository>& /*content_repo*/) override {
+  void loadComponent(const std::shared_ptr<core::ContentRepository>& content_repo) override {
+    content_repo_ = content_repo;
   }
 
   void run() override {
@@ -235,6 +237,7 @@ class TestFlowRepository : public core::Repository {
  protected:
   mutable std::mutex repository_results_mutex_;
   std::map<std::string, std::string> repository_results_;
+  std::shared_ptr<core::ContentRepository> content_repo_;
 };
 
 class TestFlowController : public minifi::FlowController {

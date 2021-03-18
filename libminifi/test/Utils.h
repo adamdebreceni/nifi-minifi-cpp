@@ -17,6 +17,8 @@
 #pragma once
 
 #include <string>
+#include "Connection.h"
+#include "FlowFileQueue.h"
 
 #define FIELD_ACCESSOR(field) \
   template<typename T> \
@@ -29,3 +31,17 @@
   static auto call_##method(T&& instance, Args&& ...args) -> decltype((std::forward<T>(instance).method(std::forward<Args>(args)...))) { \
     return std::forward<T>(instance).method(std::forward<Args>(args)...); \
   }
+
+struct ConnectionTestAccessor {
+  FIELD_ACCESSOR(queue_);
+};
+
+struct FlowFileQueueTestAccessor {
+  FIELD_ACCESSOR(min_size_);
+  FIELD_ACCESSOR(max_size_);
+  FIELD_ACCESSOR(target_size_);
+  FIELD_ACCESSOR(clock_);
+  FIELD_ACCESSOR(swapped_flow_files_);
+  FIELD_ACCESSOR(load_task_);
+  FIELD_ACCESSOR(queue_);
+};

@@ -64,6 +64,12 @@ TEST_CASE("Connections components are parsed from yaml", "[YamlConfiguration]") 
     REQUIRE(231 == yaml_connection_parser.getWorkQueueSizeFromYaml());
     REQUIRE(12582912 == yaml_connection_parser.getWorkQueueDataSizeFromYaml());  // 12 * 1024 * 1024 B
   }
+  SECTION("Queue swap threshold is read") {
+    YAML::Node connection_node = YAML::Load(std::string {
+        "swap threshold: 231\n" });
+    YamlConnectionParser yaml_connection_parser(connection_node, "test_node", parent_ptr, logger);
+    REQUIRE(231 == yaml_connection_parser.getSwapThresholdFromYaml());
+  }
   SECTION("Source and destination names and uuids are read") {
     const utils::Identifier expected_source_id = utils::generateUUID();
     const utils::Identifier expected_destination_id = utils::generateUUID();
@@ -118,6 +124,7 @@ TEST_CASE("Connections components are parsed from yaml", "[YamlConfiguration]") 
       CHECK_THROWS(yaml_connection_parser.configureConnectionSourceRelationshipsFromYaml(connection));
       CHECK_NOTHROW(yaml_connection_parser.getWorkQueueSizeFromYaml());
       CHECK_NOTHROW(yaml_connection_parser.getWorkQueueDataSizeFromYaml());
+      CHECK_NOTHROW(yaml_connection_parser.getSwapThresholdFromYaml());
       CHECK_THROWS(yaml_connection_parser.getSourceUUIDFromYaml());
       CHECK_THROWS(yaml_connection_parser.getDestinationUUIDFromYaml());
       CHECK_NOTHROW(yaml_connection_parser.getFlowFileExpirationFromYaml());
@@ -160,11 +167,13 @@ TEST_CASE("Connections components are parsed from yaml", "[YamlConfiguration]") 
         YAML::Node connection_node = YAML::Load(std::string {
             "max work queue size: \n"
             "max work queue data size: \n"
+            "swap threshold: \n"
             "flowfile expiration: \n"
             "drop empty: \n"});
         YamlConnectionParser yaml_connection_parser(connection_node, "test_node", parent_ptr, logger);
         CHECK_THROWS(yaml_connection_parser.getWorkQueueSizeFromYaml());
         CHECK_THROWS(yaml_connection_parser.getWorkQueueDataSizeFromYaml());
+        CHECK_THROWS(yaml_connection_parser.getSwapThresholdFromYaml());
         CHECK_THROWS(yaml_connection_parser.getFlowFileExpirationFromYaml());
         CHECK_THROWS(yaml_connection_parser.getDropEmptyFromYaml());
       }

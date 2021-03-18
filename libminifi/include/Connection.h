@@ -36,6 +36,8 @@
 #include "core/Repository.h"
 #include "utils/FlowFileQueue.h"
 
+struct ConnectionTestAccessor;
+
 namespace org {
 namespace apache {
 namespace nifi {
@@ -44,12 +46,14 @@ namespace minifi {
 
 class Connection : public core::Connectable, public std::enable_shared_from_this<Connection> {
  public:
+  friend struct ::ConnectionTestAccessor;
   // Constructor
   /*
    * Create a new processor
    */
   explicit Connection(const std::shared_ptr<core::Repository> &flow_repository, const std::shared_ptr<core::ContentRepository> &content_repo, std::string name);
   explicit Connection(const std::shared_ptr<core::Repository> &flow_repository, const std::shared_ptr<core::ContentRepository> &content_repo, std::string name, const utils::Identifier& uuid);
+  explicit Connection(const std::shared_ptr<core::Repository> &flow_repository, const std::shared_ptr<core::ContentRepository> &content_repo, const std::shared_ptr<SwapManager> &swap_manager, std::string name, const utils::Identifier& uuid);
   explicit Connection(const std::shared_ptr<core::Repository> &flow_repository, const std::shared_ptr<core::ContentRepository> &content_repo, std::string name, const utils::Identifier& uuid,
                       const utils::Identifier& srcUUID);
   explicit Connection(const std::shared_ptr<core::Repository> &flow_repository, const std::shared_ptr<core::ContentRepository> &content_repo, std::string name, const utils::Identifier& uuid,
@@ -119,6 +123,11 @@ class Connection : public core::Connectable, public std::enable_shared_from_this
   void setMaxQueueDataSize(uint64_t size) {
     max_data_queue_size_ = size;
   }
+  void setSwapThreshold(uint64_t size) {
+    queue_.setTargetSize(size);
+    queue_.setMinSize(size / 2);
+    queue_.setMaxSize(size * 3 / 2);
+  }
   // Get Max Queue Data Size
   uint64_t getMaxQueueDataSize() {
     return max_data_queue_size_;
@@ -182,26 +191,26 @@ class Connection : public core::Connectable, public std::enable_shared_from_this
   // Relationship for this connection
   std::set<core::Relationship> relationships_;
   // Source Processor (ProcessNode/Port)
-  std::shared_ptr<core::Connectable> source_connectable_;
+  std::shared_ptr<core::Connectable> source_connectable_{nullptr};
   // Destination Processor (ProcessNode/Port)
-  std::shared_ptr<core::Connectable> dest_connectable_;
+  std::shared_ptr<core::Connectable> dest_connectable_{nullptr};
   // Max queue size to apply back pressure
-  std::atomic<uint64_t> max_queue_size_;
+  std::atomic<uint64_t> max_queue_size_{0};
   // Max queue data size to apply back pressure
-  std::atomic<uint64_t> max_data_queue_size_;
+  std::atomic<uint64_t> max_data_queue_size_{0};
   // Flow File Expiration Duration in= MilliSeconds
-  std::atomic<uint64_t> expired_duration_;
+  std::atomic<uint64_t> expired_duration_{0};
   // flow file repository
   std::shared_ptr<core::Repository> flow_repository_;
   // content repository reference.
   std::shared_ptr<core::ContentRepository> content_repo_;
 
  private:
-  bool drop_empty_;
+  bool drop_empty_{false};
   // Mutex for protection
   mutable std::mutex mutex_;
   // Queued data size
-  std::atomic<uint64_t> queued_data_size_;
+  std::atomic<uint64_t> queued_data_size_{0};
   // Queue for the Flow File
   utils::FlowFileQueue queue_;
   // flow repository

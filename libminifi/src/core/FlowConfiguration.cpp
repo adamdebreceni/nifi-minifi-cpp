@@ -121,6 +121,15 @@ std::unique_ptr<core::ProcessGroup> FlowConfiguration::createRemoteProcessGroup(
 }
 
 std::shared_ptr<minifi::Connection> FlowConfiguration::createConnection(std::string name, const utils::Identifier& uuid) const {
+  // An alternative approach would be to thread the swap manager through all the classes
+  // but it kind of makes sense that swapping the flow files is the responsibility of the
+  // flow_file_repo_. If we introduce other swappers then we will have no other choice.
+  if (flow_file_repo_) {
+    SwapManager* swap_manager_ptr = flow_file_repo_->castToSwapManager();
+    if (swap_manager_ptr != nullptr) {
+      return std::make_shared<minifi::Connection>(flow_file_repo_, content_repo_, std::shared_ptr<SwapManager>(flow_file_repo_, swap_manager_ptr), name, uuid);
+    }
+  }
   return std::make_shared<minifi::Connection>(flow_file_repo_, content_repo_, name, uuid);
 }
 
