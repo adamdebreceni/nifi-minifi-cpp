@@ -57,7 +57,8 @@ Connection::Connection(const std::shared_ptr<core::Repository> &flow_repository,
 Connection::Connection(const std::shared_ptr<core::Repository> &flow_repository, const std::shared_ptr<core::ContentRepository> &content_repo, std::string name, const utils::Identifier& uuid)
     : Connection(flow_repository, content_repo, nullptr, name, uuid) {}
 
-Connection::Connection(const std::shared_ptr<core::Repository> &flow_repository, const std::shared_ptr<core::ContentRepository> &content_repo, const std::shared_ptr<SwapManager> &swap_manager, std::string name, const utils::Identifier& uuid)
+Connection::Connection(const std::shared_ptr<core::Repository> &flow_repository, const std::shared_ptr<core::ContentRepository> &content_repo, const std::shared_ptr<SwapManager> &swap_manager,
+                       std::string name, const utils::Identifier& uuid)
     : core::Connectable(name, uuid),
       flow_repository_(flow_repository),
       content_repo_(content_repo),
