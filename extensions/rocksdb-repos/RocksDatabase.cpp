@@ -247,7 +247,7 @@ WriteBatch OpenRocksDB::createWriteBatch() {
 std::shared_ptr<core::logging::Logger> RocksDatabase::logger_ = core::logging::LoggerFactory<RocksDatabase>::getLogger();
 
 RocksDatabase::RocksDatabase(const rocksdb::Options& options, const std::string& name, Mode mode) : open_options_(options), db_name_(name), mode_(mode) {
-  open();
+  //open();
 }
 
 void RocksDatabase::invalidate() {

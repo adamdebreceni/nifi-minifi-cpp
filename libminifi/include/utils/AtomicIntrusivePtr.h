@@ -34,7 +34,7 @@ namespace nifi {
 namespace minifi {
 namespace utils {
 
-static constexpr bool use_lock = true;
+static constexpr bool use_lock = false;
 
 // uses the lowest 16 bits to implement the reference counter
 template<typename T>

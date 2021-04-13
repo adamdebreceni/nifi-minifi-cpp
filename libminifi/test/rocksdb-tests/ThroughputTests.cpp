@@ -38,7 +38,7 @@ std::mt19937 getGenerator() {
   return gen;
 }
 
-static constexpr size_t data_size = 100;
+static constexpr size_t data_size = 10000;
 
 std::string getContent() {
   std::mt19937 gen = getGenerator();
@@ -51,11 +51,25 @@ std::string getContent() {
   return content;
 }
 
+static constexpr size_t writer_count = 4;
+static constexpr size_t reader_count = 4;
+
+utils::Identifier nextId() {
+  static utils::Identifier current;
+  static std::mutex mtx;
+  std::lock_guard<std::mutex> guard(mtx);
+  current = current.next();
+  return current;
+}
 
 struct Runner {
   Runner(internal::RocksDatabase* db, std::string prefix): db(db), prefix(std::move(prefix)) {
-    writer = std::thread{&Runner::write, this};
-    reader = std::thread{&Runner::read, this};
+    for (size_t writer_idx{0}; writer_idx < writer_count; ++writer_idx) {
+      writers.emplace_back(&Runner::write, this);
+    }
+    for (size_t reader_idx{0}; reader_idx < reader_count; ++reader_idx) {
+      readers.emplace_back(&Runner::read, this);
+    }
   }
 
   void read() {
@@ -78,7 +92,8 @@ struct Runner {
       auto batch = opendb->createWriteBatch();
       std::vector<std::string> ids;
       for (size_t idx = 0; idx < 100; ++idx) {
-        std::string path = prefix + utils::IdGenerator::getIdGenerator()->generate().to_string();
+        std::string path = prefix + nextId().to_string();
+        //logging::LoggerFactory<Runner>::getLogger()->log_error("Id = %s", path);
         io::RocksDbStream stream(path, minifi::gsl::make_not_null(db), true, &batch);
         static std::string data = getContent();
         stream.write(data);
@@ -99,16 +114,20 @@ struct Runner {
   }
 
   void join() {
-    writer.join();
-    reader.join();
+    for (auto& writer : writers) {
+      writer.join();
+    }
+    for (auto& reader : readers) {
+      reader.join();
+    }
 
     auto logger = logging::LoggerFactory<Runner>::getLogger();
     logger->log_error("Runner '%s': write = %d, read = %d", prefix, write_count.load(), read_count.load());
   }
 
   std::atomic_bool running{true};
-  std::thread writer;
-  std::thread reader;
+  std::list<std::thread> writers;
+  std::list<std::thread> readers;
 
   utils::ConditionConcurrentQueue<std::string> queue;
 
@@ -160,10 +179,37 @@ void run(bool use_columns) {
   pool.stop();
 }
 
+void run_test(size_t thread_count) {
+  std::atomic_bool running(true);
+  std::mutex mtx;
+  size_t counter = 0;
+  std::list<std::thread> threads;
+  for (size_t idx = 0; idx < thread_count; ++idx) {
+    threads.emplace_back([&] {
+      while (running) {
+        std::lock_guard<std::mutex> guard(mtx);
+        ++counter;
+      }
+    });
+  }
+
+  std::this_thread::sleep_for(std::chrono::seconds{2});
+  running = false;
+  for (auto& thread : threads) {
+    thread.join();
+  }
+  auto logger = logging::LoggerFactory<Runner>::getLogger();
+  logger->log_error("Thread count: %zu, Counter: %zu", thread_count, counter);
+}
+
 int main() {
   run(true);
   run(false);
   run(true);
   run(false);
+//  run_test(1);
+//  run_test(2);
+//  run_test(4);
+//  run_test(8);
 }
 

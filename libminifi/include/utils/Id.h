@@ -73,6 +73,19 @@ class Identifier {
   bool operator==(const Identifier& other) const;
   bool operator<(const Identifier& other) const;
 
+  Identifier next() const {
+    Identifier copy = *this;
+    for (size_t idx = 0; idx < data_.size(); ++idx) {
+      if (copy.data_[idx] == std::numeric_limits<uint8_t>::max()) {
+        copy.data_[idx] = 0;
+      } else {
+        ++copy.data_[idx];
+        break;
+      }
+    }
+    return copy;
+  }
+
   bool isNil() const;
 
   // Numerous places query the string representation

@@ -91,8 +91,6 @@ struct ColumnList {
   }
 };
 
-using ColumnMap = std::map<std::string, ColumnHandle*>;
-
 struct DBHandle : utils::RefCountedObject {
   DBHandle() = default;
   ~DBHandle();
