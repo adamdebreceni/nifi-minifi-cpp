@@ -19,12 +19,19 @@
 #include "../TestBase.h"
 #include "../../extensions/rocksdb-repos/RocksDbStream.h"
 #include "../../extensions/rocksdb-repos/DatabaseContentRepository.h"
+#include "IntegrationTestUtils.h"
 
 class RocksDBStreamTest : TestController {
  public:
   RocksDBStreamTest() {
     char format[] = "/var/tmp/testdb.XXXXXX";
     dbPath = createTempDirectory(format);
+    LogTestController::getInstance().setTrace<minifi::internal::RocksDatabase>();
+    reopen();
+  }
+
+  void reopen() {
+    db.reset();
     rocksdb::Options options;
     options.create_if_missing = true;
     options.use_direct_io_for_flush_and_compaction = true;
@@ -73,4 +80,32 @@ TEST_CASE_METHOD(RocksDBStreamTest, "Read zero bytes") {
   minifi::io::RocksDbStream nonExistingStream("two", gsl::make_not_null(db.get()));
 
   REQUIRE(nonExistingStream.read(nullptr, 0) == -1);
+}
+
+TEST_CASE_METHOD(RocksDBStreamTest, "Open existing database and read from it") {
+  std::string content = "banana";
+  {
+    minifi::io::RocksDbStream outStream("one", gsl::make_not_null(db.get()), true);
+    outStream.write(content);
+  }
+  reopen();
+  minifi::io::RocksDbStream inStream("one", gsl::make_not_null(db.get()));
+  std::string str;
+  inStream.read(str);
+  REQUIRE(str == content);
+}
+
+TEST_CASE_METHOD(RocksDBStreamTest, "Use prefix to write/read to/from specific column families") {
+  std::string content = "banana";
+  {
+    minifi::io::RocksDbStream outStream("column1:one", gsl::make_not_null(db.get()), true);
+    outStream.write(content);
+    REQUIRE(minifi::utils::verifyLogLinePresenceInPollTime(
+        std::chrono::seconds{1}, "Couldn't find column 'column1' in the database, creating"));
+  }
+  reopen();
+  minifi::io::RocksDbStream inStream("column1:one", gsl::make_not_null(db.get()));
+  std::string str;
+  inStream.read(str);
+  REQUIRE(str == content);
 }

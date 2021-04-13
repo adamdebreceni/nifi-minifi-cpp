@@ -81,7 +81,7 @@ void DatabaseContentRepository::Session::commit() {
   if (!opendb) {
     throw Exception(REPOSITORY_EXCEPTION, "Couldn't open rocksdb database to commit content changes");
   }
-  rocksdb::WriteBatch batch;
+  auto batch = opendb->createWriteBatch();
   for (const auto& resource : managedResources_) {
     auto outStream = dbContentRepository->write(*resource.first, false, &batch);
     if (outStream == nullptr) {
@@ -161,7 +161,7 @@ bool DatabaseContentRepository::remove(const minifi::ResourceClaim &claim) {
   }
 }
 
-std::shared_ptr<io::BaseStream> DatabaseContentRepository::write(const minifi::ResourceClaim& claim, bool /*append*/, rocksdb::WriteBatch* batch) {
+std::shared_ptr<io::BaseStream> DatabaseContentRepository::write(const minifi::ResourceClaim& claim, bool /*append*/, internal::WriteBatch* batch) {
   // the traditional approach with these has been to return -1 from the stream; however, since we have the ability here
   // we can simply return a nullptr, which is also valid from the API when this stream is not valid.
   if (!is_valid_ || !db_)

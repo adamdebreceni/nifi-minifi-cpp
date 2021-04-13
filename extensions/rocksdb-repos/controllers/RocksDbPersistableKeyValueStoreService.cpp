@@ -133,11 +133,11 @@ bool RocksDbPersistableKeyValueStoreService::get(std::unordered_map<std::string,
   }
   kvs.clear();
   auto it = opendb->NewIterator(rocksdb::ReadOptions());
-  for (it->SeekToFirst(); it->Valid(); it->Next()) {
-    kvs.emplace(it->key().ToString(), it->value().ToString());
+  for (; it.Valid(); it.Next()) {
+    kvs.emplace(it.key(), it.value().ToString());
   }
-  if (!it->status().ok()) {
-    logger_->log_error("Encountered error when iterating through RocksDB database at %s, error: %s", directory_.c_str(), it->status().getState());
+  if (!it.status().ok()) {
+    logger_->log_error("Encountered error when iterating through RocksDB database at %s, error: %s", directory_.c_str(), it.status().getState());
     return false;
   }
   return true;
@@ -168,15 +168,15 @@ bool RocksDbPersistableKeyValueStoreService::clear() {
     return false;
   }
   auto it = opendb->NewIterator(rocksdb::ReadOptions());
-  for (it->SeekToFirst(); it->Valid(); it->Next()) {
-    rocksdb::Status status = opendb->Delete(default_write_options, it->key());
+  for (; it.Valid(); it.Next()) {
+    rocksdb::Status status = opendb->Delete(default_write_options, it.key());
     if (!status.ok()) {
       logger_->log_error("Failed to Delete from RocksDB database at %s, error: %s", directory_.c_str(), status.getState());
       return false;
     }
   }
-  if (!it->status().ok()) {
-    logger_->log_error("Encountered error when iterating through RocksDB database at %s, error: %s", directory_.c_str(), it->status().getState());
+  if (!it.status().ok()) {
+    logger_->log_error("Encountered error when iterating through RocksDB database at %s, error: %s", directory_.c_str(), it.status().getState());
     return false;
   }
   return true;

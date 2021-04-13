@@ -140,7 +140,7 @@ class FlowFileRepository : public core::Repository, public std::enable_shared_fr
     if (!opendb) {
       return false;
     }
-    rocksdb::WriteBatch batch;
+    auto batch = opendb->createWriteBatch();
     for (const auto &item: data) {
       rocksdb::Slice value((const char *) item.second->getBuffer(), item.second->size());
       if (!batch.Put(item.first, value).ok()) {

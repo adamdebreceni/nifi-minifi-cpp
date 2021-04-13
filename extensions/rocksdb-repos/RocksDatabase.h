@@ -26,6 +26,7 @@
 #include "rocksdb/slice.h"
 #include "rocksdb/utilities/checkpoint.h"
 #include "logging/Logger.h"
+#include "utils/AtomicIntrusivePtr.h"
 
 namespace org {
 namespace apache {
@@ -33,13 +34,113 @@ namespace nifi {
 namespace minifi {
 namespace internal {
 
+struct ResolvedKey {
+  rocksdb::ColumnFamilyHandle* column{nullptr};
+  rocksdb::Slice key;
+};
+
 class RocksDatabase;
+
+struct ColumnHandle {
+  ColumnHandle(std::unique_ptr<rocksdb::ColumnFamilyHandle> impl): impl(std::move(impl)) {}
+  virtual ~ColumnHandle();
+  std::unique_ptr<rocksdb::ColumnFamilyHandle> impl;
+};
+
+struct DefaultColumnHandle : ColumnHandle {
+  using ColumnHandle::ColumnHandle;
+  ~DefaultColumnHandle() override;
+};
+
+struct ColumnListNode {
+  std::string column_name;
+  std::unique_ptr<ColumnHandle> handle;
+  std::unique_ptr<ColumnListNode> next;
+
+  ColumnListNode(std::string name, std::unique_ptr<ColumnHandle> handle)
+    : column_name(std::move(name)), handle(std::move(handle)) {}
+};
+
+struct ColumnList {
+  std::atomic<gsl::owner<ColumnListNode*>> head{nullptr};
+
+  ~ColumnList() {
+    delete head.load();
+  }
+
+  ColumnListNode* find(const std::string& name) const {
+    ColumnListNode* current = head.load();
+    while (current != nullptr) {
+      if (current->column_name == name) {
+        return current;
+      }
+      current = current->next.get();
+    }
+    return nullptr;
+  }
+
+  /**
+   * !! WARNING !! NOT THREAD SAFE
+   * @param new_head
+   */
+  void push_front(std::unique_ptr<ColumnListNode> new_head) {
+    gsl_Expects(!new_head->next);
+    new_head->next.reset(head.load());
+    // take ownership
+    head.store(new_head.release());
+  }
+};
+
+using ColumnMap = std::map<std::string, ColumnHandle*>;
+
+struct DBHandle : utils::RefCountedObject {
+  DBHandle() = default;
+  ~DBHandle();
+  std::unique_ptr<rocksdb::DB> impl;
+  std::mutex column_mtx;
+  ColumnList columns;
+};
+
+class OpenRocksDB;
+
+class WriteBatch {
+  friend class OpenRocksDB;
+  explicit WriteBatch(gsl::not_null<OpenRocksDB*> db): db_(std::move(db)) {}
+ public:
+  rocksdb::Status Put(const rocksdb::Slice& key, const rocksdb::Slice& value);
+  rocksdb::Status Delete(const rocksdb::Slice& key);
+  rocksdb::Status Merge(const rocksdb::Slice& key, const rocksdb::Slice& value);
+
+ private:
+  gsl::not_null<OpenRocksDB*> db_;
+  rocksdb::WriteBatch impl_;
+};
+
+class Iterator {
+ public:
+  explicit Iterator(rocksdb::Status error) : error_(std::move(error)) {}
+  Iterator(std::vector<std::string> columns, std::vector<std::unique_ptr<rocksdb::Iterator>> iterators);
+
+  bool Valid() const;
+  void Next();
+  rocksdb::Status status() const;
+
+  std::string key() const;
+  rocksdb::Slice value() const;
+
+ private:
+  utils::optional<rocksdb::Status> error_;
+  std::vector<std::string> columns_;
+  std::vector<std::unique_ptr<rocksdb::Iterator>> iterators_;
+  size_t column_idx_{0};
+};
 
 // Not thread safe
 class OpenRocksDB {
   friend class RocksDatabase;
+  friend class WriteBatch;
 
-  OpenRocksDB(RocksDatabase& db, gsl::not_null<std::shared_ptr<rocksdb::DB>> impl);
+  OpenRocksDB(RocksDatabase& db, gsl::not_null<utils::IntrusivePtr<DBHandle>> impl);
 
  public:
   OpenRocksDB(const OpenRocksDB&) = delete;
@@ -53,7 +154,7 @@ class OpenRocksDB {
 
   std::vector<rocksdb::Status> MultiGet(const rocksdb::ReadOptions& options, const std::vector<rocksdb::Slice>& keys, std::vector<std::string>* values);
 
-  rocksdb::Status Write(const rocksdb::WriteOptions& options, rocksdb::WriteBatch* updates);
+  rocksdb::Status Write(const rocksdb::WriteOptions& options, WriteBatch* updates);
 
   rocksdb::Status Delete(const rocksdb::WriteOptions& options, const rocksdb::Slice& key);
 
@@ -61,17 +162,21 @@ class OpenRocksDB {
 
   bool GetProperty(const rocksdb::Slice& property, std::string* value);
 
-  std::unique_ptr<rocksdb::Iterator> NewIterator(const rocksdb::ReadOptions& options);
+  Iterator NewIterator(const rocksdb::ReadOptions& options);
 
   rocksdb::Status NewCheckpoint(rocksdb::Checkpoint** checkpoint);
 
   rocksdb::Status FlushWAL(bool sync);
 
-  rocksdb::DB* get();
+  WriteBatch createWriteBatch();
 
  private:
+  rocksdb::Status resolve(const rocksdb::Slice& full_key, ResolvedKey& resolved);
+
+  rocksdb::Status getOrCreateColumn(const std::string& name, rocksdb::ColumnFamilyHandle*& handle);
+
   gsl::not_null<RocksDatabase*> db_;
-  gsl::not_null<std::shared_ptr<rocksdb::DB>> impl_;
+  gsl::not_null<utils::IntrusivePtr<DBHandle>> impl_;
 };
 
 class RocksDatabase {
@@ -87,6 +192,8 @@ class RocksDatabase {
 
   utils::optional<OpenRocksDB> open();
 
+  ~RocksDatabase();
+
  private:
   /*
    * notify RocksDatabase that the next open should check if they can reopen the database
@@ -94,12 +201,14 @@ class RocksDatabase {
    */
   void invalidate();
 
+  rocksdb::Status createColumnFamily(const std::string& name);
+
   const rocksdb::Options open_options_;
   const std::string db_name_;
   const Mode mode_;
 
   std::mutex mtx_;
-  std::shared_ptr<rocksdb::DB> impl_;
+  utils::AtomicIntrusivePtr<DBHandle> impl_;
 
   static std::shared_ptr<core::logging::Logger> logger_;
 };

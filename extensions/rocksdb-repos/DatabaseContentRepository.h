@@ -127,7 +127,7 @@ class DatabaseContentRepository : public core::ContentRepository, public core::C
   }
 
  private:
-  std::shared_ptr<io::BaseStream> write(const minifi::ResourceClaim &claim, bool append, rocksdb::WriteBatch* batch);
+  std::shared_ptr<io::BaseStream> write(const minifi::ResourceClaim &claim, bool append, minifi::internal::WriteBatch* batch);
 
   bool is_valid_;
   std::unique_ptr<minifi::internal::RocksDatabase> db_;

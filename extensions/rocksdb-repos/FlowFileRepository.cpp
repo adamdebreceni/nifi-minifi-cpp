@@ -42,7 +42,7 @@ void FlowFileRepository::flush() {
   if (!opendb) {
     return;
   }
-  rocksdb::WriteBatch batch;
+  auto batch = opendb->createWriteBatch();
   rocksdb::ReadOptions options;
 
   std::vector<std::shared_ptr<FlowFile>> purgeList;
@@ -151,10 +151,10 @@ void FlowFileRepository::prune_stored_flowfiles() {
   }
 
   auto it = opendb->NewIterator(rocksdb::ReadOptions());
-  for (it->SeekToFirst(); it->Valid(); it->Next()) {
+  for (; it.Valid(); it.Next()) {
     utils::Identifier containerId;
-    auto eventRead = FlowFileRecord::DeSerialize(reinterpret_cast<const uint8_t *>(it->value().data()), gsl::narrow<int>(it->value().size()), content_repo_, containerId);
-    std::string key = it->key().ToString();
+    auto eventRead = FlowFileRecord::DeSerialize(reinterpret_cast<const uint8_t *>(it.value().data()), gsl::narrow<int>(it.value().size()), content_repo_, containerId);
+    std::string key = it.key();
     if (eventRead) {
       // on behalf of the just resurrected persisted instance
       auto claim = eventRead->getResourceClaim();
@@ -204,9 +204,7 @@ bool FlowFileRepository::ExecuteWithRetry(std::function<rocksdb::Status()> opera
  * @return true if our db has data stored.
  */
 bool FlowFileRepository::need_checkpoint(minifi::internal::OpenRocksDB& opendb){
-  auto it = opendb.NewIterator(rocksdb::ReadOptions());
-  it->SeekToFirst();
-  return it->Valid();
+  return opendb.NewIterator(rocksdb::ReadOptions()).Valid();
 }
 void FlowFileRepository::initialize_repository() {
   auto opendb = db_->open();
