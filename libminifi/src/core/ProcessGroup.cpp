@@ -103,6 +103,7 @@ void ProcessGroup::addProcessor(const std::shared_ptr<Processor>& processor) {
 
   if (processors_.find(processor) == processors_.end()) {
     // We do not have the same processor in this process group yet
+    processor->setOwner(this);
     processors_.insert(processor);
     logger_->log_debug("Add processor %s into process group %s", processor->getName(), name_);
   }

@@ -55,7 +55,7 @@ class ResourceClaim {
    */
   // explicit ResourceClaim(std::shared_ptr<core::StreamManager<ResourceClaim>> claim_manager, const std::string contentDirectory);
 
-  explicit ResourceClaim(std::shared_ptr<core::StreamManager<ResourceClaim>> claim_manager);
+  explicit ResourceClaim(std::shared_ptr<core::StreamManager<ResourceClaim>> claim_manager, const std::string& prefix = {});
 
   explicit ResourceClaim(const Path& path, std::shared_ptr<core::StreamManager<ResourceClaim>> claim_manager);
 

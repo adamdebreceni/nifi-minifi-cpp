@@ -157,6 +157,14 @@ class Connectable : public CoreComponent {
     return connectable_version_;
   }
 
+  void setOwner(CoreComponent* owner) {
+    owner_ = owner;
+  }
+
+  CoreComponent* getOwner() const noexcept {
+    return owner_;
+  }
+
  protected:
   // must hold the relationship_mutex_ before calling this
   std::shared_ptr<Connectable> getNextIncomingConnectionImpl(const std::lock_guard<std::mutex>& relationship_mutex_lock);
@@ -194,6 +202,8 @@ class Connectable : public CoreComponent {
   std::shared_ptr<state::FlowIdentifier> connectable_version_;
 
  private:
+  CoreComponent* owner_{nullptr};
+
   std::shared_ptr<logging::Logger> logger_;
 };
 

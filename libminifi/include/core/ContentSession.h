@@ -40,7 +40,7 @@ class ContentSession {
 
   explicit ContentSession(std::shared_ptr<ContentRepository> repository);
 
-  std::shared_ptr<ResourceClaim> create();
+  std::shared_ptr<ResourceClaim> create(const std::string& prefix = {});
 
   std::shared_ptr<io::BaseStream> write(const std::shared_ptr<ResourceClaim>& resourceId, WriteMode mode = WriteMode::OVERWRITE);
 

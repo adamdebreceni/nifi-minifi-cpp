@@ -42,11 +42,11 @@ static constexpr size_t data_size = 10000;
 
 std::string getContent() {
   std::mt19937 gen = getGenerator();
-  std::uniform_int_distribution<char> dis('a', 'z');
+  std::uniform_int_distribution<unsigned> dis((unsigned)'a', (unsigned)'z');
   std::string content;
   content.reserve(data_size);
   for (size_t i = 0; i < data_size; ++i) {
-    content += dis(gen);
+    content += (char)dis(gen);
   }
   return content;
 }
@@ -172,7 +172,7 @@ void run(bool use_columns) {
   options.max_successive_merges = 0;
   auto db = utils::make_unique<internal::RocksDatabase>(options, dir);
 
-  RunnerPool pool(db.get(), 6, use_columns);
+  RunnerPool pool(db.get(), 2, use_columns);
 
   std::this_thread::sleep_for(std::chrono::seconds{5});
 

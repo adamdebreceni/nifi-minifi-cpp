@@ -127,7 +127,21 @@ rocksdb::Status OpenRocksDB::Get(const rocksdb::ReadOptions& options, const rock
 }
 
 std::vector<rocksdb::Status> OpenRocksDB::MultiGet(const rocksdb::ReadOptions& options, const std::vector<rocksdb::Slice>& keys, std::vector<std::string>* values) {
-  std::vector<rocksdb::Status> results = impl_->impl->MultiGet(options, keys, values);
+  values->resize(keys.size());
+  std::vector<rocksdb::ColumnFamilyHandle*> columns;
+  columns.reserve(keys.size());
+  std::vector<rocksdb::Slice> resolved_keys;
+  resolved_keys.reserve(keys.size());
+  for (auto& key : keys) {
+    ResolvedKey resolved;
+    rocksdb::Status result = resolve(key, resolved);
+    if (!result.ok()) {
+      return std::vector<rocksdb::Status>(keys.size(), result);
+    }
+    resolved_keys.push_back(resolved.key);
+    columns.push_back(resolved.column);
+  }
+  std::vector<rocksdb::Status> results = impl_->impl->MultiGet(options, columns, resolved_keys, values);
   for (const auto& result : results) {
     if (result == rocksdb::Status::NoSpace()) {
       db_->invalidate();
@@ -208,16 +222,15 @@ rocksdb::Status OpenRocksDB::FlushWAL(bool sync) {
 }
 
 rocksdb::Status OpenRocksDB::resolve(const rocksdb::Slice& full_key, ResolvedKey& resolved) {
-  for (size_t pos = 0; pos < full_key.size(); ++pos) {
-    size_t curr = full_key.size() - 1 - pos;
-    if (full_key[curr] == ':') {
-      auto status = getOrCreateColumn(rocksdb::Slice{full_key.data(), curr}.ToString(), resolved.column);
-      if (status.ok()) {
-        resolved.key = rocksdb::Slice{full_key.data() + curr + 1, pos};
-      }
-      return status;
-    }
-  }
+  // for (size_t pos = 0; pos < full_key.size(); ++pos) {
+  //   if (full_key[pos] == ':') {
+  //     auto status = getOrCreateColumn(rocksdb::Slice{full_key.data(), pos}.ToString(), resolved.column);
+  //     if (status.ok()) {
+  //       resolved.key = rocksdb::Slice{full_key.data() + pos + 1, full_key.size() - pos - 1};
+  //     }
+  //     return status;
+  //   }
+  // }
   resolved.column = impl_->impl->DefaultColumnFamily();
   resolved.key = full_key;
   return rocksdb::Status::OK();

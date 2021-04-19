@@ -244,12 +244,15 @@ void Processor::onTrigger(ProcessContext *context, ProcessSessionFactory *sessio
 }
 
 void Processor::onTrigger(const std::shared_ptr<ProcessContext> &context, const std::shared_ptr<ProcessSessionFactory> &sessionFactory) {
+  auto start = std::chrono::steady_clock::now();
   auto session = sessionFactory->createSession();
 
   try {
     // Call the virtual trigger function
     onTrigger(context, session);
     session->commit();
+    size_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
+    logger_->log_error("%s::onTrigger took %zu ms", getName(), elapsed);
   } catch (std::exception &exception) {
     logger_->log_warn("Caught \"%s\" (%s) during Processor::onTrigger of processor: %s (%s)",
         exception.what(), typeid(exception).name(), getUUIDStr(), getName());

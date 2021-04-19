@@ -428,6 +428,8 @@ void ConsumeWindowsEventLog::onTrigger(const std::shared_ptr<core::ProcessContex
   std::wstring bookmark_xml;
   std::tie(processed_event_count, bookmark_xml) = processEventLogs(context, session, event_query_results);
 
+  logger_->log_error("Processed: %zu", processed_event_count);
+
   if (processed_event_count == 0 || !commitAndSaveBookmark(bookmark_xml, session)) {
     context->yield();
     return;

@@ -32,8 +32,8 @@ namespace core {
 
 ContentSession::ContentSession(std::shared_ptr<ContentRepository> repository) : repository_(std::move(repository)) {}
 
-std::shared_ptr<ResourceClaim> ContentSession::create() {
-  std::shared_ptr<ResourceClaim> claim = std::make_shared<ResourceClaim>(repository_);
+std::shared_ptr<ResourceClaim> ContentSession::create(const std::string& prefix) {
+  std::shared_ptr<ResourceClaim> claim = std::make_shared<ResourceClaim>(repository_, prefix);
   managedResources_[claim] = std::make_shared<io::BufferStream>();
   return claim;
 }

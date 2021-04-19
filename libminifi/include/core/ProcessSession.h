@@ -165,6 +165,10 @@ class ProcessSession : public ReferenceContainer {
     Error_NoRelationship
   };
 
+  std::string getGroupName() const;
+
+  std::string getFlowFileId(const std::shared_ptr<core::FlowFile>& flow_file) const;
+
   RouteResult routeFlowFile(const std::shared_ptr<FlowFile>& record);
 
   void persistFlowFilesBeforeTransfer(
