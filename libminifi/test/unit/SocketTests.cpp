@@ -27,6 +27,10 @@
 #include "io/StreamFactory.h"
 #include "io/Sockets.h"
 #include "utils/ThreadPool.h"
+#ifdef OPENSSL_SUPPORT
+#include "tls/TLSSocket.h"
+#endif
+
 using Sockets = org::apache::nifi::minifi::io::Socket;
 
 TEST_CASE("TestSocket", "[TestSocket1]") {

@@ -28,6 +28,19 @@
 #include <iostream>
 #include <cinttypes>
 
+#ifdef WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif /* WIN32_LEAN_AND_MEAN */
+#include <WinSock2.h>
+#include <io.h>
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <unistd.h>
+#endif /* WIN32 */
+
 #include "FlowController.h"
 #include "core/Core.h"
 #include "utils/gsl.h"

@@ -27,9 +27,11 @@
 #include <vector>
 #include <algorithm>
 
-#include "spdlog/common.h"
-#include "spdlog/logger.h"
 #include "utils/SmallString.h"
+
+namespace spdlog {
+class logger;
+}  // namespace spdlog
 
 namespace org {
 namespace apache {
@@ -154,7 +156,7 @@ class Logger : public BaseLogger {
    */
   template<typename ... Args>
   void log_error(const char * const format, const Args& ... args) {
-    log(spdlog::level::err, format, args...);
+    log(LOG_LEVEL::err, format, args...);
   }
 
   /**
@@ -164,7 +166,7 @@ class Logger : public BaseLogger {
    */
   template<typename ... Args>
   void log_warn(const char * const format, const Args& ... args) {
-    log(spdlog::level::warn, format, args...);
+    log(LOG_LEVEL::warn, format, args...);
   }
 
   /**
@@ -174,7 +176,7 @@ class Logger : public BaseLogger {
    */
   template<typename ... Args>
   void log_info(const char * const format, const Args& ... args) {
-    log(spdlog::level::info, format, args...);
+    log(LOG_LEVEL::info, format, args...);
   }
 
   /**
@@ -184,7 +186,7 @@ class Logger : public BaseLogger {
    */
   template<typename ... Args>
   void log_debug(const char * const format, const Args& ... args) {
-    log(spdlog::level::debug, format, args...);
+    log(LOG_LEVEL::debug, format, args...);
   }
 
   /**
@@ -194,7 +196,7 @@ class Logger : public BaseLogger {
    */
   template<typename ... Args>
   void log_trace(const char * const format, const Args& ... args) {
-    log(spdlog::level::trace, format, args...);
+    log(LOG_LEVEL::trace, format, args...);
   }
 
   void set_max_log_size(int size) {
@@ -218,16 +220,19 @@ class Logger : public BaseLogger {
 
  private:
   template<typename ... Args>
-  inline void log(spdlog::level::level_enum level, const char * const format, const Args& ... args) {
+  inline void log(LOG_LEVEL level, const char * const format, const Args& ... args) {
     if (controller_ && !controller_->is_enabled())
-         return;
+      return;
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!delegate_->should_log(level)) {
+    if (!should_log_with_delegate(level, lock)) {
       return;
     }
-    const auto str = format_string(max_log_size_.load(), format, conditional_conversion(args)...);
-    delegate_->log(level, str);
+    auto str = format_string(max_log_size_.load(), format, conditional_conversion(args)...);
+    log_with_delegate(level, std::move(str), lock);
   }
+
+  bool should_log_with_delegate(LOG_LEVEL level, const std::lock_guard<std::mutex>& guard);
+  void log_with_delegate(LOG_LEVEL level, std::string message, const std::lock_guard<std::mutex>& guard);
 
   std::atomic<int> max_log_size_{LOG_BUFFER_SIZE};
 

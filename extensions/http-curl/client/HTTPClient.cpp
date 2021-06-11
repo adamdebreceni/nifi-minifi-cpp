@@ -29,6 +29,7 @@
 #include "utils/gsl.h"
 #include "utils/StringUtils.h"
 #include "utils/RegexUtils.h"
+#include "controllers/OpenSSLContextService.h"
 
 namespace org {
 namespace apache {
@@ -380,6 +381,19 @@ bool HTTPClient::matches(const std::string &value, const std::string &sregex) {
   } catch (const Exception &) {
     return false;
   }
+}
+
+CURLcode HTTPClient::configure_ssl_context(CURL* /*curl*/, void *ctx, void *param) {
+#ifdef OPENSSL_SUPPORT
+  minifi::controllers::SSLContextService *ssl_context_service = static_cast<minifi::controllers::SSLContextService*>(param);
+  auto* openssl_context_service = dynamic_cast<minifi::controllers::OpenSSLContextService*>(ssl_context_service);
+  if (!openssl_context_service->configure_ssl_context(static_cast<SSL_CTX*>(ctx))) {
+    return CURLE_FAILED_INIT;
+  }
+  return CURLE_OK;
+#else
+  return CURLE_FAILED_INIT;
+#endif
 }
 
 void HTTPClient::configure_secure_connection(CURL *http_session) {

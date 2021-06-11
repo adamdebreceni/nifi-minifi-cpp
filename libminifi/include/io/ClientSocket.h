@@ -20,17 +20,6 @@
 
 #include <utility>
 #include <cstdint>
-#ifdef WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif /* WIN32_LEAN_AND_MEAN */
-#include <WinSock2.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <unistd.h>
-#endif /* WIN32 */
 #include <mutex>
 #include <atomic>
 #include <string>
@@ -43,6 +32,11 @@
 #include "io/validation.h"
 #include "properties/Configure.h"
 #include "io/NetworkPrioritizer.h"
+#include "utils/gsl.h"
+#include "internal/SocketDescriptor.h"
+
+struct addrinfo;
+struct fd_set;
 
 namespace org {
 namespace apache {
@@ -51,11 +45,7 @@ namespace minifi {
 namespace io {
 
 #ifdef WIN32
-using SocketDescriptor = SOCKET;
-using ip4addr = in_addr;
 #else
-using SocketDescriptor = int;
-using ip4addr = in_addr_t;
 #undef INVALID_SOCKET
 static constexpr SocketDescriptor INVALID_SOCKET = -1;
 #undef SOCKET_ERROR
@@ -66,11 +56,6 @@ static constexpr int SOCKET_ERROR = -1;
  * Return the last socket error message, based on errno on posix and WSAGetLastError() on windows
  */
 std::string get_last_socket_error_message();
-
-/**
- * @return >= 0 on posix, != INVALID_SOCKET on windows
- */
-bool valid_socket(SocketDescriptor) noexcept;
 
 /**
  * Context class for socket. This is currently only used as a parent class for TLSContext.  It is necessary so the Socket and TLSSocket constructors
@@ -89,6 +74,26 @@ class SocketContext {
  * operations against a BSD socket
  */
 class Socket : public BaseStream {
+  class FdSet {
+   public:
+    FdSet();
+    FdSet(const FdSet&) = delete;
+    FdSet& operator=(const FdSet&);
+    FdSet(FdSet&& other) noexcept;
+    FdSet& operator=(FdSet&& other) noexcept;
+    ~FdSet();
+
+    bool isSet(SocketDescriptor fd);
+    void set(SocketDescriptor fd);
+    void clear(SocketDescriptor fd);
+
+    fd_set* get() {
+      return impl_;
+    }
+
+   private:
+    gsl::owner<fd_set*> impl_;
+  };
  public:
   /**
    * Constructor that creates a client socket.
@@ -183,14 +188,6 @@ class Socket : public BaseStream {
   explicit Socket(const std::shared_ptr<SocketContext> &context, std::string hostname, uint16_t port, uint16_t listeners);
 
   /**
-   * Creates a connection using the addr object
-   * @param ignored ignored
-   * @param addr The IPv4 address to connect to
-   * @returns 0 on success, -1 on error
-   */
-  virtual int8_t createConnection(const addrinfo *ignored, ip4addr &addr);
-
-  /**
    * Iterates through {@code destination_addresses} and tries to connect to each address until it succeeds.
    * Supports both IPv4 and IPv6.
    * @param destination_addresses Destination addresses, typically from {@code getaddrinfo}.
@@ -221,10 +218,10 @@ class Socket : public BaseStream {
   io::NetworkInterface local_network_interface_;
 
   // connection information
-  SocketDescriptor socket_file_descriptor_{ INVALID_SOCKET };  // -1 on posix
+  SocketDescriptor socket_file_descriptor_ = SocketDescriptor::Invalid;
 
-  fd_set total_list_{};
-  fd_set read_fds_{};
+  FdSet total_list_{};
+  FdSet read_fds_{};
   std::atomic<uint16_t> socket_max_{ 0 };
   std::atomic<uint64_t> total_written_{ 0 };
   std::atomic<uint64_t> total_read_{ 0 };
@@ -235,35 +232,9 @@ class Socket : public BaseStream {
   std::shared_ptr<logging::Logger> logger_;
 
  private:
-#ifdef WIN32
-  struct SocketInitializer {
-    SocketInitializer() {
-      static WSADATA s_wsaData;
-      const int iWinSockInitResult = WSAStartup(MAKEWORD(2, 2), &s_wsaData);
-      if (0 != iWinSockInitResult) {
-        throw std::runtime_error("Cannot start client");
-      }
-    }
-    ~SocketInitializer() noexcept {
-      WSACleanup();
-    }
-  };
-  static void initialize_socket() {
-    static SocketInitializer initialized;
-  }
-#else
-  static void initialize_socket() {}
-#endif /* WIN32 */
+  static void initialize_socket();
 
-  static std::string init_hostname() {
-    initialize_socket();
-    char hostname[1024];
-    gethostname(hostname, 1024);
-    Socket mySock(nullptr, hostname, 0);
-    mySock.initialize();
-    const auto resolved_hostname = mySock.getHostname();
-    return !IsNullOrEmpty(resolved_hostname) ? resolved_hostname : hostname;
-  }
+  static std::string init_hostname();
 };
 
 }  // namespace io

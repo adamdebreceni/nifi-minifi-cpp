@@ -37,6 +37,14 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_sinks.h"
 #include "spdlog/sinks/null_sink.h"
+#include "spdlog/sinks/rotating_file_sink.h"
+#include "spdlog/common.h"
+#include "spdlog/sinks/sink.h"
+#include "spdlog/logger.h"
+#include "spdlog/formatter.h"
+#include "spdlog/pattern_formatter.h"
+
+#include "core/logging/internal/Utils.h"
 
 #ifdef WIN32
 #include "core/logging/WindowsEventLogSink.h"
@@ -239,7 +247,7 @@ std::shared_ptr<internal::LoggerNamespace> LoggerConfiguration::initialize_names
         current_namespace = child;
       }
     }
-    current_namespace->level = level;
+    current_namespace->level = to_minifi_log_level(level);
     current_namespace->has_level = true;
     current_namespace->sinks = sinks;
   }
@@ -258,7 +266,7 @@ std::shared_ptr<spdlog::logger> LoggerConfiguration::get_logger(std::shared_ptr<
   }
   std::shared_ptr<internal::LoggerNamespace> current_namespace = root_namespace;
   std::vector<std::shared_ptr<spdlog::sinks::sink>> sinks = root_namespace->sinks;
-  spdlog::level::level_enum level = root_namespace->level;
+  spdlog::level::level_enum level = to_spdlog_level(root_namespace->level);
   std::string current_namespace_str = "";
   std::string sink_namespace_str = "root";
   std::string level_namespace_str = "root";
@@ -274,7 +282,7 @@ std::shared_ptr<spdlog::logger> LoggerConfiguration::get_logger(std::shared_ptr<
       sink_namespace_str = current_namespace_str;
     }
     if (current_namespace->has_level) {
-      level = current_namespace->level;
+      level = to_spdlog_level(current_namespace->level);
       level_namespace_str = current_namespace_str;
     }
     current_namespace_str += "::";
@@ -286,7 +294,7 @@ std::shared_ptr<spdlog::logger> LoggerConfiguration::get_logger(std::shared_ptr<
   spdlogger = std::make_shared<spdlog::logger>(name, begin(sinks), end(sinks));
   spdlogger->set_level(level);
   spdlogger->set_formatter(formatter -> clone());
-  spdlogger->flush_on(std::max(spdlog::level::info, current_namespace->level));
+  spdlogger->flush_on(std::max(spdlog::level::info, to_spdlog_level(current_namespace->level)));
   try {
     spdlog::register_logger(spdlogger);
   } catch (const spdlog::spdlog_ex &) {
@@ -314,7 +322,7 @@ spdlog::sink_ptr LoggerConfiguration::create_fallback_sink() {
 std::shared_ptr<internal::LoggerNamespace> LoggerConfiguration::create_default_root() {
   std::shared_ptr<internal::LoggerNamespace> result = std::make_shared<internal::LoggerNamespace>();
   result->sinks = { std::make_shared<spdlog::sinks::stderr_sink_mt>() };
-  result->level = spdlog::level::info;
+  result->level = LOG_LEVEL::info;
   return result;
 }
 

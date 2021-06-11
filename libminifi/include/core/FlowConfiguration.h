@@ -41,6 +41,7 @@
 #include "core/state/nodes/FlowInformation.h"
 #include "utils/file/FileSystem.h"
 #include "utils/OptionalUtils.h"
+#include "utils/file/PathUtils.h"
 
 namespace org {
 namespace apache {

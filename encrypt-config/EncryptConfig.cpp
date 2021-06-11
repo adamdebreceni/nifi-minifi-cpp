@@ -19,11 +19,15 @@
 
 #include <sodium.h>
 
+#include <fstream>
 #include <stdexcept>
 
+#include "properties/Configure.h"
 #include "ConfigFile.h"
 #include "ConfigFileEncryptor.h"
 #include "utils/file/FileUtils.h"
+#include "utils/file/PathUtils.h"
+#include "utils/StringUtils.h"
 #include "utils/OptionalUtils.h"
 #include "Defaults.h"
 

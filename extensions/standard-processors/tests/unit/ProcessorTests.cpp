@@ -24,6 +24,10 @@
 #include <fstream>
 #include <GenerateFlowFile.h>
 #ifdef WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif
+#include <windows.h>
 #include <fileapi.h>
 #include <system_error>
 #endif /* WIN32 */

@@ -1,4 +1,5 @@
 /**
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -15,16 +16,37 @@
  * limitations under the License.
  */
 
-#pragma once
+#include "io/internal/SocketDescriptor.h"
+#include "io/internal/SocketDescriptorImpl.h"
 
+namespace org {
+namespace apache {
+namespace nifi {
+namespace minifi {
+namespace io {
+
+SocketDescriptor::SocketDescriptor(const SocketDescriptorImpl& val) {
+  value() = val;
+}
+
+bool SocketDescriptor::isValid() const {
 #ifdef WIN32
+  return value() != INVALID_SOCKET && value() >= 0;
+#else
+  return value() >= 0;
+#endif /* WIN32 */
+}
 
-#include <Windows.h>
-#include <memory>
-#include "core/Core.h"
-
-void RunAsServiceIfNeeded();
-HANDLE GetTerminationEventHandle(bool* isStartedByService);
-bool CreateServiceTerminationThread(std::shared_ptr<logging::Logger> logger, HANDLE terminationEventHandle);
-
+SocketDescriptor SocketDescriptor::Invalid = [] {
+#ifdef WIN32
+  return SocketDescriptor(INVALID_SOCKET);
+#else
+  return SocketDescriptor(-1);
 #endif
+}();
+
+}  // namespace io
+}  // namespace minifi
+}  // namespace nifi
+}  // namespace apache
+}  // namespace org

@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include "utils/file/FileUtils.h"
+#include "utils/StringUtils.h"
 #include "utils/gsl.h"
 
 namespace org {

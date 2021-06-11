@@ -17,6 +17,7 @@
  */
 #include "properties/Properties.h"
 #include <string>
+#include <fstream>
 #include "utils/StringUtils.h"
 #include "utils/file/FileUtils.h"
 #include "utils/file/PathUtils.h"

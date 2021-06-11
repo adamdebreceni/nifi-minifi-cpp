@@ -17,13 +17,19 @@
  */
 
 #define CATCH_CONFIG_RUNNER
-#include <string>
+#ifdef WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif
+#include <windows.h>
+#include <direct.h>
+#endif
+
 #include "../TestBase.h"
+#include <string>
 #include "core/controller/ControllerService.h"
 #include "core/ProcessGroup.h"
 #include "core/yaml/YamlConfiguration.h"
-
-#include "catch.hpp"
 
 namespace {
   std::string config_yaml; // NOLINT

@@ -23,13 +23,16 @@
 #include <sstream>
 #include <iostream>
 
+#include "core/logging/internal/Utils.h"
+#include "spdlog/common.h"
+#include "spdlog/logger.h"
+
 namespace org {
 namespace apache {
 namespace nifi {
 namespace minifi {
 namespace core {
 namespace logging {
-
 
 LoggerControl::LoggerControl()
     : is_enabled_(true) {
@@ -127,6 +130,14 @@ void Logger::log_string(LOG_LEVEL level, std::string str) {
     case off:
       break;
   }
+}
+
+bool Logger::should_log_with_delegate(LOG_LEVEL level, const std::lock_guard<std::mutex>& guard) {
+  return delegate_->should_log(to_spdlog_level(level));
+}
+
+void Logger::log_with_delegate(LOG_LEVEL level, std::string message, const std::lock_guard<std::mutex>& guard) {
+  delegate_->log(to_spdlog_level(level), std::move(message));
 }
 
 Logger::Logger(std::shared_ptr<spdlog::logger> delegate, std::shared_ptr<LoggerControl> controller)

@@ -1,4 +1,5 @@
 /**
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -17,14 +18,29 @@
 
 #pragma once
 
-#ifdef WIN32
+namespace org {
+namespace apache {
+namespace nifi {
+namespace minifi {
+namespace io {
 
-#include <Windows.h>
-#include <memory>
-#include "core/Core.h"
+class SocketDescriptorImpl;
 
-void RunAsServiceIfNeeded();
-HANDLE GetTerminationEventHandle(bool* isStartedByService);
-bool CreateServiceTerminationThread(std::shared_ptr<logging::Logger> logger, HANDLE terminationEventHandle);
+class SocketDescriptor {
+ public:
+  SocketDescriptor() = default;
+  explicit SocketDescriptor(const SocketDescriptorImpl& val);
+  SocketDescriptorImpl& value();
+  const SocketDescriptorImpl& value() const;
+  bool isValid() const;
+  static SocketDescriptor Invalid;
 
-#endif
+ private:
+  alignas(8) unsigned char raw_[8];
+};
+
+}  // namespace io
+}  // namespace minifi
+}  // namespace nifi
+}  // namespace apache
+}  // namespace org

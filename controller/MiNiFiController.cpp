@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
   if (nullptr == secure_context) {
     std::string secureStr;
     if (configuration->get(minifi::Configure::nifi_remote_input_secure, secureStr) && org::apache::nifi::minifi::utils::StringUtils::toBool(secureStr).value_or(false)) {
-      secure_context = std::make_shared<minifi::controllers::SSLContextService>("ControllerSocketProtocolSSL", configuration);
+      secure_context = minifi::controllers::SSLContextService::make_shared("ControllerSocketProtocolSSL", configuration);
       secure_context->onEnable();
     }
   }

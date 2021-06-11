@@ -26,13 +26,6 @@
 #include <vector>
 #include <cassert>
 
-#ifdef WIN32
-#include <winsock2.h>
-
-#else
-#include <arpa/inet.h>
-
-#endif
 #include "BaseStream.h"
 #include "Exception.h"
 

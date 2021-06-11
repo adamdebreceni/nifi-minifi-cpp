@@ -23,6 +23,11 @@
 #include <string>
 #include <Exception.h>
 #include "io/validation.h"
+
+#ifdef WIN32
+#include <io.h>
+#endif
+
 namespace org {
 namespace apache {
 namespace nifi {

@@ -115,7 +115,7 @@ class ListenHTTPTestsFixture {
       config->set(minifi::Configure::nifi_security_client_private_key, utils::file::FileUtils::get_executable_dir() + "/resources/" + client_cert);
       config->set(minifi::Configure::nifi_security_client_pass_phrase, "Password12");
     }
-    ssl_context_service = std::make_shared<minifi::controllers::SSLContextService>("SSLContextService", config);
+    ssl_context_service = minifi::controllers::SSLContextService::make_shared("SSLContextService", config);
     ssl_context_service->onEnable();
   }
 

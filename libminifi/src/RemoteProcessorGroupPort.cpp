@@ -161,7 +161,7 @@ void RemoteProcessorGroupPort::onSchedule(const std::shared_ptr<core::ProcessCon
   } else {
     std::string secureStr;
     if (configure_->get(Configure::nifi_remote_input_secure, secureStr) && utils::StringUtils::toBool(secureStr).value_or(false)) {
-      ssl_service = std::make_shared<minifi::controllers::SSLContextService>(RPG_SSL_CONTEXT_SERVICE_NAME, configure_);
+      ssl_service = minifi::controllers::SSLContextService::make_shared(RPG_SSL_CONTEXT_SERVICE_NAME, configure_);
       ssl_service->onEnable();
     }
   }

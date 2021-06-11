@@ -21,10 +21,5 @@
 #include "io/ClientSocket.h"
 #include "ServerSocket.h"
 
-#ifdef OPENSSL_SUPPORT
-#include "tls/TLSSocket.h"
-#include "tls/TLSServerSocket.h"
-#endif
-
 
 #endif  // LIBMINIFI_INCLUDE_IO_SOCKETS_H_

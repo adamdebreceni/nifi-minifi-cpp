@@ -35,6 +35,8 @@
 #include "utils/GeneralUtils.h"
 #include "utils/gsl.h"
 #include "utils/tls/TLSUtils.h"
+#include "io/internal/SocketDescriptorImpl.h"
+#include "controllers/OpenSSLContextService.h"
 
 namespace org {
 namespace apache {
@@ -84,8 +86,9 @@ int16_t TLSContext::initialize(bool server_method) {
     std::string passphrase;
     std::string caCertificate;
 
-    if (ssl_service_ != nullptr) {
-      if (!ssl_service_->configure_ssl_context(local_context.get())) {
+    auto openssl_service = std::dynamic_pointer_cast<controllers::OpenSSLContextService>(ssl_service_);
+    if (openssl_service != nullptr) {
+      if (!openssl_service->configure_ssl_context(local_context.get())) {
         error_value = TLS_ERROR_CERT_ERROR;
         return error_value;
       }
@@ -222,7 +225,7 @@ int16_t TLSSocket::initialize(bool blocking) {
 
   if (!is_server) {
     ssl_ = SSL_new(context_->getContext());
-    SSL_set_fd(ssl_, socket_file_descriptor_);
+    SSL_set_fd(ssl_, socket_file_descriptor_.value());
     SSL_set_tlsext_host_name(ssl_, requested_hostname_.c_str());  // SNI extension
     connected_ = false;
     int rez = SSL_connect(ssl_);
@@ -242,7 +245,7 @@ int16_t TLSSocket::initialize(bool blocking) {
       }
     } else {
       connected_ = true;
-      logger_->log_debug("SSL socket connect success to %s %d, on fd %d", requested_hostname_, port_, socket_file_descriptor_);
+      logger_->log_debug("SSL socket connect success to %s %d, on fd %d", requested_hostname_, port_, static_cast<int>(socket_file_descriptor_.value()));
       return 0;
     }
   }
@@ -251,7 +254,7 @@ int16_t TLSSocket::initialize(bool blocking) {
 }
 
 void TLSSocket::close_ssl(int fd) {
-  FD_CLR(fd, &total_list_);  // add to master set
+  total_list_.clear(SocketDescriptor(fd));
   if (UNLIKELY(listeners_ > 0)) {
     std::lock_guard<std::mutex> lock(ssl_mutex_);
     auto fd_ssl = ssl_map_[fd];
@@ -265,7 +268,7 @@ void TLSSocket::close_ssl(int fd) {
 
 int16_t TLSSocket::select_descriptor(const uint16_t msec) {
   if (listeners_ == 0 && connected_) {
-    return socket_file_descriptor_;
+    return socket_file_descriptor_.value();
   }
 
   struct timeval tv;
@@ -278,26 +281,26 @@ int16_t TLSSocket::select_descriptor(const uint16_t msec) {
   std::lock_guard<std::recursive_mutex> guard(selection_mutex_);
 
   if (msec > 0)
-    select(socket_max_ + 1, &read_fds_, NULL, NULL, &tv);
+    select(socket_max_ + 1, read_fds_.get(), NULL, NULL, &tv);
   else
-    select(socket_max_ + 1, &read_fds_, NULL, NULL, NULL);
+    select(socket_max_ + 1, read_fds_.get(), NULL, NULL, NULL);
 
   for (int i = 0; i <= socket_max_; i++) {
-    if (!FD_ISSET(i, &read_fds_)) continue;
+    if (!read_fds_.isSet(SocketDescriptor(i))) continue;
 
-    if (i != socket_file_descriptor_) {
+    if (i != socket_file_descriptor_.value()) {
       // data to be received on i
       return i;
     }
 
     // listener can accept a new connection
     if (listeners_ > 0) {
-      const auto newfd = accept(socket_file_descriptor_, nullptr, nullptr);
-      if (!valid_socket(newfd)) {
+      const auto newfd = accept(socket_file_descriptor_.value(), nullptr, nullptr);
+      if (!SocketDescriptor(newfd).isValid()) {
         logger_->log_error("accept: %s", get_last_socket_error_message());
         return -1;
       }
-      FD_SET(newfd, &total_list_);  // add to master set
+      total_list_.set(SocketDescriptor(newfd));  // add to master set
       if (newfd > socket_max_) {    // keep track of the max
         socket_max_ = newfd;
       }
@@ -321,10 +324,10 @@ int16_t TLSSocket::select_descriptor(const uint16_t msec) {
         int ssl_error = SSL_get_error(ssl_, rez);
         if (ssl_error == SSL_ERROR_WANT_WRITE) {
           logger_->log_trace("want write");
-          return socket_file_descriptor_;
+          return socket_file_descriptor_.value();
         } else if (ssl_error == SSL_ERROR_WANT_READ) {
           logger_->log_trace("want read");
-          return socket_file_descriptor_;
+          return socket_file_descriptor_.value();
         } else {
           logger_->log_error("SSL socket connect failed (%d) to %s %d", ssl_error, requested_hostname_, port_);
           close();
@@ -332,17 +335,17 @@ int16_t TLSSocket::select_descriptor(const uint16_t msec) {
         }
       }
       connected_ = true;
-      logger_->log_debug("SSL socket connect success to %s %d, on fd %d", requested_hostname_, port_, socket_file_descriptor_);
-      return socket_file_descriptor_;
+      logger_->log_debug("SSL socket connect success to %s %d, on fd %d", requested_hostname_, port_, static_cast<int>(socket_file_descriptor_.value()));
+      return socket_file_descriptor_.value();
     }
-    return socket_file_descriptor_;
+    return socket_file_descriptor_.value();
     // we have a new connection
   }
 
   bool is_server = listeners_ > 0;
 
   if (listeners_ == 0) {
-    return socket_file_descriptor_;
+    return socket_file_descriptor_.value();
   }
 
   logger_->log_trace("%s Could not find a suitable file descriptor or select timed out", is_server ? "Server:" : "Client:");

@@ -20,9 +20,41 @@
 #include "utils/IntegrationTestUtils.h"
 
 #include "spdlog/spdlog.h"
+#include "spdlog/common.h"
+#include "spdlog/sinks/stdout_sinks.h"
+#include "spdlog/sinks/ostream_sink.h"
+#include "spdlog/sinks/dist_sink.h"
+#include "core/logging/internal/Utils.h"
 
-void LogTestController::setLevel(const std::string name, spdlog::level::level_enum level) {
-  const auto levelView(spdlog::level::to_string_view(level));
+LogTestController::LogTestController(const std::shared_ptr<logging::LoggerProperties> &loggerProps) {
+  my_properties_ = loggerProps;
+  bool initMain = false;
+  if (nullptr == my_properties_) {
+    my_properties_ = std::make_shared<logging::LoggerProperties>();
+    initMain = true;
+  }
+  my_properties_->set("logger.root", "ERROR,ostream");
+  my_properties_->set("logger." + core::getClassName<LogTestController>(), "INFO");
+  my_properties_->set("logger." + core::getClassName<logging::LoggerConfiguration>(), "INFO");
+  std::shared_ptr<spdlog::sinks::dist_sink_mt> dist_sink = std::make_shared<spdlog::sinks::dist_sink_mt>();
+  dist_sink->add_sink(std::make_shared<spdlog::sinks::ostream_sink_mt>(log_output, true));
+  dist_sink->add_sink(std::make_shared<spdlog::sinks::stderr_sink_mt>());
+  my_properties_->add_sink("ostream", dist_sink);
+  if (initMain) {
+    logging::LoggerConfiguration::getConfiguration().initialize(my_properties_);
+    logger_ = logging::LoggerConfiguration::getConfiguration().getLogger(core::getClassName<LogTestController>());
+  } else {
+    config = logging::LoggerConfiguration::newInstance();
+    // create for test purposes. most tests use the main logging factory, but this exists to test the logging
+    // framework itself.
+    config->initialize(my_properties_);
+    logger_ = config->getLogger(core::getClassName<LogTestController>());
+  }
+}
+
+void LogTestController::setLevel(const std::string name, logging::LOG_LEVEL level) {
+  spdlog::level::level_enum spdlog_level = logging::to_spdlog_level(level);
+  const auto levelView(spdlog::level::to_string_view(spdlog_level));
   logger_->log_info("Setting log level for %s to %s", name, std::string(levelView.begin(), levelView.end()));
   std::string adjusted_name = name;
   const std::string clazz = "class ";
@@ -32,7 +64,7 @@ void LogTestController::setLevel(const std::string name, spdlog::level::level_en
   if (config && config->shortenClassNames()) {
     utils::ClassUtils::shortenClassName(adjusted_name, adjusted_name);
   }
-  spdlog::get(adjusted_name)->set_level(level);
+  spdlog::get(adjusted_name)->set_level(spdlog_level);
 }
 
 TestPlan::TestPlan(std::shared_ptr<core::ContentRepository> content_repo, std::shared_ptr<core::Repository> flow_repo, std::shared_ptr<core::Repository> prov_repo,

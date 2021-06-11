@@ -30,6 +30,7 @@
 
 #include "ResourceClaim.h"
 #include "utils/file/FileUtils.h"
+#define CATCH_CONFIG_COLOUR_NONE
 #include "catch.hpp"
 #include "core/logging/Logger.h"
 #include "core/Core.h"
@@ -38,10 +39,6 @@
 #include "core/logging/LoggerConfiguration.h"
 #include "utils/Id.h"
 
-#include "spdlog/common.h"
-#include "spdlog/sinks/stdout_sinks.h"
-#include "spdlog/sinks/ostream_sink.h"
-#include "spdlog/sinks/dist_sink.h"
 #include "unit/ProvenanceTestHelper.h"
 #include "core/FlowFile.h"
 #include "core/Processor.h"
@@ -79,32 +76,32 @@ class LogTestController {
 
   template<typename T>
   void setTrace() {
-    setLevel<T>(spdlog::level::trace);
+    setLevel<T>(logging::LOG_LEVEL::trace);
   }
 
   template<typename T>
   void setDebug() {
-    setLevel<T>(spdlog::level::debug);
+    setLevel<T>(logging::LOG_LEVEL::debug);
   }
 
   template<typename T>
   void setInfo() {
-    setLevel<T>(spdlog::level::info);
+    setLevel<T>(logging::LOG_LEVEL::info);
   }
 
   template<typename T>
   void setWarn() {
-    setLevel<T>(spdlog::level::warn);
+    setLevel<T>(logging::LOG_LEVEL::warn);
   }
 
   template<typename T>
   void setError() {
-    setLevel<T>(spdlog::level::err);
+    setLevel<T>(logging::LOG_LEVEL::err);
   }
 
   template<typename T>
   void setOff() {
-    setLevel<T>(spdlog::level::off);
+    setLevel<T>(logging::LOG_LEVEL::off);
   }
 
   /**
@@ -118,7 +115,7 @@ class LogTestController {
   }
 
   template<typename T>
-  void setLevel(spdlog::level::level_enum level) {
+  void setLevel(logging::LOG_LEVEL level) {
     logging::LoggerFactory<T>::getLogger();
     std::string name = core::getClassName<T>();
     if (config)
@@ -170,7 +167,7 @@ class LogTestController {
 
   void reset() {
     for (auto const & name : modified_loggers) {
-      setLevel(name, spdlog::level::err);
+      setLevel(name, logging::LOG_LEVEL::err);
     }
     modified_loggers.clear();
     if (config)
@@ -192,33 +189,9 @@ class LogTestController {
       : LogTestController(nullptr) {
   }
 
-  explicit LogTestController(const std::shared_ptr<logging::LoggerProperties> &loggerProps) {
-    my_properties_ = loggerProps;
-    bool initMain = false;
-    if (nullptr == my_properties_) {
-      my_properties_ = std::make_shared<logging::LoggerProperties>();
-      initMain = true;
-    }
-    my_properties_->set("logger.root", "ERROR,ostream");
-    my_properties_->set("logger." + core::getClassName<LogTestController>(), "INFO");
-    my_properties_->set("logger." + core::getClassName<logging::LoggerConfiguration>(), "INFO");
-    std::shared_ptr<spdlog::sinks::dist_sink_mt> dist_sink = std::make_shared<spdlog::sinks::dist_sink_mt>();
-    dist_sink->add_sink(std::make_shared<spdlog::sinks::ostream_sink_mt>(log_output, true));
-    dist_sink->add_sink(std::make_shared<spdlog::sinks::stderr_sink_mt>());
-    my_properties_->add_sink("ostream", dist_sink);
-    if (initMain) {
-      logging::LoggerConfiguration::getConfiguration().initialize(my_properties_);
-      logger_ = logging::LoggerConfiguration::getConfiguration().getLogger(core::getClassName<LogTestController>());
-    } else {
-      config = logging::LoggerConfiguration::newInstance();
-      // create for test purposes. most tests use the main logging factory, but this exists to test the logging
-      // framework itself.
-      config->initialize(my_properties_);
-      logger_ = config->getLogger(core::getClassName<LogTestController>());
-    }
-  }
+  explicit LogTestController(const std::shared_ptr<logging::LoggerProperties> &loggerProps);
 
-  void setLevel(const std::string name, spdlog::level::level_enum level);
+  void setLevel(const std::string name, logging::LOG_LEVEL level);
 
   std::shared_ptr<logging::LoggerProperties> my_properties_;
   std::unique_ptr<logging::LoggerConfiguration> config;

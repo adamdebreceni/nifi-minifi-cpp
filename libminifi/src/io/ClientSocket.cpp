@@ -33,6 +33,18 @@
 #include <arpa/inet.h>
 #endif
 
+#ifdef WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif /* WIN32_LEAN_AND_MEAN */
+#include <WinSock2.h>
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <unistd.h>
+#endif /* WIN32 */
+
 #include <memory>
 #include <utility>
 #include <vector>
@@ -47,6 +59,8 @@
 #include "core/logging/LoggerConfiguration.h"
 #include "utils/file/FileUtils.h"
 #include "utils/GeneralUtils.h"
+#include "io/internal/SocketDescriptorImpl.h"
+
 namespace util = org::apache::nifi::minifi::utils;
 namespace mio = org::apache::nifi::minifi::io;
 
@@ -114,19 +128,19 @@ std::error_code bind_to_local_network_interface(const minifi::io::SocketDescript
   if (itemFound == nullptr) { return std::make_error_code(std::errc::no_such_device_or_address); }
 
   const socklen_t addrlen = itemFound->ifa_addr->sa_family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
-  if (bind(fd, itemFound->ifa_addr, addrlen) != 0) { return { errno, std::generic_category() }; }
+  if (bind(fd.value(), itemFound->ifa_addr, addrlen) != 0) { return { errno, std::generic_category() }; }
   return {};
 }
 #endif /* !WIN32 */
 
 std::error_code set_non_blocking(const minifi::io::SocketDescriptor fd) noexcept {
 #ifndef WIN32
-  if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
+  if (fcntl(fd.value(), F_SETFL, O_NONBLOCK) < 0) {
     return { errno, std::generic_category() };
   }
 #else
   u_long iMode = 1;
-  if (ioctlsocket(fd, FIONBIO, &iMode) == SOCKET_ERROR) {
+  if (ioctlsocket(fd.value(), FIONBIO, &iMode) == SOCKET_ERROR) {
     return { WSAGetLastError(), std::system_category() };
   }
 #endif /* !WIN32 */
@@ -149,12 +163,41 @@ std::string get_last_socket_error_message() {
   return std::system_category().message(error_code);
 }
 
-bool valid_socket(const SocketDescriptor fd) noexcept {
-#ifdef WIN32
-  return fd != INVALID_SOCKET && fd >= 0;
-#else
-  return fd >= 0;
-#endif /* WIN32 */
+Socket::FdSet::FdSet() : impl_(new fd_set()) {
+  FD_ZERO(impl_);
+}
+
+Socket::FdSet::FdSet(FdSet&& other) noexcept : impl_(new fd_set()) {
+  *impl_ = *other.impl_;
+}
+
+Socket::FdSet& Socket::FdSet::operator=(FdSet&& other) noexcept {
+  if (this == &other) return *this;
+  *impl_ = *other.impl_;
+  FD_ZERO(other.impl_);
+  return *this;
+}
+
+Socket::FdSet& Socket::FdSet::operator=(const FdSet& other) {
+  if (this == &other) return *this;
+  *impl_ = *other.impl_;
+  return *this;
+}
+
+bool Socket::FdSet::isSet(SocketDescriptor fd) {
+  return FD_ISSET(fd.value(), impl_);
+}
+
+void Socket::FdSet::set(SocketDescriptor fd) {
+  FD_SET(fd.value(), impl_);
+}
+
+void Socket::FdSet::clear(SocketDescriptor fd) {
+  FD_CLR(fd.value(), impl_);
+}
+
+Socket::FdSet::~FdSet() {
+  delete impl_;
 }
 
 Socket::Socket(const std::shared_ptr<SocketContext>& /*context*/, std::string hostname, const uint16_t port, const uint16_t listeners)
@@ -162,8 +205,6 @@ Socket::Socket(const std::shared_ptr<SocketContext>& /*context*/, std::string ho
       port_(port),
       listeners_(listeners),
       logger_(logging::LoggerFactory<Socket>::getLogger()) {
-  FD_ZERO(&total_list_);
-  FD_ZERO(&read_fds_);
   initialize_socket();
 }
 
@@ -181,8 +222,8 @@ Socket::Socket(Socket &&other) noexcept
       is_loopback_only_{ other.is_loopback_only_ },
       local_network_interface_{ std::move(other.local_network_interface_) },
       socket_file_descriptor_{ other.socket_file_descriptor_ },
-      total_list_(other.total_list_),
-      read_fds_(other.read_fds_),
+      total_list_(std::move(other.total_list_)),
+      read_fds_(std::move(other.read_fds_)),
       socket_max_{ other.socket_max_.load() },
       total_written_{ other.total_written_.load() },
       total_read_{ other.total_read_.load() },
@@ -200,11 +241,9 @@ Socket& Socket::operator=(Socket &&other) noexcept {
   port_ = util::exchange(other.port_, 0);
   is_loopback_only_ = util::exchange(other.is_loopback_only_, false);
   local_network_interface_ = util::exchange(other.local_network_interface_, {});
-  socket_file_descriptor_ = util::exchange(other.socket_file_descriptor_, INVALID_SOCKET);
-  total_list_ = other.total_list_;
-  FD_ZERO(&other.total_list_);
-  read_fds_ = other.read_fds_;
-  FD_ZERO(&other.read_fds_);
+  socket_file_descriptor_ = util::exchange(other.socket_file_descriptor_, SocketDescriptor::Invalid);
+  total_list_ = utils::exchange(other.total_list_, {});
+  read_fds_ = utils::exchange(other.read_fds_, {});
   socket_max_.exchange(other.socket_max_);
   other.socket_max_.exchange(0);
   total_written_.exchange(other.total_written_);
@@ -222,14 +261,14 @@ Socket::~Socket() {
 }
 
 void Socket::close() {
-  if (valid_socket(socket_file_descriptor_)) {
-    logging::LOG_DEBUG(logger_) << "Closing " << socket_file_descriptor_;
+  if (socket_file_descriptor_.isValid()) {
+    logging::LOG_DEBUG(logger_) << "Closing " << socket_file_descriptor_.value();
 #ifdef WIN32
-    closesocket(socket_file_descriptor_);
+    closesocket(socket_file_descriptor_.value());
 #else
-    ::close(socket_file_descriptor_);
+    ::close(socket_file_descriptor_.value());
 #endif
-    socket_file_descriptor_ = INVALID_SOCKET;
+    socket_file_descriptor_ = SocketDescriptor::Invalid;
   }
   if (total_written_ > 0) {
     local_network_interface_.log_write(gsl::narrow<uint32_t>(total_written_.load()));
@@ -241,6 +280,28 @@ void Socket::close() {
   }
 }
 
+#ifdef WIN32
+namespace {
+struct SocketInitializer {
+  SocketInitializer() {
+    static WSADATA s_wsaData;
+    const int iWinSockInitResult = WSAStartup(MAKEWORD(2, 2), &s_wsaData);
+    if (0 != iWinSockInitResult) {
+      throw std::runtime_error("Cannot start client");
+    }
+  }
+  ~SocketInitializer() noexcept {
+    WSACleanup();
+  }
+};
+}  // namespace
+void Socket::initialize_socket() {
+  static SocketInitializer initialized;
+}
+#else
+void Socket::initialize_socket() {}
+#endif /* WIN32 */
+
 void Socket::setNonBlocking() {
   if (listeners_ <= 0) {
     nonBlocking_ = true;
@@ -249,7 +310,8 @@ void Socket::setNonBlocking() {
 
 int8_t Socket::createConnection(const addrinfo* const destination_addresses) {
   for (const auto *current_addr = destination_addresses; current_addr; current_addr = current_addr->ai_next) {
-    if (!valid_socket(socket_file_descriptor_ = socket(current_addr->ai_family, current_addr->ai_socktype, current_addr->ai_protocol))) {
+    socket_file_descriptor_.value() = socket(current_addr->ai_family, current_addr->ai_socktype, current_addr->ai_protocol);
+    if (!socket_file_descriptor_.isValid()) {
       logger_->log_warn("socket: %s", get_last_socket_error_message());
       continue;
     }
@@ -257,14 +319,14 @@ int8_t Socket::createConnection(const addrinfo* const destination_addresses) {
 
     if (listeners_ > 0) {
       // server socket
-      const auto bind_result = bind(socket_file_descriptor_, current_addr->ai_addr, current_addr->ai_addrlen);
+      const auto bind_result = bind(socket_file_descriptor_.value(), current_addr->ai_addr, current_addr->ai_addrlen);
       if (bind_result == SOCKET_ERROR) {
         logger_->log_warn("bind: %s", get_last_socket_error_message());
         close();
         continue;
       }
 
-      const auto listen_result = listen(socket_file_descriptor_, listeners_);
+      const auto listen_result = listen(socket_file_descriptor_.value(), listeners_);
       if (listen_result == SOCKET_ERROR) {
         logger_->log_warn("listen: %s", get_last_socket_error_message());
         close();
@@ -282,7 +344,7 @@ int8_t Socket::createConnection(const addrinfo* const destination_addresses) {
       }
 #endif /* !WIN32 */
 
-      const auto connect_result = connect(socket_file_descriptor_, current_addr->ai_addr, current_addr->ai_addrlen);
+      const auto connect_result = connect(socket_file_descriptor_.value(), current_addr->ai_addr, current_addr->ai_addrlen);
       if (connect_result == SOCKET_ERROR) {
         logger_->log_warn("Couldn't connect to %s:%" PRIu16 ": %s", sockaddr_ntop(current_addr->ai_addr), port_, get_last_socket_error_message());
         close();
@@ -292,82 +354,11 @@ int8_t Socket::createConnection(const addrinfo* const destination_addresses) {
       logger_->log_info("Connected to %s:%" PRIu16, sockaddr_ntop(current_addr->ai_addr), port_);
     }
 
-    FD_SET(socket_file_descriptor_, &total_list_);
-    socket_max_ = socket_file_descriptor_;
+    total_list_.set(socket_file_descriptor_);
+    socket_max_ = socket_file_descriptor_.value();
     return 0;
   }
   return -1;
-}
-
-int8_t Socket::createConnection(const addrinfo *, ip4addr &addr) {
-  if (!valid_socket(socket_file_descriptor_ = socket(AF_INET, SOCK_STREAM, 0))) {
-    logger_->log_error("error while connecting to server socket");
-    return -1;
-  }
-
-  setSocketOptions(socket_file_descriptor_);
-
-  if (listeners_ > 0) {
-    // server socket
-    sockaddr_in sa{};
-    memset(&sa, 0, sizeof(struct sockaddr_in));
-    sa.sin_family = AF_INET;
-    sa.sin_port = htons(port_);
-    sa.sin_addr.s_addr = htonl(is_loopback_only_ ? INADDR_LOOPBACK : INADDR_ANY);
-    if (bind(socket_file_descriptor_, reinterpret_cast<const sockaddr*>(&sa), sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-      logger_->log_error("Could not bind to socket, reason %s", get_last_socket_error_message());
-      return -1;
-    }
-
-    if (listen(socket_file_descriptor_, listeners_) == -1) {
-      return -1;
-    }
-    logger_->log_debug("Created connection with %d listeners", listeners_);
-  } else {
-    // client socket
-#ifndef WIN32
-    if (!local_network_interface_.getInterface().empty()) {
-      const auto err = bind_to_local_network_interface(socket_file_descriptor_, local_network_interface_);
-      if (err) logger_->log_info("Bind to interface %s failed %s", local_network_interface_.getInterface(), err.message());
-      else logger_->log_info("Bind to interface %s", local_network_interface_.getInterface());
-    }
-#endif /* !WIN32 */
-    sockaddr_in sa_loc{};
-    memset(&sa_loc, 0x00, sizeof(sa_loc));
-    sa_loc.sin_family = AF_INET;
-    sa_loc.sin_port = htons(port_);
-    // use any address if you are connecting to the local machine for testing
-    // otherwise we must use the requested hostname
-    if (IsNullOrEmpty(requested_hostname_) || requested_hostname_ == "localhost") {
-      sa_loc.sin_addr.s_addr = htonl(is_loopback_only_ ? INADDR_LOOPBACK : INADDR_ANY);
-    } else {
-#ifdef WIN32
-      sa_loc.sin_addr.s_addr = addr.s_addr;
-    }
-    if (connect(socket_file_descriptor_, reinterpret_cast<const sockaddr*>(&sa_loc), sizeof(sockaddr_in)) == SOCKET_ERROR) {
-      int err = WSAGetLastError();
-      if (err == WSAEADDRNOTAVAIL) {
-        logger_->log_error("invalid or unknown IP");
-      } else if (err == WSAECONNREFUSED) {
-        logger_->log_error("Connection refused");
-      } else {
-        logger_->log_error("Unknown error");
-      }
-#else
-      sa_loc.sin_addr.s_addr = addr;
-    }
-    if (connect(socket_file_descriptor_, reinterpret_cast<const sockaddr *>(&sa_loc), sizeof(sockaddr_in)) < 0) {
-#endif /* WIN32 */
-      close();
-      return -1;
-    }
-  }
-
-  // add the listener to the total set
-  FD_SET(socket_file_descriptor_, &total_list_);
-  socket_max_ = socket_file_descriptor_;
-  logger_->log_debug("Created connection with file descriptor %d", socket_file_descriptor_);
-  return 0;
 }
 
 int Socket::initialize() {
@@ -395,7 +386,7 @@ int Socket::initialize() {
     logger_->log_error("getaddrinfo: %s", get_last_getaddrinfo_err_str(errcode));
     return -1;
   }
-  socket_file_descriptor_ = INVALID_SOCKET;
+  socket_file_descriptor_ = SocketDescriptor::Invalid;
 
   // AI_CANONNAME always sets ai_canonname of the first addrinfo structure
   canonical_hostname_ = !IsNullOrEmpty(addr_info->ai_canonname) ? addr_info->ai_canonname : requested_hostname_;
@@ -412,7 +403,7 @@ int Socket::initialize() {
 
 int16_t Socket::select_descriptor(const uint16_t msec) {
   if (listeners_ == 0) {
-    return socket_file_descriptor_;
+    return socket_file_descriptor_.value();
   }
 
   struct timeval tv{};
@@ -425,24 +416,24 @@ int16_t Socket::select_descriptor(const uint16_t msec) {
   std::lock_guard<std::recursive_mutex> guard(selection_mutex_);
 
   if (msec > 0)
-    select(socket_max_ + 1, &read_fds_, nullptr, nullptr, &tv);
+    select(socket_max_ + 1, read_fds_.get(), nullptr, nullptr, &tv);
   else
-    select(socket_max_ + 1, &read_fds_, nullptr, nullptr, nullptr);
+    select(socket_max_ + 1, read_fds_.get(), nullptr, nullptr, nullptr);
 
   for (int i = 0; i <= socket_max_; i++) {
-    if (FD_ISSET(i, &read_fds_)) {
-      if (i == socket_file_descriptor_) {
+    if (read_fds_.isSet(SocketDescriptor(i))) {
+      if (i == socket_file_descriptor_.value()) {
         if (listeners_ > 0) {
           struct sockaddr_storage remoteaddr;  // client address
           socklen_t addrlen = sizeof remoteaddr;
-          int newfd = accept(socket_file_descriptor_, (struct sockaddr *) &remoteaddr, &addrlen);
-          FD_SET(newfd, &total_list_);  // add to master set
+          int newfd = accept(socket_file_descriptor_.value(), (struct sockaddr *) &remoteaddr, &addrlen);
+          total_list_.set(SocketDescriptor(newfd));  // add to master set
           if (newfd > socket_max_) {    // keep track of the max
             socket_max_ = newfd;
           }
           return newfd;
         } else {
-          return socket_file_descriptor_;
+          return socket_file_descriptor_.value();
         }
         // we have a new connection
       } else {
@@ -461,30 +452,30 @@ int16_t Socket::setSocketOptions(const SocketDescriptor sock) {
   int opt = 1;
 #ifndef WIN32
 #ifndef __MACH__
-  if (setsockopt(sock, SOL_TCP, TCP_NODELAY, static_cast<void*>(&opt), sizeof(opt)) < 0) {
+  if (setsockopt(sock->value(), SOL_TCP, TCP_NODELAY, static_cast<void*>(&opt), sizeof(opt)) < 0) {
     logger_->log_error("setsockopt() TCP_NODELAY failed");
-    ::close(sock);
+    ::close(sock->value());
     return -1;
   }
-  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&opt), sizeof(opt)) < 0) {
+  if (setsockopt(sock->value(), SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&opt), sizeof(opt)) < 0) {
     logger_->log_error("setsockopt() SO_REUSEADDR failed");
-    ::close(sock);
+    ::close(sock->value());
     return -1;
   }
 
   int sndsize = 256 * 1024;
-  if (setsockopt(sock, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char *>(&sndsize), sizeof(sndsize)) < 0) {
+  if (setsockopt(sock->value(), SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char *>(&sndsize), sizeof(sndsize)) < 0) {
     logger_->log_error("setsockopt() SO_SNDBUF failed");
-    ::close(sock);
+    ::close(sock->value());
     return -1;
   }
 
 #else
   if (listeners_ > 0) {
     // lose the pesky "address already in use" error message
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&opt), sizeof(opt)) < 0) {
+    if (setsockopt(sock->value(), SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&opt), sizeof(opt)) < 0) {
       logger_->log_error("setsockopt() SO_REUSEADDR failed");
-      ::close(sock);
+      ::close(sock->value());
       return -1;
     }
   }
@@ -531,7 +522,7 @@ int Socket::read(uint8_t *buf, int buflen, bool retrieve_all_bytes) {
     if (fd < 0) {
       if (listeners_ <= 0) {
         logger_->log_debug("fd %d close %i", fd, buflen);
-        utils::file::FileUtils::close(socket_file_descriptor_);
+        utils::file::FileUtils::close(socket_file_descriptor_.value());
       }
       return -1;
     }
@@ -568,6 +559,16 @@ int Socket::read(uint8_t *buf, int buflen, bool retrieve_all_bytes) {
   }
   total_read_ += total_read;
   return total_read;
+}
+
+std::string Socket::init_hostname() {
+  initialize_socket();
+  char hostname[1024];
+  gethostname(hostname, 1024);
+  Socket mySock(nullptr, hostname, 0);
+  mySock.initialize();
+  const auto resolved_hostname = mySock.getHostname();
+  return !IsNullOrEmpty(resolved_hostname) ? resolved_hostname : hostname;
 }
 
 } /* namespace io */

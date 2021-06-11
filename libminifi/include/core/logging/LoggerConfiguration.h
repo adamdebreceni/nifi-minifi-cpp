@@ -27,12 +27,14 @@
 #include <mutex>
 #include <string>
 
-#include "spdlog/common.h"
-#include "spdlog/sinks/rotating_file_sink.h"
-#include "spdlog/sinks/sink.h"
-#include "spdlog/logger.h"
-#include "spdlog/formatter.h"
-#include "spdlog/pattern_formatter.h"
+namespace spdlog {
+class formatter;
+class logger;
+namespace sinks {
+class sink;
+}  // namespace sinks
+using sink_ptr = std::shared_ptr<sinks::sink>;
+}  // namespace spdlog
 
 #include "core/Core.h"
 #include "core/logging/Logger.h"
@@ -47,13 +49,13 @@ namespace logging {
 
 namespace internal {
 struct LoggerNamespace {
-  spdlog::level::level_enum level;
+  LOG_LEVEL level;
   bool has_level;
   std::vector<std::shared_ptr<spdlog::sinks::sink>> sinks;
   std::map<std::string, std::shared_ptr<LoggerNamespace>> children;
 
   LoggerNamespace()
-      : level(spdlog::level::off),
+      : level(LOG_LEVEL::off),
         has_level(false),
         sinks(std::vector<std::shared_ptr<spdlog::sinks::sink>>()),
         children(std::map<std::string, std::shared_ptr<LoggerNamespace>>()) {
