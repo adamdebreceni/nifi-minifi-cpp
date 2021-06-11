@@ -44,10 +44,7 @@ namespace nifi {
 namespace minifi {
 namespace io {
 
-#ifdef WIN32
-#else
-#undef INVALID_SOCKET
-static constexpr SocketDescriptor INVALID_SOCKET = -1;
+#ifndef WIN32
 #undef SOCKET_ERROR
 static constexpr int SOCKET_ERROR = -1;
 #endif /* WIN32 */
