@@ -103,6 +103,16 @@ uint16_t ClassLoader::registerResource(const std::string &resource, const std::s
   return RESOURCE_SUCCESS;
 }
 
+ClassLoader::~ClassLoader() {
+  for (auto& initializer : initializers_) {
+    initializer->deinitialize();
+  }
+  loaded_factories_.clear();
+  for (auto ptr : dl_handles_) {
+    dlclose(ptr);
+  }
+}
+
 #ifdef WIN32
 
 void ClassLoader::store_error() {

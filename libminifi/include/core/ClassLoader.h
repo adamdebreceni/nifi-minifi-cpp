@@ -235,15 +235,7 @@ class ClassLoader {
    */
   ClassLoader();
 
-  ~ClassLoader() {
-    for (auto& initializer : initializers_) {
-      initializer->deinitialize();
-    }
-    loaded_factories_.clear();
-    for (auto ptr : dl_handles_) {
-      dlclose(ptr);
-    }
-  }
+  ~ClassLoader();
 
   /**
    * Sets the class loader
