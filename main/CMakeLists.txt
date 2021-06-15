@@ -46,9 +46,6 @@ if (NOT USE_SHARED_LIBS)
 endif(NOT USE_SHARED_LIBS)
 target_link_libraries(minifiexe Threads::Threads)
 
-target_wholearchive_library(minifiexe core-minifi)
-target_wholearchive_library(minifiexe minifi)
-
 target_link_libraries(minifiexe yaml-cpp)
 if(NOT WIN32 AND ENABLE_JNI AND NOT DISABLE_JEMALLOC)
 	target_link_libraries(minifiexe JeMalloc::JeMalloc)
@@ -67,11 +64,7 @@ if (NOT USE_SHARED_LIBS)
 endif(NOT USE_SHARED_LIBS)
 
 get_property(extensions GLOBAL PROPERTY EXTENSION-OPTIONS)
-foreach(EXTENSION ${extensions})
-	message("Linking MiNiFiMain against ${EXTENSION}")
-	target_wholearchive_library(minifiexe ${EXTENSION})
-endforeach()
-
+target_link_libraries(minifiexe spdlog libsodium gsl-lite optional-lite ${LIBMINIFI})
 set_target_properties(minifiexe PROPERTIES OUTPUT_NAME minifi)
 set_target_properties(minifiexe PROPERTIES ENABLE_EXPORTS True)
 

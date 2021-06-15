@@ -30,8 +30,7 @@ include_directories(${TENSORFLOW_INCLUDE_DIRS})
 
 file(GLOB SOURCES  "*.cpp")
 
-add_library(minifi-tensorflow-extensions STATIC ${SOURCES})
-set_property(TARGET minifi-tensorflow-extensions PROPERTY POSITION_INDEPENDENT_CODE ON)
+add_library(minifi-tensorflow-extensions SHARED ${SOURCES})
 
 target_link_libraries(minifi-tensorflow-extensions ${LIBMINIFI} Threads::Threads)
 target_link_libraries(minifi-tensorflow-extensions ${TENSORFLOW_LIBRARIES})

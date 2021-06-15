@@ -65,7 +65,7 @@ build_git_project(opencv-external "${BASE_DIR}" "https://github.com/opencv/openc
         -DWITH_WEBP=OFF
         -DWITH_TIFF=OFF)
 
-add_library(minifi-opencv STATIC ${SOURCES})
+add_library(minifi-opencv SHARED ${SOURCES})
 
 target_link_libraries(minifi-opencv ${LIBMINIFI})
 

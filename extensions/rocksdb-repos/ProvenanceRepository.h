@@ -24,6 +24,8 @@
 #include "core/Core.h"
 #include "provenance/Provenance.h"
 #include "core/logging/LoggerConfiguration.h"
+#include "core/Resource.h"
+
 namespace org {
 namespace apache {
 namespace nifi {
@@ -233,6 +235,8 @@ class ProvenanceRepository : public core::Repository, public std::enable_shared_
   std::unique_ptr<rocksdb::DB> db_;
   std::shared_ptr<logging::Logger> logger_;
 };
+
+REGISTER_INTERNAL_RESOURCE_AS(ProvenanceRepository, ("ProvenanceRepository", "provenancerepository"));
 
 } /* namespace provenance */
 } /* namespace minifi */

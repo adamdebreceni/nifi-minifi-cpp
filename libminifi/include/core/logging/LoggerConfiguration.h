@@ -38,6 +38,8 @@
 #include "core/logging/Logger.h"
 #include "properties/Properties.h"
 
+class LogTestController;
+
 namespace org {
 namespace apache {
 namespace nifi {
@@ -92,6 +94,7 @@ class LoggerProperties : public Properties {
 };
 
 class LoggerConfiguration {
+  friend class ::LogTestController;
  public:
   /**
    * Gets the current log configuration
@@ -138,6 +141,8 @@ class LoggerConfiguration {
   static spdlog::sink_ptr create_fallback_sink();
 
   static std::shared_ptr<internal::LoggerNamespace> create_default_root();
+
+  static std::shared_ptr<spdlog::logger> getSpdlogLogger(const std::string& name);
 
   class LoggerImpl : public Logger {
    public:

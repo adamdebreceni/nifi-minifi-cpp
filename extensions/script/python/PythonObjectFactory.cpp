@@ -15,13 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "core/FlowConfiguration.h"
-#include "ExpressionLoader.h"
+#include "PythonObjectFactory.h"
 
-bool ExpressionObjectFactory::added = core::FlowConfiguration::add_static_func("createExpressionFactory");
-extern "C" {
-void *createExpressionFactory(void) {
-  return new ExpressionObjectFactory();
-}
-
+PyProcCreator *PyProcCreator::getPythonCreator() {
+  static PyProcCreator python_the_creator;
+  return &python_the_creator;
 }

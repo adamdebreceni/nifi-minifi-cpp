@@ -26,7 +26,6 @@
 #include "blocks/file_blocks.h"
 #include "blocks/comms.h"
 #include "core/processors.h"
-#include "HTTPCurlLoader.h"
 #include "python_lib.h"
 
 

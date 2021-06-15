@@ -1,5 +1,4 @@
 /**
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -15,9 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "PyProcCreator.h"
 
-PyProcCreator *PyProcCreator::getPythonCreator() {
-  static PyProcCreator python_the_creator;
-  return &python_the_creator;
-}
+#pragma once
+
+#include <memory>
+#include <vector>
+#include "properties/Configure.h"
+
+#ifndef WIN32
+#define DLL_EXPORT
+#else
+#define DLL_EXPORT __declspec(dllexport)
+#endif
+
+extern "C" DLL_EXPORT bool initializeExtension(const std::shared_ptr<org::apache::nifi::minifi::Configure>& config);
+extern "C" DLL_EXPORT void deinitializeExtension();

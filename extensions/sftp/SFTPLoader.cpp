@@ -15,11 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "SFTPLoader.h"
-#include "core/FlowConfiguration.h"
+
+#include "core/extension/ExtensionInterface.h"
 #include "client/SFTPClient.h"
 
-bool SFTPFactoryInitializer::initialize() {
+extern "C" bool initializeExtension(const std::shared_ptr<org::apache::nifi::minifi::Configure>& /*config*/) {
   if (libssh2_init(0) != 0) {
     return false;
   }
@@ -30,18 +30,7 @@ bool SFTPFactoryInitializer::initialize() {
   return true;
 }
 
-void SFTPFactoryInitializer::deinitialize() {
+extern "C" void deinitializeExtension() {
   curl_global_cleanup();
   libssh2_exit();
-}
-
-
-bool SFTPFactory::added = core::FlowConfiguration::add_static_func("createSFTPFactory");
-
-extern "C" {
-
-void *createSFTPFactory(void) {
-  return new SFTPFactory();
-}
-
 }

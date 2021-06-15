@@ -578,7 +578,6 @@ add_subdirectory(nanofi)
 add_dependencies(nanofi minifiexe)
 
 add_subdirectory(encrypt-config)
-add_dependencies(encrypt-config minifi)
 
 if (NOT DISABLE_CURL AND NOT DISABLE_CONTROLLER)
 	add_subdirectory(controller)

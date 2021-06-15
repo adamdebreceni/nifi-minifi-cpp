@@ -94,6 +94,8 @@ class ConvertJSONAck : public ConvertBase {
   std::shared_ptr<logging::Logger> logger_;
 };
 
+REGISTER_INTERNAL_RESOURCE(ConvertJSONAck);
+
 } /* namespace processors */
 } /* namespace minifi */
 } /* namespace nifi */

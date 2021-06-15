@@ -76,7 +76,8 @@ class RocksDbPersistableKeyValueStoreService : public AbstractAutoPersistingKeyV
   std::shared_ptr<logging::Logger> logger_;
 };
 
-REGISTER_RESOURCE(RocksDbPersistableKeyValueStoreService, "A key-value service implemented by RocksDB");
+REGISTER_RESOURCE_AS(RocksDbPersistableKeyValueStoreService, "A key-value service implemented by RocksDB",
+                     ("RocksDbPersistableKeyValueStoreService", "rocksdbpersistablekeyvaluestoreservice"));
 
 } /* namespace controllers */
 } /* namespace minifi */

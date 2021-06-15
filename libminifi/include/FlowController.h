@@ -202,7 +202,6 @@ class FlowController : public core::controller::ForwardingControllerServiceProvi
  protected:
   // function to load the flow file repo.
   void loadFlowRepo();
-  void initializeExternalComponents();
 
   utils::optional<std::chrono::milliseconds> loadShutdownTimeoutFromConfiguration();
 
