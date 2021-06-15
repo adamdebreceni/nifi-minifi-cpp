@@ -158,6 +158,10 @@ std::shared_ptr<Logger> LoggerConfiguration::getLogger(const std::string &name, 
   return result;
 }
 
+std::shared_ptr<spdlog::logger> LoggerConfiguration::getSpdlogLogger(const std::string& name) {
+  return spdlog::get(name);
+}
+
 std::shared_ptr<internal::LoggerNamespace> LoggerConfiguration::initialize_namespaces(const std::shared_ptr<LoggerProperties> &logger_properties) {
   std::map<std::string, std::shared_ptr<spdlog::sinks::sink>> sink_map = logger_properties->initial_sinks();
 

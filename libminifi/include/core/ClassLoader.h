@@ -37,6 +37,7 @@
 #endif
 #include "core/Core.h"
 #include "io/BufferStream.h"
+#include "ObjectFactory.h"
 
 namespace org {
 namespace apache {
@@ -55,182 +56,6 @@ namespace core {
 #define RTLD_GLOBAL (1 << 1)
 #define RTLD_LOCAL  (1 << 2)
 #endif
-
-/**
- * Class used to provide a global initialization and deinitialization function for an ObjectFactory.
- * Calls to instances of all ObjectFactoryInitializers are done under a unique lock.
- */
-class ObjectFactoryInitializer {
- public:
-  virtual ~ObjectFactoryInitializer() = default;
-
-  /**
-   * This function is be called before the ObjectFactory is used.
-   * @return whether the initialization was successful. If false, deinitialize will NOT be called.
-   */
-  virtual bool initialize() = 0;
-
-  /**
-   * This function will be called after the ObjectFactory is not needed anymore.
-   */
-  virtual void deinitialize() = 0;
-};
-
-/**
- * Factory that is used as an interface for
- * creating processors from shared objects.
- */
-class ObjectFactory {
- public:
-  ObjectFactory(const std::string &group) // NOLINT
-      : group_(group) {
-  }
-
-  ObjectFactory() = default;
-
-  /**
-   * Virtual destructor.
-   */
-  virtual ~ObjectFactory() = default;
-
-  /**
-   * Create a shared pointer to a new processor.
-   */
-  virtual std::shared_ptr<CoreComponent> create(const std::string& /*name*/) {
-    return nullptr;
-  }
-
-  /**
-   * Create a shared pointer to a new processor.
-   */
-  virtual CoreComponent *createRaw(const std::string& /*name*/) {
-    return nullptr;
-  }
-
-  /**
-   * Create a shared pointer to a new processor.
-   */
-  virtual std::shared_ptr<CoreComponent> create(const std::string& /*name*/, const utils::Identifier& /*uuid*/) {
-    return nullptr;
-  }
-
-  /**
-   * Create a shared pointer to a new processor.
-   */
-  virtual CoreComponent* createRaw(const std::string& /*name*/, const utils::Identifier& /*uuid*/) {
-    return nullptr;
-  }
-
-  /**
-   * Returns an initializer for the factory.
-   */
-  virtual std::unique_ptr<ObjectFactoryInitializer> getInitializer() {
-    return nullptr;
-  }
-
-  /**
-   * Gets the name of the object.
-   * @return class name of processor
-   */
-  virtual std::string getName() = 0;
-
-  virtual std::string getGroupName() const {
-    return group_;
-  }
-
-  virtual std::string getClassName() = 0;
-  /**
-   * Gets the class name for the object
-   * @return class name for the processor.
-   */
-  virtual std::vector<std::string> getClassNames() = 0;
-
-  virtual std::unique_ptr<ObjectFactory> assign(const std::string &class_name) = 0;
-
- private:
-  std::string group_;
-};
-/**
- * Factory that is used as an interface for
- * creating processors from shared objects.
- */
-template<class T>
-class DefautObjectFactory : public ObjectFactory {
- public:
-  DefautObjectFactory() {
-    className = core::getClassName<T>();
-  }
-
-  DefautObjectFactory(const std::string &group_name) // NOLINT
-      : ObjectFactory(group_name) {
-    className = core::getClassName<T>();
-  }
-  /**
-   * Virtual destructor.
-   */
-  virtual ~DefautObjectFactory() = default;
-
-  /**
-   * Create a shared pointer to a new processor.
-   */
-  virtual std::shared_ptr<CoreComponent> create(const std::string &name) {
-    std::shared_ptr<T> ptr = std::make_shared<T>(name);
-    return std::static_pointer_cast<CoreComponent>(ptr);
-  }
-
-  /**
-   * Create a shared pointer to a new processor.
-   */
-  virtual std::shared_ptr<CoreComponent> create(const std::string &name, const utils::Identifier &uuid) {
-    std::shared_ptr<T> ptr = std::make_shared<T>(name, uuid);
-    return std::static_pointer_cast<CoreComponent>(ptr);
-  }
-
-  /**
-   * Create a shared pointer to a new processor.
-   */
-  virtual CoreComponent* createRaw(const std::string &name) {
-    T *ptr = new T(name);
-    return dynamic_cast<CoreComponent*>(ptr);
-  }
-
-  /**
-   * Create a shared pointer to a new processor.
-   */
-  virtual CoreComponent* createRaw(const std::string &name, const utils::Identifier &uuid) {
-    T *ptr = new T(name, uuid);
-    return dynamic_cast<CoreComponent*>(ptr);
-  }
-
-  /**
-   * Gets the name of the object.
-   * @return class name of processor
-   */
-  virtual std::string getName() {
-    return className;
-  }
-
-  /**
-   * Gets the class name for the object
-   * @return class name for the processor.
-   */
-  virtual std::string getClassName() {
-    return className;
-  }
-
-  virtual std::vector<std::string> getClassNames() {
-    std::vector<std::string> container;
-    container.push_back(className);
-    return container;
-  }
-
-  virtual std::unique_ptr<ObjectFactory> assign(const std::string& /*class_name*/) {
-    return nullptr;
-  }
-
- protected:
-  std::string className;
-};
 
 /**
  * Function that is used to create the
@@ -263,32 +88,13 @@ class ClassLoader {
   }
 
   /**
-   * Sets the class loader
-   * @param name name of class loader
-   * @param loader loader unique ptr
-   * @return result of insertion
-   */
-  bool setClassLoader(const std::string &name, std::unique_ptr<ClassLoader> loader) {
-    if (nullptr != getClassLoader(name)) {
-      throw std::runtime_error("Cannot have more than one classloader with the same name");
-    }
-    std::lock_guard<std::mutex> lock(internal_mutex_);
-    // return validation that we inserted the class loader
-    return class_loaders_.insert(std::make_pair(name, std::move(loader))).second;
-  }
-
-  /**
    * Retrieves a class loader
    * @param name name of class loader
-   * @return class loader ptr if it exists, nullptr if it does not
+   * @return class loader reference
    */
-  ClassLoader *getClassLoader(const std::string &name) {
+  ClassLoader& getClassLoader(const std::string& name) {
     std::lock_guard<std::mutex> lock(internal_mutex_);
-    auto cld = class_loaders_.find(name);
-    if (cld != class_loaders_.end()) {
-      cld->second.get();
-    }
-    return nullptr;
+    return class_loaders_[name];
   }
 
   /**
@@ -304,7 +110,10 @@ class ClassLoader {
   void registerClass(const std::string &name, std::unique_ptr<ObjectFactory> factory) {
     std::lock_guard<std::mutex> lock(internal_mutex_);
     if (loaded_factories_.find(name) != loaded_factories_.end()) {
+      logger_->log_error("Class '%s' is already registered", name);
       return;
+    } else {
+      logger_->log_error("Registering class '%s'", name);
     }
 
     auto initializer = factory->getInitializer();
@@ -323,6 +132,16 @@ class ClassLoader {
     class_to_group_[name] = group_name;
 
     loaded_factories_.insert(std::make_pair(name, std::move(factory)));
+  }
+
+  void unregisterClass(const std::string& name) {
+    std::lock_guard<std::mutex> lock(internal_mutex_);
+    if (loaded_factories_.erase(name) == 0) {
+      logger_->log_error("Could not unregister non-registered class '%s'", name);
+      return;
+    } else {
+      logger_->log_error("Unregistered class '%s'", name);
+    }
   }
 
   std::vector<std::string> getClasses(const std::string &group) {
@@ -365,15 +184,6 @@ class ClassLoader {
   /**
    * Instantiate object based on class_name
    * @param class_name class to create
-   * @param make_shared_ptr creates a shared ptr of the given type name
-   * @return nullptr, object created from class_name definition, or make_shared of T
-   */
-  template<class T>
-  std::shared_ptr<T> instantiate(const std::string &class_name, bool make_shared_ptr = true);
-
-  /**
-   * Instantiate object based on class_name
-   * @param class_name class to create
    * @param uuid uuid of object
    * @return nullptr or object created from class_name definition.
    */
@@ -397,15 +207,6 @@ class ClassLoader {
    */
   template<class T = CoreComponent>
   T *instantiateRaw(const std::string &class_name, const std::string &name);
-
-  /**
-   * Instantiate object based on class_name
-   * @param class_name class to create
-   * @param uuid uuid of object
-   * @return nullptr or object created from class_name definition.
-   */
-  template<class T = CoreComponent>
-  T *instantiateRaw(const std::string &class_name, const utils::Identifier &uuid);
 
  protected:
 #ifdef WIN32
@@ -535,72 +336,66 @@ class ClassLoader {
 
   std::map<std::string, std::string> class_to_group_;
 
-  // other class loaders
-
-  std::map<std::string, std::unique_ptr<ClassLoader>> class_loaders_;
+  std::map<std::string, ClassLoader> class_loaders_;
 
   std::mutex internal_mutex_;
 
   std::vector<void *> dl_handles_;
 
   std::vector<std::unique_ptr<ObjectFactoryInitializer>> initializers_;
-};
 
-template<class T>
-std::shared_ptr<T> ClassLoader::instantiate(const std::string &class_name, bool make_shared_ptr) {
-  const auto ret = instantiate<T>(class_name, class_name);
-  if (nullptr == ret && make_shared_ptr) {
-    return std::make_shared<T>(class_name);
-  }
-  return ret;
-}
+  std::shared_ptr<logging::Logger> logger_;
+};
 
 template<class T>
 std::shared_ptr<T> ClassLoader::instantiate(const std::string &class_name, const std::string &name) {
   std::lock_guard<std::mutex> lock(internal_mutex_);
+  // allow subsequent classes to override functionality (like ProcessContextBuilder)
+  for (auto& child_loader : class_loaders_) {
+    if (auto result = child_loader.second.instantiate<T>(class_name, name)) {
+      return result;
+    }
+  }
   auto factory_entry = loaded_factories_.find(class_name);
   if (factory_entry != loaded_factories_.end()) {
     auto obj = factory_entry->second->create(name);
     return std::dynamic_pointer_cast<T>(obj);
-  } else {
-    return nullptr;
   }
+  return nullptr;
 }
 
 template<class T>
 std::shared_ptr<T> ClassLoader::instantiate(const std::string &class_name, const utils::Identifier &uuid) {
   std::lock_guard<std::mutex> lock(internal_mutex_);
+  // allow subsequent classes to override functionality (like ProcessContextBuilder)
+  for (auto& child_loader : class_loaders_) {
+    if (auto result = child_loader.second.instantiate<T>(class_name, uuid)) {
+      return result;
+    }
+  }
   auto factory_entry = loaded_factories_.find(class_name);
   if (factory_entry != loaded_factories_.end()) {
     auto obj = factory_entry->second->create(class_name, uuid);
     return std::dynamic_pointer_cast<T>(obj);
-  } else {
-    return nullptr;
   }
+  return nullptr;
 }
 
 template<class T>
 T *ClassLoader::instantiateRaw(const std::string &class_name, const std::string &name) {
   std::lock_guard<std::mutex> lock(internal_mutex_);
+  // allow subsequent classes to override functionality (like ProcessContextBuilder)
+  for (auto& child_loader : class_loaders_) {
+    if (auto* result = child_loader.second.instantiateRaw<T>(class_name, name)) {
+      return result;
+    }
+  }
   auto factory_entry = loaded_factories_.find(class_name);
   if (factory_entry != loaded_factories_.end()) {
     auto obj = factory_entry->second->createRaw(name);
     return dynamic_cast<T*>(obj);
-  } else {
-    return nullptr;
   }
-}
-
-template<class T>
-T *ClassLoader::instantiateRaw(const std::string &class_name, const utils::Identifier& uuid) {
-  std::lock_guard<std::mutex> lock(internal_mutex_);
-  auto factory_entry = loaded_factories_.find(class_name);
-  if (factory_entry != loaded_factories_.end()) {
-    auto obj = factory_entry->second->createRaw(class_name, uuid);
-    return dynamic_cast<T*>(obj);
-  } else {
-    return nullptr;
-  }
+  return nullptr;
 }
 
 }  // namespace core

@@ -27,6 +27,7 @@
 #include "core/logging/LoggerConfiguration.h"
 #include "database/RocksDatabase.h"
 #include "core/ContentSession.h"
+#include "core/Resource.h"
 
 namespace org {
 namespace apache {
@@ -103,6 +104,8 @@ class DatabaseContentRepository : public core::ContentRepository, public core::C
   std::unique_ptr<minifi::internal::RocksDatabase> db_;
   std::shared_ptr<logging::Logger> logger_;
 };
+
+REGISTER_INTERNAL_RESOURCE_AS(DatabaseContentRepository, ("DatabaseContentRepository", "databasecontentrepository"));
 
 } /* namespace repository */
 } /* namespace core */

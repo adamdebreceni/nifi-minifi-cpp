@@ -40,13 +40,9 @@ file(GLOB NANOFI_ECU_SOURCES "ecu/*.c")
 include(CppVersion)
 set_cpp_version()
 
-add_library(nanofi STATIC ${NANOFI_SOURCES})
+add_library(nanofi SHARED ${NANOFI_SOURCES})
 
-target_link_libraries(nanofi spdlog ut)
-target_wholearchive_library(nanofi core-minifi)
-target_wholearchive_library(nanofi minifi)
-target_wholearchive_library(nanofi minifi-standard-processors)
-
+target_link_libraries(nanofi spdlog ut core-minifi minifi-standard-processors)
 
 if (ENABLE_PYTHON AND NOT STATIC_BUILD)
 

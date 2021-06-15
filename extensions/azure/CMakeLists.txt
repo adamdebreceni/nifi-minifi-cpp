@@ -21,7 +21,7 @@ include(${CMAKE_SOURCE_DIR}/extensions/ExtensionHeader.txt)
 
 file(GLOB SOURCES "*.cpp" "storage/*.cpp" "controllerservices/*.cpp" "processors/*.cpp")
 
-add_library(minifi-azure STATIC ${SOURCES})
+add_library(minifi-azure SHARED ${SOURCES})
 
 target_compile_features(minifi-azure PUBLIC cxx_std_14)
 

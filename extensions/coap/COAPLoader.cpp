@@ -15,17 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "core/FlowConfiguration.h"
+ 
 #include "core/logging/LoggerConfiguration.h"
-#include "COAPLoader.h"
+#include "core/extension/ExtensionInterface.h"
 
 #ifdef WIN32
 #include <winsock2.h>
 #endif
 
-bool COAPObjectFactory::added = core::FlowConfiguration::add_static_func("createCOAPFactory");
-
-bool COAPObjectFactoryInitializer::initialize() {
+extern "C" bool initializeExtension(const std::shared_ptr<org::apache::nifi::minifi::Configure>& /*config*/) {
 #ifdef WIN32
   static WSADATA s_wsaData;
   int iWinSockInitResult = WSAStartup(MAKEWORD(2, 2), &s_wsaData);
@@ -40,18 +38,8 @@ bool COAPObjectFactoryInitializer::initialize() {
 #endif
 }
 
-void COAPObjectFactoryInitializer::deinitialize() {
+extern "C" void deinitializeExtension() {
 #ifdef WIN32
   WSACleanup();
 #endif
-}
-
-extern "C" {
-
-
-
-void *createCOAPFactory(void) {
-  return new COAPObjectFactory();
-}
-
 }

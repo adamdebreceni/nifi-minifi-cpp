@@ -1,5 +1,4 @@
 /**
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -15,15 +14,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "core/FlowConfiguration.h"
-#include "SQLLoader.h"
 
-static auto added = core::FlowConfiguration::add_static_func("createSQLFactory");
+#pragma once
 
-extern "C" {
+#include <memory>
 
-void *createSQLFactory(void) {
-  return new SQLFactory();
-}
+#include "core/logging/Logger.h"
+#include "Extension.h"
+#include "properties/Configure.h"
 
-}
+namespace org {
+namespace apache {
+namespace nifi {
+namespace minifi {
+namespace core {
+namespace extension {
+
+static constexpr const char* nifi_extension_directory = "nifi.extension.directory";
+
+class ExtensionManager {
+  ExtensionManager();
+
+  static ExtensionManager &instance();
+
+ public:
+  static bool initialize(const std::shared_ptr<Configure>& config);
+
+ private:
+  std::vector<std::unique_ptr<Extension>> extensions_;
+
+  static std::shared_ptr<logging::Logger> logger_;
+};
+
+}  // namespace extension
+}  // namespace core
+}  // namespace minifi
+}  // namespace nifi
+}  // namespace apache
+}  // namespace org

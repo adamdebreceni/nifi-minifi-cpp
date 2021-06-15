@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include "core/ClassLoader.h"
+#include "core/logging/LoggerConfiguration.h"
 
 namespace org {
 namespace apache {
@@ -25,7 +26,8 @@ namespace nifi {
 namespace minifi {
 namespace core {
 
-ClassLoader::ClassLoader() = default;
+ClassLoader::ClassLoader()
+  : logger_(logging::LoggerFactory<ClassLoader>::getLogger()) {}
 
 ClassLoader &ClassLoader::getDefaultClassLoader() {
   static ClassLoader ret;

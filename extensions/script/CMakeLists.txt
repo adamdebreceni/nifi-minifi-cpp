@@ -26,8 +26,7 @@ endif()
 
 file(GLOB SOURCES  "ExecuteScript.cpp" "ScriptFlowFile.cpp" "ScriptProcessContext.cpp" "${OTHER_SOURCES}")
 
-add_library(minifi-script-extensions STATIC ${SOURCES})
-set_property(TARGET minifi-script-extensions PROPERTY POSITION_INDEPENDENT_CODE ON)
+add_library(minifi-script-extensions SHARED ${SOURCES})
 
 target_link_libraries(minifi-script-extensions ${LIBMINIFI} Threads::Threads)
 

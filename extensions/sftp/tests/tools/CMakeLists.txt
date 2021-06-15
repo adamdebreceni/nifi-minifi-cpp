@@ -27,7 +27,7 @@ target_include_directories(sftp-test-tools BEFORE PRIVATE "${CMAKE_SOURCE_DIR}/l
 target_include_directories(sftp-test-tools BEFORE PRIVATE "${CMAKE_SOURCE_DIR}/libminifi/include/core")
 target_include_directories(sftp-test-tools BEFORE PRIVATE "${CMAKE_SOURCE_DIR}/libminifi/include/io")
 
-target_link_libraries(sftp-test-tools minifi)
+target_link_libraries(sftp-test-tools core-minifi)
 
 set(SFTP_TEST_SERVER_JAR_SOURCE "${CMAKE_SOURCE_DIR}/extensions/sftp/tests/tools/sftp-test-server")
 set(SFTP_TEST_SERVER_JAR_BIN "${CMAKE_CURRENT_BINARY_DIR}/" )

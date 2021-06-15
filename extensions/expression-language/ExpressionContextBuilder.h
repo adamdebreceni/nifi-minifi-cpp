@@ -48,6 +48,8 @@ class ExpressionContextBuilder : public core::ProcessContextBuilder {
   std::shared_ptr<core::ProcessContext> build(const std::shared_ptr<ProcessorNode> &processor) override;
 };
 
+REGISTER_INTERNAL_RESOURCE_AS(ExpressionContextBuilder, ("ProcessContextBuilder"));
+
 } /* namespace expressions */
 } /* namespace core */
 } /* namespace minifi */
