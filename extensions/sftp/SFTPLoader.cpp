@@ -16,21 +16,27 @@
  * limitations under the License.
  */
 
-#include "core/extension/ExtensionInterface.h"
+#include "core/extension/Extension.h"
 #include "client/SFTPClient.h"
 
-extern "C" bool initializeExtension(const std::shared_ptr<org::apache::nifi::minifi::Configure>& /*config*/) {
-  if (libssh2_init(0) != 0) {
-    return false;
+class SFTPExtension : core::extension::Extension {
+ public:
+  using Extension::Extension;
+  bool doInitialize(const std::shared_ptr<org::apache::nifi::minifi::Configure>& /*config*/) override {
+    if (libssh2_init(0) != 0) {
+      return false;
+    }
+    if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK) {
+      libssh2_exit();
+      return false;
+    }
+    return true;
   }
-  if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK) {
-    libssh2_exit();
-    return false;
-  }
-  return true;
-}
 
-extern "C" void deinitializeExtension() {
-  curl_global_cleanup();
-  libssh2_exit();
-}
+  void doDeinitialize() override {
+    curl_global_cleanup();
+    libssh2_exit();
+  }
+};
+
+REGISTER_EXTENSION(SFTPExtension);

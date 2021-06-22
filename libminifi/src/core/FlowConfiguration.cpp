@@ -60,7 +60,6 @@ FlowConfiguration::FlowConfiguration(
     }
   }
 
-  initialize_static_functions();
   extension::ExtensionManager::initialize(configuration_);
 }
 

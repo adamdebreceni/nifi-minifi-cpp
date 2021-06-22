@@ -15,8 +15,13 @@
  * limitations under the License.
  */
 
+#include <memory>
+#include <dlfcn.h>
+
+#include "core/extension/DynamicLibrary.h"
 #include "core/extension/Extension.h"
-#include "core/extension/ExtensionManager.h"
+#include "utils/GeneralUtils.h"
+#include "core/logging/LoggerConfiguration.h"
 
 namespace org {
 namespace apache {
@@ -25,12 +30,35 @@ namespace minifi {
 namespace core {
 namespace extension {
 
-Extension::Extension(std::string name, ExtensionInit init): name_(std::move(name)), init_(init) {
-  ExtensionManager::instance().registerExtension(this);
+std::shared_ptr<logging::Logger> DynamicLibrary::logger_ = logging::LoggerFactory<DynamicLibrary>::getLogger();
+
+DynamicLibrary::DynamicLibrary(std::string name, std::string library_path)
+  : Module(std::move(name)),
+    library_path_(std::move(library_path)) {
 }
 
-Extension::~Extension() {
-  ExtensionManager::instance().unregisterExtension(this);
+bool DynamicLibrary::load() {
+  dlerror();
+  handle_ = dlopen(library_path_.c_str(), RTLD_NOW | RTLD_LOCAL);
+  if (!handle_) {
+    logger_->log_error("Failed to load extension '%s' at '%s': %s", name_, library_path_, dlerror());
+    return false;
+  } else {
+    logger_->log_info("Loaded extension '%s' at '%s'", name_, library_path_);
+    return true;
+  }
+}
+
+DynamicLibrary::~DynamicLibrary() {
+  if (!handle_) {
+    return;
+  }
+  dlerror();
+  if (dlclose(handle_)) {
+    logger_->log_error("Failed to unload extension '%s' at '%': %s", name_, library_path_, dlerror());
+  } else {
+    logger_->log_info("Unloaded extension '%s' at '%s'", name_, library_path_);
+  }
 }
 
 }  // namespace extension

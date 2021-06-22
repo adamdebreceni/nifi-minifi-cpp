@@ -17,7 +17,3 @@
  */
 #include "PythonObjectFactory.h"
 
-PyProcCreator *PyProcCreator::getPythonCreator() {
-  static PyProcCreator python_the_creator;
-  return &python_the_creator;
-}

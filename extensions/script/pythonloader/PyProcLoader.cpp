@@ -15,19 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "core/extension/ExtensionInterface.h"
+#include "core/extension/Extension.h"
 #include "PythonCreator.h"
 
-static minifi::python::PythonCreator& getPythonCreator() {
-  static minifi::python::PythonCreator instance("PythonCreator");
-  return instance;
-}
+class PythonExtension : core::extension::Extension {
+  static minifi::python::PythonCreator& getPythonCreator() {
+    static minifi::python::PythonCreator instance("PythonCreator");
+    return instance;
+  }
+ public:
+  using Extension::Extension;
+  bool doInitialize(const std::shared_ptr<minifi::Configure>& config) override {
+    getPythonCreator().configure(config);
+    return true;
+  }
 
-extern "C" bool initializeExtension(const std::shared_ptr<minifi::Configure>& config) {
-  getPythonCreator().configure(config);
-  return true;
-}
+  void doDeinitialize() override {
+    // TODO(adebreceni)
+  }
+};
 
-extern "C" void deinitializeExtension() {
-  // TODO(adebreceni)
-}
+REGISTER_EXTENSION(PythonExtension);
+

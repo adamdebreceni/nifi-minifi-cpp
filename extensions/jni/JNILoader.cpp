@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include "core/extension/ExtensionInterface.h"
+#include "core/extension/Extension.h"
 #include "JVMCreator.h"
 
 namespace minifi = org::apache::nifi::minifi;
@@ -26,11 +26,17 @@ static minifi::jni::JVMCreator& getJVMCreator() {
   return instance;
 }
 
-extern "C" bool initializeExtension(const std::shared_ptr<org::apache::nifi::minifi::Configure>& config) {
-  getJVMCreator().configure(config);
-  return true;
-}
+class JNIExtension : core::extension::Extension {
+ public:
+  using Extension::Extension;
+  bool doInitialize(const std::shared_ptr<org::apache::nifi::minifi::Configure>& config) override {
+    getJVMCreator().configure(config);
+    return true;
+  }
 
-extern "C" void deinitializeExtension() {
-  // TODO(adebreceni)
-}
+  void doDeinitialize() override {
+    // TODO(adebreceni)
+  }
+};
+
+REGISTER_EXTENSION(JNIExtension);

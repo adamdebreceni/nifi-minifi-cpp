@@ -18,6 +18,7 @@
 
 #include "./TestBase.h"
 #include "utils/IntegrationTestUtils.h"
+#include "core/extension/ExtensionManager.h"
 
 #include "spdlog/spdlog.h"
 
@@ -447,3 +448,7 @@ void TestPlan::validateAnnotations() const {
   }
 }
 
+static bool extensionInitializer = [] {
+  core::extension::ExtensionManager::initialize({});
+  return true;
+}();

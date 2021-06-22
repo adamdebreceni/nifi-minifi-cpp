@@ -188,7 +188,7 @@ class ComponentManifest : public DeviceInformation {
                 bgroup.value = GROUP_STR;
                 SerializedResponseNode artifact;
                 artifact.name = "artifact";
-                artifact.value = core::ClassLoader::getDefaultClassLoader().getGroupForClass(type);
+                artifact.value = core::ClassLoader::getDefaultClassLoader().getGroupForClass(type).value_or("");
                 allowed_type.children.push_back(typeNode);
                 allowed_type.children.push_back(bgroup);
                 allowed_type.children.push_back(artifact);

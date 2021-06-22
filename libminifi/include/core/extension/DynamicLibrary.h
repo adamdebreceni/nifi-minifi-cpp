@@ -19,9 +19,7 @@
 
 #include <memory>
 
-#include "core/logging/Logger.h"
-#include "DynamicLibrary.h"
-#include "properties/Configure.h"
+#include "Module.h"
 
 namespace org {
 namespace apache {
@@ -30,23 +28,18 @@ namespace minifi {
 namespace core {
 namespace extension {
 
-static constexpr const char* nifi_extension_directory = "nifi.extension.directory";
-
-class ExtensionManager {
-  ExtensionManager();
+class DynamicLibrary : public Module {
+  friend class ExtensionManager;
 
  public:
-  static ExtensionManager &instance();
-
-  static bool initialize(const std::shared_ptr<Configure>& config);
-
-  void registerExtension(Extension* extension);
-  void unregisterExtension(Extension* extension);
+  DynamicLibrary(std::string name, std::string library_path);
+  ~DynamicLibrary() override;
 
  private:
-  std::vector<std::unique_ptr<Module>> modules_;
+  bool load();
 
-  Module* active_module_;
+  std::string library_path_;
+  gsl::owner<void*> handle_ = nullptr;
 
   static std::shared_ptr<logging::Logger> logger_;
 };

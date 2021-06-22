@@ -1,5 +1,4 @@
 /**
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -15,30 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <dirent.h>
-#include "api/nanofi.h"
-#include "blocks/file_blocks.h"
-#include "blocks/comms.h"
-#include "core/processors.h"
-#include "python_lib.h"
 
+#ifdef WIN32
+#pragma comment(lib, "wldap32.lib" )
+#pragma comment(lib, "crypt32.lib" )
+#pragma comment(lib, "Ws2_32.lib")
 
-
-#ifdef __cplusplus
-extern "C" {
+#define CURL_STATICLIB
+#include <curl/curl.h>
 #endif
 
+#include "core/extension/Extension.h"
 
-int init_api(const char * /*resource*/) {
-  return 0;
-}
+#include "client/HTTPClient.h"
 
-#ifdef __cplusplus
-}
-#endif
+class HttpCurlExtension : core::extension::Extension {
+ public:
+  using Extension::Extension;
+  bool doInitialize(const core::extension::ExtensionConfig& /*config*/) override {
+    return curl_global_init(CURL_GLOBAL_DEFAULT) == CURLE_OK;
+  }
+  void doDeinitialize() override {
+    curl_global_cleanup();
+  }
+};
+
+REGISTER_EXTENSION(HttpCurlExtension);

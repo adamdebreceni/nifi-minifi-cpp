@@ -35,54 +35,6 @@ ClassLoader &ClassLoader::getDefaultClassLoader() {
   return ret;
 }
 
-uint16_t ClassLoader::registerResource(const std::string &resource, const std::string &resourceFunction) {
-  void *resource_ptr = nullptr;
-  if (resource.empty()) {
-    dlclose(dlopen(0, RTLD_LAZY | RTLD_GLOBAL));
-    resource_ptr = dlopen(0, RTLD_NOW | RTLD_GLOBAL);
-  } else {
-    dlclose(dlopen(resource.c_str(), RTLD_LAZY | RTLD_GLOBAL));
-    resource_ptr = dlopen(resource.c_str(), RTLD_NOW | RTLD_GLOBAL);
-  }
-  if (!resource_ptr) {
-    return RESOURCE_FAILURE;
-  } else {
-    std::lock_guard<std::mutex> lock(internal_mutex_);
-    dl_handles_.push_back(resource_ptr);
-  }
-
-  // reset errors
-  dlerror();
-
-  // load the symbols
-  createFactory* create_factory_func = reinterpret_cast<createFactory*>(dlsym(resource_ptr, resourceFunction.c_str()));
-  const char* dlsym_error = dlerror();
-  if ((dlsym_error != nullptr && strlen(dlsym_error) > 0) || create_factory_func == nullptr) {
-    return RESOURCE_FAILURE;
-  }
-
-  ObjectFactory *factory = create_factory_func();
-
-  std::lock_guard<std::mutex> lock(internal_mutex_);
-
-  auto initializer = factory->getInitializer();
-  if (initializer != nullptr) {
-    if (!initializer->initialize()) {
-      delete factory;
-      return RESOURCE_FAILURE;
-    }
-    initializers_.emplace_back(std::move(initializer));
-  }
-
-  for (auto class_name : factory->getClassNames()) {
-    loaded_factories_[class_name] = std::unique_ptr<ObjectFactory>(factory->assign(class_name));
-  }
-
-  delete factory;
-
-  return RESOURCE_SUCCESS;
-}
-
 } /* namespace core */
 } /* namespace minifi */
 } /* namespace nifi */

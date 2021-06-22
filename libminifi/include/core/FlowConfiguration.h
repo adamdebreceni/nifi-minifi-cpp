@@ -123,30 +123,9 @@ class FlowConfiguration : public CoreComponent {
     return service_provider_;
   }
 
-  static bool add_static_func(std::string functor) {
-    std::lock_guard<std::mutex> lock(get_static_functions().atomic_initialization_);
-    get_static_functions().statics_sl_funcs_.push_back(functor);
-    return true;
-  }
-
-  static void initialize_static_functions() {
-    std::lock_guard<std::mutex> lock(get_static_functions().atomic_initialization_);
-    for (auto sl_func : get_static_functions().statics_sl_funcs_) {
-      core::ClassLoader::getDefaultClassLoader().registerResource("", sl_func);
-    }
-  }
-
   utils::ChecksumCalculator& getChecksumCalculator() { return checksum_calculator_; }
 
  protected:
-  void registerResource(const std::string &resource_function) {
-    core::ClassLoader::getDefaultClassLoader().registerResource("", resource_function);
-  }
-
-  void registerResource(const std::string &resource_location, const std::string &resource_function) {
-    core::ClassLoader::getDefaultClassLoader().registerResource(resource_location, resource_function);
-  }
-
   // service provider reference.
   std::shared_ptr<core::controller::StandardControllerServiceProvider> service_provider_;
   // based, shared controller service map.

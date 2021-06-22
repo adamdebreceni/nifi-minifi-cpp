@@ -18,10 +18,12 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 #include "core/logging/Logger.h"
-#include "DynamicLibrary.h"
+#include "utils/gsl.h"
 #include "properties/Configure.h"
+#include "Extension.h"
 
 namespace org {
 namespace apache {
@@ -30,23 +32,30 @@ namespace minifi {
 namespace core {
 namespace extension {
 
-static constexpr const char* nifi_extension_directory = "nifi.extension.directory";
+/**
+ * Represents an initializable component of the agent.
+ */
+class Module {
+  friend class ExtensionManager;
 
-class ExtensionManager {
-  ExtensionManager();
+ protected:
+  explicit Module(std::string name);
 
  public:
-  static ExtensionManager &instance();
-
-  static bool initialize(const std::shared_ptr<Configure>& config);
+  virtual ~Module();
 
   void registerExtension(Extension* extension);
-  void unregisterExtension(Extension* extension);
+  bool unregisterExtension(Extension* extension);
 
  private:
-  std::vector<std::unique_ptr<Module>> modules_;
+  bool initialize(const std::shared_ptr<Configure>& config);
 
-  Module* active_module_;
+ protected:
+  std::string name_;
+
+  std::mutex mtx_;
+  bool initialized_{false};
+  std::vector<Extension*> extensions_;
 
   static std::shared_ptr<logging::Logger> logger_;
 };

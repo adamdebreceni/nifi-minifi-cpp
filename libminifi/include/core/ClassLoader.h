@@ -77,16 +77,6 @@ class ClassLoader {
    */
   ClassLoader();
 
-  ~ClassLoader() {
-    for (auto& initializer : initializers_) {
-      initializer->deinitialize();
-    }
-    loaded_factories_.clear();
-    for (auto ptr : dl_handles_) {
-      dlclose(ptr);
-    }
-  }
-
   /**
    * Retrieves a class loader
    * @param name name of class loader
@@ -98,13 +88,6 @@ class ClassLoader {
   }
 
   /**
-   * Register the file system resource.
-   * This will attempt to load objects within this resource.
-   * @return return code: RESOURCE_FAILURE or RESOURCE_SUCCESS
-   */
-  uint16_t registerResource(const std::string &resource, const std::string &resourceName);
-
-  /**
    * Register a class with the give ProcessorFactory
    */
   void registerClass(const std::string &name, std::unique_ptr<ObjectFactory> factory) {
@@ -112,25 +95,8 @@ class ClassLoader {
     if (loaded_factories_.find(name) != loaded_factories_.end()) {
       logger_->log_error("Class '%s' is already registered", name);
       return;
-    } else {
-      logger_->log_error("Registering class '%s'", name);
     }
-
-    auto initializer = factory->getInitializer();
-    if (initializer != nullptr) {
-      initializer->initialize();
-      initializers_.emplace_back(std::move(initializer));
-    }
-
-    auto canonical_name = factory->getClassName();
-
-    auto group_name = factory->getGroupName();
-
-    module_mapping_[group_name].push_back(canonical_name);
-    if (canonical_name != name)
-      class_to_group_[canonical_name] = group_name;
-    class_to_group_[name] = group_name;
-
+    logger_->log_error("Registering class '%s'", name);
     loaded_factories_.insert(std::make_pair(name, std::move(factory)));
   }
 
@@ -144,41 +110,35 @@ class ClassLoader {
     }
   }
 
-  std::vector<std::string> getClasses(const std::string &group) {
+  std::vector<std::string> getClasses(const std::string &group) const {
     std::lock_guard<std::mutex> lock(internal_mutex_);
-    return module_mapping_[group];
-  }
-
-  std::vector<std::string> getGroups() {
-    std::vector<std::string> groups;
-    std::lock_guard<std::mutex> lock(internal_mutex_);
-    for (auto & resource : loaded_factories_) {
-      groups.push_back(resource.first);
-    }
-    return groups;
-  }
-
-  std::vector<std::string> getClasses() {
-    std::vector<std::string> groups;
-    std::lock_guard<std::mutex> lock(internal_mutex_);
-    for (auto & resource : loaded_factories_) {
-      if (nullptr != resource.second) {
-        auto classes = resource.second->getClassNames();
-        groups.insert(groups.end(), classes.begin(), classes.end());
-      } else {
+    std::vector<std::string> classes;
+    for (const auto& child_loader : class_loaders_) {
+      for (auto&& clazz : child_loader.second.getClasses(group)) {
+        classes.push_back(std::move(clazz));
       }
     }
-    return groups;
+    for (const auto& factory : loaded_factories_) {
+      if (factory.second->getGroupName() == group) {
+        classes.push_back(factory.second->getClassName());
+      }
+    }
+    return classes;
   }
 
-  std::string getGroupForClass(const std::string &class_name) {
+  utils::optional<std::string> getGroupForClass(const std::string &class_name) const {
     std::lock_guard<std::mutex> lock(internal_mutex_);
-    auto factory_entry = class_to_group_.find(class_name);
-    if (factory_entry != class_to_group_.end()) {
-      return factory_entry->second;
-    } else {
-      return "";
+    for (const auto& child_loader : class_loaders_) {
+      utils::optional<std::string> group = child_loader.second.getGroupForClass(class_name);
+      if (group) {
+        return group;
+      }
     }
+    auto factory = loaded_factories_.find(class_name);
+    if (factory != loaded_factories_.end()) {
+      return factory->second->getGroupName();
+    }
+    return {};
   }
 
   /**
@@ -330,19 +290,11 @@ class ClassLoader {
 
 #endif
 
-  std::map<std::string, std::vector<std::string>> module_mapping_;
-
   std::map<std::string, std::unique_ptr<ObjectFactory>> loaded_factories_;
-
-  std::map<std::string, std::string> class_to_group_;
 
   std::map<std::string, ClassLoader> class_loaders_;
 
-  std::mutex internal_mutex_;
-
-  std::vector<void *> dl_handles_;
-
-  std::vector<std::unique_ptr<ObjectFactoryInitializer>> initializers_;
+  mutable std::mutex internal_mutex_;
 
   std::shared_ptr<logging::Logger> logger_;
 };
