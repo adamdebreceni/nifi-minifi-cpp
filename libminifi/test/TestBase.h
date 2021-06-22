@@ -54,6 +54,7 @@
 #include "core/state/nodes/FlowInformation.h"
 #include "utils/ClassUtils.h"
 #include "Path.h"
+#include "LogUtils.h"
 
 class LogTestController {
  public:
@@ -119,7 +120,7 @@ class LogTestController {
 
   template<typename T>
   void setLevel(spdlog::level::level_enum level) {
-    logging::LoggerFactory<T>::getLogger();
+    //logging::LoggerFactory<T>::getLogger();
     std::string name = core::getClassName<T>();
     if (config)
       config->getLogger(name);
@@ -183,7 +184,8 @@ class LogTestController {
     stream.clear();
   }
 
-  std::ostringstream log_output;
+  std::shared_ptr<std::ostringstream> log_output_ptr = std::make_shared<std::ostringstream>();
+  std::ostringstream& log_output = *log_output_ptr;
 
   std::shared_ptr<logging::Logger> logger_;
 
@@ -203,7 +205,7 @@ class LogTestController {
     my_properties_->set("logger." + core::getClassName<LogTestController>(), "INFO");
     my_properties_->set("logger." + core::getClassName<logging::LoggerConfiguration>(), "INFO");
     std::shared_ptr<spdlog::sinks::dist_sink_mt> dist_sink = std::make_shared<spdlog::sinks::dist_sink_mt>();
-    dist_sink->add_sink(std::make_shared<spdlog::sinks::ostream_sink_mt>(log_output, true));
+    dist_sink->add_sink(std::make_shared<StringStreamSink>(log_output_ptr, true));
     dist_sink->add_sink(std::make_shared<spdlog::sinks::stderr_sink_mt>());
     my_properties_->add_sink("ostream", dist_sink);
     if (initMain) {
@@ -393,7 +395,6 @@ class TestController {
  public:
   TestController()
       : log(LogTestController::getInstance()) {
-    core::FlowConfiguration::initialize_static_functions();
     minifi::setDefaultDirectory("./");
     log.reset();
     utils::IdGenerator::getIdGenerator()->initialize(std::make_shared<minifi::Properties>());

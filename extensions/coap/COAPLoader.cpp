@@ -15,31 +15,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #include "core/logging/LoggerConfiguration.h"
-#include "core/extension/ExtensionInterface.h"
+#include "core/extension/Extension.h"
 
 #ifdef WIN32
 #include <winsock2.h>
 #endif
 
-extern "C" bool initializeExtension(const std::shared_ptr<org::apache::nifi::minifi::Configure>& /*config*/) {
-#ifdef WIN32
-  static WSADATA s_wsaData;
-  int iWinSockInitResult = WSAStartup(MAKEWORD(2, 2), &s_wsaData);
-  if (iWinSockInitResult != 0) {
-    logging::LoggerFactory<COAPObjectFactoryInitializer>::getLogger()->log_error("WSAStartup failed with error %d", iWinSockInitResult);
-    return false;
-  } else {
-    return true;
-  }
-#else
-  return true;
-#endif
-}
+class CoapExtension : public core::extension::Extension {
+ public:
+  using Extension::Extension;
 
-extern "C" void deinitializeExtension() {
+  bool doInitialize(const std::shared_ptr<org::apache::nifi::minifi::Configure> & /*config*/) override {
 #ifdef WIN32
-  WSACleanup();
+    static WSADATA s_wsaData;
+    int iWinSockInitResult = WSAStartup(MAKEWORD(2, 2), &s_wsaData);
+    if (iWinSockInitResult != 0) {
+      logging::LoggerFactory<COAPObjectFactoryInitializer>::getLogger()->log_error("WSAStartup failed with error %d", iWinSockInitResult);
+      return false;
+    } else {
+      return true;
+    }
+#else
+    return true;
 #endif
-}
+  }
+
+  void doDeinitialize() override {
+#ifdef WIN32
+    WSACleanup();
+#endif
+  }
+};
+
+REGISTER_EXTENSION(CoapExtension);

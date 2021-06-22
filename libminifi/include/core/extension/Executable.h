@@ -17,11 +17,7 @@
 
 #pragma once
 
-#include <memory>
-
-#include "core/logging/Logger.h"
-#include "DynamicLibrary.h"
-#include "properties/Configure.h"
+#include "Module.h"
 
 namespace org {
 namespace apache {
@@ -30,25 +26,10 @@ namespace minifi {
 namespace core {
 namespace extension {
 
-static constexpr const char* nifi_extension_directory = "nifi.extension.directory";
-
-class ExtensionManager {
-  ExtensionManager();
-
+class Executable : public Module {
  public:
-  static ExtensionManager &instance();
-
-  static bool initialize(const std::shared_ptr<Configure>& config);
-
-  void registerExtension(Extension* extension);
-  void unregisterExtension(Extension* extension);
-
- private:
-  std::vector<std::unique_ptr<Module>> modules_;
-
-  Module* active_module_;
-
-  static std::shared_ptr<logging::Logger> logger_;
+  Executable(): Module("executable") {}
+  ~Executable() override = default;
 };
 
 }  // namespace extension

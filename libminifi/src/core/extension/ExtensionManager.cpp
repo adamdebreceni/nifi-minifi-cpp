@@ -18,6 +18,7 @@
 #include "core/extension/ExtensionManager.h"
 #include "core/logging/LoggerConfiguration.h"
 #include "utils/file/FileUtils.h"
+#include "core/extension/Executable.h"
 
 namespace org {
 namespace apache {
@@ -63,7 +64,10 @@ static utils::optional<LibraryDescriptor> asDynamicLibrary(const std::string& di
 
 std::shared_ptr<logging::Logger> ExtensionManager::logger_ = logging::LoggerFactory<ExtensionManager>::getLogger();
 
-ExtensionManager::ExtensionManager() = default;
+ExtensionManager::ExtensionManager() {
+  modules_.push_back(utils::make_unique<Executable>());
+  active_module_ = modules_[0].get();
+}
 
 ExtensionManager& ExtensionManager::instance() {
   static ExtensionManager instance;
@@ -73,7 +77,9 @@ ExtensionManager& ExtensionManager::instance() {
 bool ExtensionManager::initialize(const std::shared_ptr<Configure>& config) {
   static bool initialized = ([&] {
     logger_->log_debug("Initializing extensions");
-    utils::optional<std::string> dir = config->get(nifi_extension_directory);
+    // initialize executable
+    instance().active_module_->initialize(config);
+    utils::optional<std::string> dir = config ? config->get(nifi_extension_directory) : utils::nullopt;
     if (!dir) return;
     std::vector<LibraryDescriptor> libraries;
     utils::file::FileUtils::list_dir(dir.value(), [&] (const std::string& path, const std::string& filename) {
@@ -84,16 +90,28 @@ bool ExtensionManager::initialize(const std::shared_ptr<Configure>& config) {
       return true;
     }, logger_, false);
     for (const auto& library : libraries) {
-      if (auto extension = Extension::load(library.name, library.getFullPath())) {
-        if (!extension->initialize(config)) {
-          logger_->log_error("Failed to initialize extension '%s' at '%s'", library.name, library.getFullPath());
-        } else {
-          instance().extensions_.push_back(std::move(extension));
-        }
+      auto module = utils::make_unique<DynamicLibrary>(library.name, library.getFullPath());
+      instance().active_module_ = module.get();
+      if (module->initialize(config)) {
+        logger_->log_error("Failed to initialize module '%s' at '%s'", library.name, library.getFullPath());
+      } else {
+        instance().modules_.push_back(std::move(module));
       }
     }
   }(), true);
   return initialized;
+}
+
+void ExtensionManager::registerExtension(Extension *extension) {
+  active_module_->registerExtension(extension);
+}
+
+void ExtensionManager::unregisterExtension(Extension *extension) {
+  for (const auto& module : modules_) {
+    if (module->unregisterExtension(extension)) {
+      return;
+    }
+  }
 }
 
 }  // namespace extension

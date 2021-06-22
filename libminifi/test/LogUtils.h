@@ -17,15 +17,33 @@
 
 #pragma once
 
+#include <sstream>
 #include <memory>
-#include <vector>
-#include "properties/Configure.h"
 
-#ifndef WIN32
-#define DLL_EXPORT
-#else
-#define DLL_EXPORT __declspec(dllexport)
-#endif
+#include "spdlog/sinks/sink.h"
+#include "spdlog/sinks/ostream_sink.h"
 
-extern "C" DLL_EXPORT bool initializeExtension(const std::shared_ptr<org::apache::nifi::minifi::Configure>& config);
-extern "C" DLL_EXPORT void deinitializeExtension();
+class StringStreamSink : public spdlog::sinks::sink {
+ public:
+  StringStreamSink(std::shared_ptr<std::ostringstream> stream, bool force_flush = false)
+    : stream_(std::move(stream)), sink_(*stream_, force_flush) {}
+
+  ~StringStreamSink() override = default;
+
+  void log(const spdlog::details::log_msg &msg) override {
+    sink_.log(msg);
+  }
+  void flush() override {
+    sink_.flush();
+  }
+  void set_pattern(const std::string &pattern) override {
+    sink_.set_pattern(pattern);
+  }
+  void set_formatter(std::unique_ptr<spdlog::formatter> sink_formatter) override {
+    sink_.set_formatter(std::move(sink_formatter));
+  }
+
+ private:
+  std::shared_ptr<std::ostringstream> stream_;
+  spdlog::sinks::ostream_sink_mt sink_;
+};

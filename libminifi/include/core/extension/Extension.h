@@ -18,11 +18,8 @@
 #pragma once
 
 #include <memory>
-
-#include "core/logging/Logger.h"
-#include "utils/gsl.h"
+#include <vector>
 #include "properties/Configure.h"
-#include "ExtensionInterface.h"
 
 namespace org {
 namespace apache {
@@ -31,29 +28,63 @@ namespace minifi {
 namespace core {
 namespace extension {
 
-class Extension {
-  friend class ExtensionManager;
-  Extension(std::string name, std::string library_path, gsl::owner<void*> handle);
+class Extension;
 
+using ExtensionConfig = std::shared_ptr<org::apache::nifi::minifi::Configure>;
+using ExtensionInit = bool(*)(Extension*, const ExtensionConfig&);
+
+class ExtensionInitializer;
+
+class Extension {
+  friend class ExtensionInitializer;
  public:
-  ~Extension();
+  explicit Extension(std::string name, ExtensionInit init);
+  virtual ~Extension();
+
+  bool initialize(const ExtensionConfig& config) {
+    return init_(this, config);
+  }
+
+  const std::string& getName() const {
+    return name_;
+  }
+
+ protected:
+  virtual bool doInitialize(const ExtensionConfig& /*config*/) {
+    return true;
+  }
+
+  virtual void doDeinitialize() {}
 
  private:
-  static std::unique_ptr<Extension> load(std::string name, std::string library_path);
-
-  bool initialize(const std::shared_ptr<Configure>& config);
-
   std::string name_;
-  std::string library_path_;
-  gsl::owner<void*> handle_;
-
-  std::atomic_bool initialized_{false};
-  std::mutex mtx_;
-  std::decay<decltype(initializeExtension)>::type initializer_;
-  std::decay<decltype(deinitializeExtension)>::type deinitializer_;
-
-  static std::shared_ptr<logging::Logger> logger_;
+  ExtensionInit init_;
 };
+
+class ExtensionInitializer {
+ public:
+  explicit ExtensionInitializer(Extension* extension, const ExtensionConfig& config): extension_(extension) {
+    if (!extension_->doInitialize(config)) {
+      throw std::runtime_error("Failed to initialize extension");
+    }
+  }
+  ~ExtensionInitializer() {
+    extension_->doDeinitialize();
+  }
+
+ private:
+  Extension* extension_;
+};
+
+#define REGISTER_EXTENSION(clazz) \
+  static clazz extension_registrar(#clazz, [](org::apache::nifi::minifi::core::extension::Extension* extension, const org::apache::nifi::minifi::core::extension::ExtensionConfig& config) -> bool { \
+    try {                             \
+      static org::apache::nifi::minifi::core::extension::ExtensionInitializer initializer(extension, config);                                                  \
+      return true; \
+    } catch (...) {                   \
+      return false;                                  \
+    }                                 \
+  })
 
 }  // namespace extension
 }  // namespace core
