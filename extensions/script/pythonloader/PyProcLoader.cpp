@@ -17,6 +17,7 @@
  */
 #include "core/extension/Extension.h"
 #include "PythonCreator.h"
+#include "PythonBindings.h"
 
 class PythonExtension : core::extension::Extension {
   static minifi::python::PythonCreator& getPythonCreator() {

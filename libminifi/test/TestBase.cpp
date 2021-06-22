@@ -449,6 +449,8 @@ void TestPlan::validateAnnotations() const {
 }
 
 static bool extensionInitializer = [] {
+  LogTestController::getInstance().setTrace<core::extension::ExtensionManager>();
+  LogTestController::getInstance().setTrace<core::extension::Module>();
   core::extension::ExtensionManager::initialize({});
   return true;
 }();
