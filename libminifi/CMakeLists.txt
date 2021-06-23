@@ -77,8 +77,9 @@ file(GLOB PROCESSOR_SOURCES  "src/processors/*.cpp" )
 
 add_library(core-minifi SHARED ${SOURCES})
 if(WIN32)
-        add_dependencies(core-minifi message-strings)
-        target_include_directories(core-minifi PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/include")
+	set_target_properties(core-minifi PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+	add_dependencies(core-minifi message-strings)
+	target_include_directories(core-minifi PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/include")
 endif()
 
 if(NOT EXCLUDE_BOOST)
