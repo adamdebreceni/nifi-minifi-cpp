@@ -25,6 +25,11 @@
 #include <Psapi.h>
 #pragma comment(lib, "psapi.lib" )
 #define DLL_EXPORT __declspec(dllexport)
+#define RTLD_LAZY   0
+#define RTLD_NOW    0
+
+#define RTLD_GLOBAL (1 << 1)
+#define RTLD_LOCAL  (1 << 2)
 #endif
 
 #include "core/extension/DynamicLibrary.h"
