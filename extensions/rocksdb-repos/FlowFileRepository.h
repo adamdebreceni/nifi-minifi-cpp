@@ -29,6 +29,7 @@
 #include "core/logging/LoggerConfiguration.h"
 #include "concurrentqueue.h"
 #include "database/RocksDatabase.h"
+#include "core/Resource.h"
 
 namespace org {
 namespace apache {
