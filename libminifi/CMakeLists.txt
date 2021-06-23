@@ -112,3 +112,7 @@ if (ENABLE_PYTHON AND NOT STATIC_BUILD)
 		set_target_properties(minifi-shared PROPERTIES LINK_FLAGS "${LINK_FLAGS} /WHOLEARCHIVE:core-minifi-shared")
 	endif()
 endif(ENABLE_PYTHON AND NOT STATIC_BUILD)
+
+if (NOT WIN32)
+	install(TARGETS core-minifi LIBRARY DESTINATION lib COMPONENT bin)
+endif()

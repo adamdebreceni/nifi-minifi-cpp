@@ -75,3 +75,7 @@ else()
 #add_custom_command(TARGET minifiexe POST_BUILD
 #           COMMAND type ${CMAKE_BINARY_DIR}/all.log)
 endif()
+
+if (NOT WIN32)
+	install(TARGETS minifiexe RUNTIME DESTINATION bin COMPONENT bin)
+endif()

@@ -772,9 +772,9 @@ if(WIN32)
 			#DESTINATION bin
 			#COMPONENT bin)
 else()
-	install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/main/minifi
-			DESTINATION bin
-			COMPONENT bin)
+#	install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/main/minifi
+#			DESTINATION bin
+#			COMPONENT bin)
 endif()
 
 
