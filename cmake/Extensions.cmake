@@ -29,6 +29,13 @@ macro(register_extension extension-name)
   set_target_properties(${extension-name} PROPERTIES
           ENABLE_EXPORTS True
           POSITION_INDEPENDENT_CODE ON)
+  if (NOT WIN32)
+    install(
+        TARGETS ${extension-name}
+        LIBRARY DESTINATION extensions
+        COMPONENT bin
+    )
+  endif()
 endmacro()
 
 ### TESTING MACROS
