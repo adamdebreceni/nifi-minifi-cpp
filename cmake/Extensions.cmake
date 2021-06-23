@@ -29,6 +29,14 @@ macro(register_extension extension-name)
   set_target_properties(${extension-name} PROPERTIES
           ENABLE_EXPORTS True
           POSITION_INDEPENDENT_CODE ON)
+  if (WIN32)
+    set_target_properties(${extension-name} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests")
+  else()
+    set_target_properties(${extension-name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests")
+  endif()
+
   if (NOT WIN32)
     install(
         TARGETS ${extension-name}

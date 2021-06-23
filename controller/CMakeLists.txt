@@ -38,7 +38,9 @@ foreach(EXTENSION ${extensions})
 	target_wholearchive_library(minificontroller ${EXTENSION})
 endforeach()
 
-set_target_properties(minificontroller PROPERTIES OUTPUT_NAME minificontroller)
+set_target_properties(minificontroller PROPERTIES
+		OUTPUT_NAME minificontroller
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 install(TARGETS minificontroller
         RUNTIME

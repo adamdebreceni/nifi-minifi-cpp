@@ -68,6 +68,7 @@ target_link_libraries(minifiexe spdlog libsodium gsl-lite optional-lite ${LIBMIN
 if (WIN32)
 	set_target_properties(minifiexe PROPERTIES LINK_FLAGS "${LINK_FLAGS} /WHOLEARCHIVE:core-minifi")
 endif()
+set_target_properties(minifiexe PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set_target_properties(minifiexe PROPERTIES OUTPUT_NAME minifi)
 set_target_properties(minifiexe PROPERTIES ENABLE_EXPORTS True)
 

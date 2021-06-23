@@ -81,6 +81,8 @@ function(createTests testName)
         target_link_libraries(${testName} ${Boost_SYSTEM_LIBRARY})
         target_link_libraries(${testName} ${Boost_FILESYSTEM_LIBRARY})
     endif()
+
+  set_target_properties(${testName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests")
 endfunction()
 
 enable_testing(test)

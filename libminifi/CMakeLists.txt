@@ -80,6 +80,11 @@ if(WIN32)
 	set_target_properties(core-minifi PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 	add_dependencies(core-minifi message-strings)
 	target_include_directories(core-minifi PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/include")
+	set_target_properties(core-minifi PROPERTIES
+			RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+			ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+else()
+	set_target_properties(core-minifi PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 endif()
 
 if(NOT EXCLUDE_BOOST)
@@ -115,5 +120,5 @@ if (ENABLE_PYTHON AND NOT STATIC_BUILD)
 endif(ENABLE_PYTHON AND NOT STATIC_BUILD)
 
 if (NOT WIN32)
-	install(TARGETS core-minifi LIBRARY DESTINATION lib COMPONENT bin)
+	install(TARGETS core-minifi LIBRARY DESTINATION bin COMPONENT bin)
 endif()
