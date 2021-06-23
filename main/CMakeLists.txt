@@ -65,7 +65,9 @@ endif(NOT USE_SHARED_LIBS)
 
 get_property(extensions GLOBAL PROPERTY EXTENSION-OPTIONS)
 target_link_libraries(minifiexe spdlog libsodium gsl-lite optional-lite ${LIBMINIFI})
-set_target_properties(minifiexe PROPERTIES LINK_FLAGS "${LINK_FLAGS} /WHOLEARCHIVE:core-minifi")
+if (WIN32)
+	set_target_properties(minifiexe PROPERTIES LINK_FLAGS "${LINK_FLAGS} /WHOLEARCHIVE:core-minifi")
+endif()
 set_target_properties(minifiexe PROPERTIES OUTPUT_NAME minifi)
 set_target_properties(minifiexe PROPERTIES ENABLE_EXPORTS True)
 
