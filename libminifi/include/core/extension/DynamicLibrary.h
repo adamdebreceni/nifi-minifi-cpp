@@ -36,6 +36,19 @@ class DynamicLibrary : public Module {
   ~DynamicLibrary() override;
 
  private:
+#ifdef WIN32
+  std::map<void*, std::string> resource_mapping_;
+
+  std::string error_str_;
+  std::string current_error_;
+
+  void store_error();
+  void* dlsym(void* handle, const char* name);
+  const char* dlerror();
+  void* dlopen(const char* file, int mode);
+  int dlclose(void* handle);
+#endif
+
   bool load();
 
   std::string library_path_;
