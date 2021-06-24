@@ -34,6 +34,7 @@
 #include "core/Resource.h"
 #include "core/logging/LoggerConfiguration.h"
 #include "utils/Enum.h"
+#include "utils/Export.h"
 
 namespace org {
 namespace apache {
@@ -89,21 +90,21 @@ class TailFile : public core::Processor {
   ~TailFile() override = default;
 
   // Processor Name
-  static constexpr char const* ProcessorName = "TailFile";
+  EXTENSIONAPI static constexpr char const* ProcessorName = "TailFile";
 
   // Supported Properties
-  static core::Property FileName;
-  static core::Property StateFile;
-  static core::Property Delimiter;
-  static core::Property TailMode;
-  static core::Property BaseDirectory;
-  static core::Property RecursiveLookup;
-  static core::Property LookupFrequency;
-  static core::Property RollingFilenamePattern;
-  static core::Property InitialStartPosition;
+  EXTENSIONAPI static core::Property FileName;
+  EXTENSIONAPI static core::Property StateFile;
+  EXTENSIONAPI static core::Property Delimiter;
+  EXTENSIONAPI static core::Property TailMode;
+  EXTENSIONAPI static core::Property BaseDirectory;
+  EXTENSIONAPI static core::Property RecursiveLookup;
+  EXTENSIONAPI static core::Property LookupFrequency;
+  EXTENSIONAPI static core::Property RollingFilenamePattern;
+  EXTENSIONAPI static core::Property InitialStartPosition;
 
   // Supported Relationships
-  static core::Relationship Success;
+  EXTENSIONAPI static core::Relationship Success;
 
   /**
    * Function that's executed when the processor is scheduled.

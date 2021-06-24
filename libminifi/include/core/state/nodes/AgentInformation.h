@@ -64,6 +64,7 @@
 #include "utils/OsUtils.h"
 #include "utils/ProcessCpuUsageTracker.h"
 #include "core/AgentIdentificationProvider.h"
+#include "utils/Export.h"
 
 namespace org {
 namespace apache {
@@ -548,8 +549,8 @@ class AgentStatus : public StateMonitorNode {
 
   std::map<std::string, std::shared_ptr<core::Repository>> repositories_;
 
-  static utils::ProcessCpuUsageTracker cpu_load_tracker_;
-  static std::mutex cpu_load_tracker_mutex_;
+  MINIFIAPI static utils::ProcessCpuUsageTracker cpu_load_tracker_;
+  MINIFIAPI static std::mutex cpu_load_tracker_mutex_;
 };
 
 class AgentIdentifier {

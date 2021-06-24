@@ -36,6 +36,7 @@
 #include "io/ZlibStream.h"
 #include "utils/Enum.h"
 #include "utils/gsl.h"
+#include "utils/Export.h"
 
 namespace org {
 namespace apache {
@@ -59,18 +60,18 @@ public:
   // Destructor
   ~CompressContent() override = default;
   // Processor Name
-  static constexpr char const* ProcessorName = "CompressContent";
+  EXTENSIONAPI static constexpr char const* ProcessorName = "CompressContent";
   // Supported Properties
-  static core::Property CompressMode;
-  static core::Property CompressLevel;
-  static core::Property CompressFormat;
-  static core::Property UpdateFileName;
-  static core::Property EncapsulateInTar;
-  static core::Property BatchSize;
+  EXTENSIONAPI static core::Property CompressMode;
+  EXTENSIONAPI static core::Property CompressLevel;
+  EXTENSIONAPI static core::Property CompressFormat;
+  EXTENSIONAPI static core::Property UpdateFileName;
+  EXTENSIONAPI static core::Property EncapsulateInTar;
+  EXTENSIONAPI static core::Property BatchSize;
 
   // Supported Relationships
-  static core::Relationship Failure;
-  static core::Relationship Success;
+  EXTENSIONAPI static core::Relationship Failure;
+  EXTENSIONAPI static core::Relationship Success;
 
   SMART_ENUM(CompressionMode,
     (Compress, "compress"),

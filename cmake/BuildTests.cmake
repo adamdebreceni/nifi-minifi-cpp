@@ -82,7 +82,7 @@ function(createTests testName)
         target_link_libraries(${testName} ${Boost_FILESYSTEM_LIBRARY})
     endif()
 
-  set_target_properties(${testName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests")
+  set_target_properties(${testName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 endfunction()
 
 enable_testing(test)
@@ -131,7 +131,7 @@ FOREACH(testfile ${NANOFI_UNIT_TESTS})
     appendIncludes("${testfilename}")
     target_link_libraries(${testfilename} ${CATCH_MAIN_LIB} ${TEST_BASE_LIB} nanofi Threads::Threads)
 
-    target_wholearchive_library(${testfilename} minifi-standard-processors)
+    target_link_libraries(${testfilename} minifi-standard-processors)
 
     MATH(EXPR UNIT_TEST_COUNT "${UNIT_TEST_COUNT}+1")
     add_test(NAME "${testfilename}" COMMAND "${testfilename}" WORKING_DIRECTORY ${TEST_DIR})

@@ -27,6 +27,7 @@
 #include "utils/ValueParser.h"
 #include "utils/PropertyErrors.h"
 #include "utils/OptionalUtils.h"
+#include "utils/Export.h"
 
 namespace org {
 namespace apache {
@@ -47,7 +48,7 @@ class TransformableValue {
  */
 class TimePeriodValue : public TransformableValue, public state::response::UInt64Value {
  public:
-  static const std::type_index type_id;
+  MINIFIAPI static const std::type_index type_id;
 
   explicit TimePeriodValue(const std::string &timeString)
       : state::response::UInt64Value(0) {
@@ -115,7 +116,7 @@ class TimePeriodValue : public TransformableValue, public state::response::UInt6
  */
 class DataSizeValue : public TransformableValue, public state::response::UInt64Value {
  public:
-  static const std::type_index type_id;
+  MINIFIAPI static const std::type_index type_id;
 
   explicit DataSizeValue(const std::string &sizeString)
       : state::response::UInt64Value(0) {

@@ -33,6 +33,7 @@
 #include "core/Resource.h"
 #include "core/logging/LoggerConfiguration.h"
 #include "utils/OptionalUtils.h"
+#include "utils/Export.h"
 
 namespace org {
 namespace apache {
@@ -48,21 +49,21 @@ class RetryFlowFile : public core::Processor {
   // Destructor
   virtual ~RetryFlowFile() = default;
   // Processor Name
-  static constexpr char const* ProcessorName = "RetryFlowFile";
+  EXTENSIONAPI static constexpr char const* ProcessorName = "RetryFlowFile";
   // Supported Properties
-  static core::Property RetryAttribute;
-  static core::Property MaximumRetries;
-  static core::Property PenalizeRetries;
-  static core::Property FailOnNonNumericalOverwrite;
-  static core::Property ReuseMode;
+  EXTENSIONAPI static core::Property RetryAttribute;
+  EXTENSIONAPI static core::Property MaximumRetries;
+  EXTENSIONAPI static core::Property PenalizeRetries;
+  EXTENSIONAPI static core::Property FailOnNonNumericalOverwrite;
+  EXTENSIONAPI static core::Property ReuseMode;
   // Supported Relationships
-  static core::Relationship Retry;
-  static core::Relationship RetriesExceeded;
-  static core::Relationship Failure;
+  EXTENSIONAPI static core::Relationship Retry;
+  EXTENSIONAPI static core::Relationship RetriesExceeded;
+  EXTENSIONAPI static core::Relationship Failure;
   // ReuseMode allowable values
-  static constexpr char const* FAIL_ON_REUSE = "Fail on Reuse";
-  static constexpr char const* WARN_ON_REUSE = "Warn on Reuse";
-  static constexpr char const*   RESET_REUSE = "Reset Reuse";
+  EXTENSIONAPI static constexpr char const* FAIL_ON_REUSE = "Fail on Reuse";
+  EXTENSIONAPI static constexpr char const* WARN_ON_REUSE = "Warn on Reuse";
+  EXTENSIONAPI static constexpr char const*   RESET_REUSE = "Reset Reuse";
 
  public:
   bool supportsDynamicProperties() override {

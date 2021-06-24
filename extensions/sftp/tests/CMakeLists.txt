@@ -43,11 +43,11 @@ if (NOT SKIP_TESTS AND Java_FOUND AND Maven_FOUND AND NOT DISABLE_EXPRESSION_LAN
 
 		createTests("${testfilename}")
 		target_link_libraries(${testfilename} ${CATCH_MAIN_LIB} core-minifi sftp-test-tools)
-		target_wholearchive_library(${testfilename} minifi-sftp)
-		target_wholearchive_library(${testfilename} minifi-expression-language-extensions)
-		target_wholearchive_library(${testfilename} minifi-standard-processors)
+		target_link_libraries(${testfilename} minifi-sftp)
+		target_link_libraries(${testfilename} minifi-expression-language-extensions)
+		target_link_libraries(${testfilename} minifi-standard-processors)
 		if (NOT DISABLE_ROCKSDB)
-			target_wholearchive_library(${testfilename} minifi-rocksdb-repos)
+			target_link_libraries(${testfilename} minifi-rocksdb-repos)
 		endif()
 
 		MATH(EXPR SFTP-EXTENSIONS_TEST_COUNT "${SFTP-EXTENSIONS_TEST_COUNT}+1")

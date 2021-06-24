@@ -33,6 +33,7 @@
 #include "core/logging/LoggerConfiguration.h"
 #include "ThreadManagementService.h"
 #include "io/NetworkPrioritizer.h"
+#include "utils/Export.h"
 
 namespace org {
 namespace apache {
@@ -67,11 +68,11 @@ class NetworkPrioritizerService : public core::controller::ControllerService, pu
     initialize();
   }
 
-  static core::Property NetworkControllers;
-  static core::Property MaxThroughput;
-  static core::Property MaxPayload;
-  static core::Property VerifyInterfaces;
-  static core::Property DefaultPrioritizer;
+  MINIFIAPI static core::Property NetworkControllers;
+  MINIFIAPI static core::Property MaxThroughput;
+  MINIFIAPI static core::Property MaxPayload;
+  MINIFIAPI static core::Property VerifyInterfaces;
+  MINIFIAPI static core::Property DefaultPrioritizer;
 
   void initialize();
 

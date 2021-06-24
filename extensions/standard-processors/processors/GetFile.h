@@ -31,6 +31,7 @@
 #include "core/Core.h"
 #include "core/Resource.h"
 #include "core/logging/LoggerConfiguration.h"
+#include "utils/Export.h"
 
 namespace org {
 namespace apache {
@@ -121,21 +122,21 @@ class GetFile : public core::Processor, public state::response::MetricsNodeSourc
   ~GetFile() override = default;
 
   // Processor Name
-  static constexpr char const* ProcessorName = "GetFile";
+  EXTENSIONAPI static constexpr char const* ProcessorName = "GetFile";
   // Supported Properties
-  static core::Property Directory;
-  static core::Property Recurse;
-  static core::Property KeepSourceFile;
-  static core::Property MinAge;
-  static core::Property MaxAge;
-  static core::Property MinSize;
-  static core::Property MaxSize;
-  static core::Property IgnoreHiddenFile;
-  static core::Property PollInterval;
-  static core::Property BatchSize;
-  static core::Property FileFilter;
+  EXTENSIONAPI static core::Property Directory;
+  EXTENSIONAPI static core::Property Recurse;
+  EXTENSIONAPI static core::Property KeepSourceFile;
+  EXTENSIONAPI static core::Property MinAge;
+  EXTENSIONAPI static core::Property MaxAge;
+  EXTENSIONAPI static core::Property MinSize;
+  EXTENSIONAPI static core::Property MaxSize;
+  EXTENSIONAPI static core::Property IgnoreHiddenFile;
+  EXTENSIONAPI static core::Property PollInterval;
+  EXTENSIONAPI static core::Property BatchSize;
+  EXTENSIONAPI static core::Property FileFilter;
   // Supported Relationships
-  static core::Relationship Success;
+  EXTENSIONAPI static core::Relationship Success;
 
  public:
   /**

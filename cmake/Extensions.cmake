@@ -31,10 +31,11 @@ macro(register_extension extension-name)
           POSITION_INDEPENDENT_CODE ON)
   if (WIN32)
     set_target_properties(${extension-name} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests")
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
   else()
-    set_target_properties(${extension-name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests")
+    set_target_properties(${extension-name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
   endif()
 
   if (NOT WIN32)
