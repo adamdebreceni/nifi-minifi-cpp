@@ -20,6 +20,7 @@
 
 #include <string>
 #include <vector>
+#include "utils/Export.h"
 
 namespace org {
 namespace apache {
@@ -28,14 +29,14 @@ namespace minifi {
 
 class AgentBuild {
  public:
-  static const char* const VERSION;
-  static const char* const BUILD_IDENTIFIER;
-  static const char* const BUILD_REV;
-  static const char* const BUILD_DATE;
-  static const char* const COMPILER;
-  static const char* const COMPILER_VERSION;
-  static const char* const COMPILER_FLAGS;
-  static std::vector<std::string> getExtensions();
+  MINIFIAPI static const char* const VERSION;
+  MINIFIAPI static const char* const BUILD_IDENTIFIER;
+  MINIFIAPI static const char* const BUILD_REV;
+  MINIFIAPI static const char* const BUILD_DATE;
+  MINIFIAPI static const char* const COMPILER;
+  MINIFIAPI static const char* const COMPILER_VERSION;
+  MINIFIAPI static const char* const COMPILER_FLAGS;
+  MINIFIAPI static std::vector<std::string> getExtensions();
 };
 
 }  // namespace minifi

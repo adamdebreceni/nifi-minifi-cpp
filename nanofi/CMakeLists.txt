@@ -40,24 +40,9 @@ file(GLOB NANOFI_ECU_SOURCES "ecu/*.c")
 include(CppVersion)
 set_cpp_version()
 
-add_library(nanofi SHARED ${NANOFI_SOURCES})
+add_library(nanofi STATIC ${NANOFI_SOURCES})
 
 target_link_libraries(nanofi spdlog ut core-minifi minifi-standard-processors)
-
-if (ENABLE_PYTHON AND NOT STATIC_BUILD)
-
-add_library(nanofi-shared SHARED ${NANOFI_SOURCES})
-
-target_link_libraries(nanofi-shared spdlog ut)
-target_wholearchive_library(nanofi-shared core-minifi-shared)
-target_wholearchive_library(nanofi-shared minifi-shared)
-target_wholearchive_library(nanofi-shared minifi-standard-processors)
-
-add_dependencies(nanofi-shared minifi-standard-processors)
-
-set_property(TARGET nanofi-shared PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-endif(ENABLE_PYTHON AND NOT STATIC_BUILD)
 
 if (NOT DISABLE_CURL)
 add_subdirectory(examples)

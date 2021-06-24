@@ -28,6 +28,7 @@
 #include "core/controller/ControllerService.h"
 #include "core/logging/LoggerConfiguration.h"
 #include "core/state/UpdatePolicy.h"
+#include "utils/Export.h"
 
 namespace org {
 namespace apache {
@@ -54,10 +55,10 @@ class UpdatePolicyControllerService : public core::controller::ControllerService
     initialize();
   }
 
-  static core::Property AllowAllProperties;
-  static core::Property PersistUpdates;
-  static core::Property AllowedProperties;
-  static core::Property DisallowedProperties;
+  MINIFIAPI static core::Property AllowAllProperties;
+  MINIFIAPI static core::Property PersistUpdates;
+  MINIFIAPI static core::Property AllowedProperties;
+  MINIFIAPI static core::Property DisallowedProperties;
 
   void initialize();
 

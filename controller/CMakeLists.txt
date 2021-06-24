@@ -35,7 +35,7 @@ target_link_libraries(minificontroller cxxopts Threads::Threads)
 
 get_property(extensions GLOBAL PROPERTY EXTENSION-OPTIONS)
 foreach(EXTENSION ${extensions})
-	target_wholearchive_library(minificontroller ${EXTENSION})
+	target_link_libraries(minificontroller ${EXTENSION})
 endforeach()
 
 set_target_properties(minificontroller PROPERTIES

@@ -35,6 +35,7 @@
 #include "core/logging/LoggerConfiguration.h"
 #include "utils/MinifiConcurrentQueue.h"
 #include "utils/gsl.h"
+#include "utils/Export.h"
 
 namespace org {
 namespace apache {
@@ -61,20 +62,20 @@ class ListenHTTP : public core::Processor {
   // Destructor
   ~ListenHTTP() override;
   // Processor Name
-  static constexpr char const *ProcessorName = "ListenHTTP";
+  EXTENSIONAPI static constexpr char const *ProcessorName = "ListenHTTP";
   // Supported Properties
-  static core::Property BasePath;
-  static core::Property Port;
-  static core::Property AuthorizedDNPattern;
-  static core::Property SSLCertificate;
-  static core::Property SSLCertificateAuthority;
-  static core::Property SSLVerifyPeer;
-  static core::Property SSLMinimumVersion;
-  static core::Property HeadersAsAttributesRegex;
-  static core::Property BatchSize;
-  static core::Property BufferSize;
+  EXTENSIONAPI static core::Property BasePath;
+  EXTENSIONAPI static core::Property Port;
+  EXTENSIONAPI static core::Property AuthorizedDNPattern;
+  EXTENSIONAPI static core::Property SSLCertificate;
+  EXTENSIONAPI static core::Property SSLCertificateAuthority;
+  EXTENSIONAPI static core::Property SSLVerifyPeer;
+  EXTENSIONAPI static core::Property SSLMinimumVersion;
+  EXTENSIONAPI static core::Property HeadersAsAttributesRegex;
+  EXTENSIONAPI static core::Property BatchSize;
+  EXTENSIONAPI static core::Property BufferSize;
   // Supported Relationships
-  static core::Relationship Success;
+  EXTENSIONAPI static core::Relationship Success;
 
   void onTrigger(core::ProcessContext *context, core::ProcessSession *session) override;
   void initialize() override;

@@ -41,21 +41,21 @@ Module::~Module() {
 }
 
 void Module::registerExtension(Extension *extension) {
-  logger_->log_debug("Registering extension '%s' in module '%s'", extension->getName(), name_);
+  logger_->log_error("Registering extension '%s' in module '%s'", extension->getName(), name_);
   std::lock_guard<std::mutex> guard(mtx_);
   extensions_.push_back(extension);
 }
 
 bool Module::unregisterExtension(Extension *extension) {
-  logger_->log_debug("Unregistering extension '%s' in module '%s'", extension->getName(), name_);
+  logger_->log_error("Unregistering extension '%s' in module '%s'", extension->getName(), name_);
   std::lock_guard<std::mutex> guard(mtx_);
   auto it = std::find(extensions_.begin(), extensions_.end(), extension);
   if (it != extensions_.end()) {
-    logger_->log_trace("Couldn't find extension '%s' in module '%s'", extension->getName(), name_);
+    logger_->log_error("Couldn't find extension '%s' in module '%s'", extension->getName(), name_);
     return false;
   }
   extensions_.erase(it);
-  logger_->log_trace("Successfully unregistered extension '%s' in module '%s'", extension->getName(), name_);
+  logger_->log_error("Successfully unregistered extension '%s' in module '%s'", extension->getName(), name_);
   return true;
 }
 
@@ -63,6 +63,7 @@ bool Module::initialize(const std::shared_ptr<Configure> &config) {
   logger_->log_debug("Initializing module '%s'", name_);
   std::lock_guard<std::mutex> guard(mtx_);
   for (auto* extension : extensions_) {
+    logger_->log_error("Initializing extension '%s'", extension->getName());
     if (!extension->initialize(config)) {
       return false;
     }

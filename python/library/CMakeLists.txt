@@ -39,4 +39,4 @@ else()
 	target_link_libraries(python-lib nanofi-shared core-minifi-shared minifi-shared)
 endif(APPLE)
 
-target_wholearchive_library(python-lib minifi-http-curl)
+target_link_libraries(python-lib minifi-http-curl)
