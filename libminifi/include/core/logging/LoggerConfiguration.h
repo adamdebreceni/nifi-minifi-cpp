@@ -99,10 +99,7 @@ class LoggerConfiguration {
   /**
    * Gets the current log configuration
    */
-  static LoggerConfiguration& getConfiguration() {
-    static LoggerConfiguration logger_configuration;
-    return logger_configuration;
-  }
+  static LoggerConfiguration& getConfiguration();
 
   static std::unique_ptr<LoggerConfiguration> newInstance() {
     return std::unique_ptr<LoggerConfiguration>(new LoggerConfiguration());

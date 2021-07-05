@@ -82,6 +82,11 @@ LoggerConfiguration::LoggerConfiguration()
   loggers.push_back(logger_);
 }
 
+LoggerConfiguration& LoggerConfiguration::getConfiguration() {
+  static LoggerConfiguration instance;
+  return instance;
+}
+
 void LoggerConfiguration::initialize(const std::shared_ptr<LoggerProperties> &logger_properties) {
   std::lock_guard<std::mutex> lock(mutex);
   root_namespace_ = initialize_namespaces(logger_properties);
