@@ -451,8 +451,6 @@ private:
   static const std::map<CompressionFormat, std::string> fileExtension_;
 };
 
-REGISTER_RESOURCE(CompressContent, "Compresses or decompresses the contents of FlowFiles using a user-specified compression algorithm and updates the mime.type attribute as appropriate");
-
 } /* namespace processors */
 } /* namespace minifi */
 } /* namespace nifi */

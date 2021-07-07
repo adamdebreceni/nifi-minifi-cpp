@@ -176,8 +176,6 @@ class HttpSiteToSiteClient : public sitetosite::SiteToSiteClient {
   static std::shared_ptr<utils::IdGenerator> id_generator_;
 };
 
-REGISTER_INTERNAL_RESOURCE_AS(HttpSiteToSiteClient, ("HttpSiteToSiteClient", "HttpProtocol"));
-
 } /* namespace sitetosite */
 } /* namespace minifi */
 } /* namespace nifi */

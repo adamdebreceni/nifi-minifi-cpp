@@ -184,10 +184,6 @@ class ConsumeKafka : public core::Processor {
   std::shared_ptr<logging::Logger> logger_{logging::LoggerFactory<ConsumeKafka>::getLogger()};
 };
 
-REGISTER_RESOURCE(ConsumeKafka, "Consumes messages from Apache Kafka and transform them into MiNiFi FlowFiles. "
-    "The application should make sure that the processor is triggered at regular intervals, even if no messages are expected, "
-    "to serve any queued callbacks waiting to be called. Rebalancing can also only happen on trigger."); // NOLINT
-
 }  // namespace processors
 }  // namespace minifi
 }  // namespace nifi

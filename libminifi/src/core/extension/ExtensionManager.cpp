@@ -76,13 +76,14 @@ ExtensionManager& ExtensionManager::instance() {
 
 bool ExtensionManager::initialize(const std::shared_ptr<Configure>& config) {
   static bool initialized = ([&] {
-    logger_->log_debug("Initializing extensions");
+    logger_->log_error("Initializing extensions");
     // initialize executable
     instance().active_module_->initialize(config);
     utils::optional<std::string> dir = config ? config->get(nifi_extension_directory) : utils::nullopt;
     if (!dir) return;
     std::vector<LibraryDescriptor> libraries;
     utils::file::FileUtils::list_dir(dir.value(), [&] (const std::string& path, const std::string& filename) {
+      if (!utils::StringUtils::startsWith(filename, "minifi-")) return true;
       utils::optional<LibraryDescriptor> library = asDynamicLibrary(path, filename);
       if (library && library->verify(logger_)) {
         libraries.push_back(std::move(library.value()));
@@ -92,7 +93,11 @@ bool ExtensionManager::initialize(const std::shared_ptr<Configure>& config) {
     for (const auto& library : libraries) {
       auto module = utils::make_unique<DynamicLibrary>(library.name, library.getFullPath());
       instance().active_module_ = module.get();
-      if (module->initialize(config)) {
+      if (!module->load()) {
+        // error already logged by method
+        continue;
+      }
+      if (!module->initialize(config)) {
         logger_->log_error("Failed to initialize module '%s' at '%s'", library.name, library.getFullPath());
       } else {
         instance().modules_.push_back(std::move(module));
@@ -112,6 +117,29 @@ void ExtensionManager::unregisterExtension(Extension *extension) {
       return;
     }
   }
+}
+
+bool ExtensionManager::unloadModule(const std::string& name) {
+  logger_->log_info("Trying to unload module '%s'", name);
+  auto it = std::find_if(modules_.begin(), modules_.end(), [&] (const std::unique_ptr<Module>& module) {
+    gsl_Expects(module);
+    return module->getName() == name;
+  });
+  if (it == modules_.end()) {
+    logger_->log_error("Could not find module '%s'", name);
+    return false;
+  }
+  auto* lib = dynamic_cast<DynamicLibrary*>(it->get());
+  if (lib == nullptr) {
+    logger_->log_error("Cannot unload non-dynamic library '%s'", name);
+    return false;
+  }
+  if (!lib->unload()) {
+    logger_->log_error("Unloading library '%s' failed", name);
+    return false;
+  }
+  modules_.erase(it);
+  return true;
 }
 
 }  // namespace extension

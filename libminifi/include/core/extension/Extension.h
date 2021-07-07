@@ -63,14 +63,8 @@ class Extension {
 
 class ExtensionInitializer {
  public:
-  explicit ExtensionInitializer(Extension* extension, const ExtensionConfig& config): extension_(extension) {
-    if (!extension_->doInitialize(config)) {
-      throw std::runtime_error("Failed to initialize extension");
-    }
-  }
-  ~ExtensionInitializer() {
-    extension_->doDeinitialize();
-  }
+  explicit ExtensionInitializer(Extension* extension, const ExtensionConfig& config);
+  ~ExtensionInitializer();
 
  private:
   Extension* extension_;

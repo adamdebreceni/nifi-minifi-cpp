@@ -104,8 +104,6 @@ class JVMCreator : public minifi::core::CoreComponent {
   std::shared_ptr<logging::Logger> logger_;
 };
 
-REGISTER_INTERNAL_RESOURCE(JVMCreator);
-
 } /* namespace jni */
 } /* namespace minifi */
 } /* namespace nifi */

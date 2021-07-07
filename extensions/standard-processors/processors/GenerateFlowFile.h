@@ -103,8 +103,6 @@ class GenerateFlowFile : public core::Processor {
   std::shared_ptr<logging::Logger> logger_;
 };
 
-REGISTER_RESOURCE(GenerateFlowFile, "This processor creates FlowFiles with random data or custom content. GenerateFlowFile is useful for load testing, configuration, and simulation.");
-
 }  // namespace processors
 }  // namespace minifi
 }  // namespace nifi

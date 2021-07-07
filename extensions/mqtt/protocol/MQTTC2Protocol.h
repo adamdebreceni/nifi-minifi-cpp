@@ -88,8 +88,6 @@ class MQTTC2Protocol : public C2Protocol {
 
 };
 
-REGISTER_INTERNAL_RESOURCE(MQTTC2Protocol);
-
 } /* namespace c2 */
 } /* namespace minifi */
 } /* namespace nifi */

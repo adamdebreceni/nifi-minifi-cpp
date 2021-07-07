@@ -236,8 +236,6 @@ class ProvenanceRepository : public core::Repository, public std::enable_shared_
   std::shared_ptr<logging::Logger> logger_;
 };
 
-REGISTER_INTERNAL_RESOURCE_AS(ProvenanceRepository, ("ProvenanceRepository", "provenancerepository"));
-
 } /* namespace provenance */
 } /* namespace minifi */
 } /* namespace nifi */

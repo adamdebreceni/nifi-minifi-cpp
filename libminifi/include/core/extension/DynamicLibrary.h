@@ -50,6 +50,7 @@ class DynamicLibrary : public Module {
 #endif
 
   bool load();
+  bool unload();
 
   std::string library_path_;
   gsl::owner<void*> handle_ = nullptr;

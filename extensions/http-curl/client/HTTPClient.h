@@ -296,8 +296,6 @@ class HTTPClient : public BaseHTTPClient, public core::Connectable {
   std::shared_ptr<logging::Logger> logger_{logging::LoggerFactory<HTTPClient>::getLogger()};
 };
 
-REGISTER_INTERNAL_RESOURCE(HTTPClient);
-
 }  // namespace utils
 }  // namespace minifi
 }  // namespace nifi

@@ -83,6 +83,8 @@ minifi::utils::optional<Aws::Auth::AWSCredentials> AWSCredentialsService::getAWS
   return aws_credentials_;
 }
 
+REGISTER_RESOURCE(AWSCredentialsService, "AWS Credentials Management Service");
+
 }  // namespace controllers
 }  // namespace aws
 }  // namespace minifi

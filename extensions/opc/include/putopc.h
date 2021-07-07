@@ -100,8 +100,6 @@ class PutOPCProcessor : public BaseOPCProcessor {
   opc::OPCNodeDataType nodeDataType_;
 };
 
-REGISTER_RESOURCE(PutOPCProcessor, "Creates/updates  OPC nodes");
-
 } /* namespace processors */
 } /* namespace minifi */
 } /* namespace nifi */

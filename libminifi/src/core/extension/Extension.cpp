@@ -17,6 +17,7 @@
 
 #include "core/extension/Extension.h"
 #include "core/extension/ExtensionManager.h"
+#include "core/logging/LoggerConfiguration.h"
 
 namespace org {
 namespace apache {
@@ -25,12 +26,25 @@ namespace minifi {
 namespace core {
 namespace extension {
 
+static std::shared_ptr<logging::Logger> init_logger = logging::LoggerFactory<ExtensionInitializer>::getLogger();
+
 Extension::Extension(std::string name, ExtensionInit init): name_(std::move(name)), init_(init) {
   ExtensionManager::instance().registerExtension(this);
 }
 
 Extension::~Extension() {
   ExtensionManager::instance().unregisterExtension(this);
+}
+
+ExtensionInitializer::ExtensionInitializer(Extension* extension, const ExtensionConfig& config): extension_(extension) {
+  init_logger->log_error("Initializing extension: %s", extension_->getName());
+  if (!extension_->doInitialize(config)) {
+    throw std::runtime_error("Failed to initialize extension");
+  }
+}
+ExtensionInitializer::~ExtensionInitializer() {
+  init_logger->log_error("Deinitializing extension: %s", extension_->getName());
+  extension_->doDeinitialize();
 }
 
 }  // namespace extension

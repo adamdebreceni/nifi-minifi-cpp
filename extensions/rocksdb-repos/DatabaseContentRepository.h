@@ -100,8 +100,6 @@ class DatabaseContentRepository : public core::ContentRepository, public core::C
   std::shared_ptr<logging::Logger> logger_;
 };
 
-REGISTER_INTERNAL_RESOURCE_AS(DatabaseContentRepository, ("DatabaseContentRepository", "databasecontentrepository"));
-
 } /* namespace repository */
 } /* namespace core */
 } /* namespace minifi */

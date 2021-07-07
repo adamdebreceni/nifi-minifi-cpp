@@ -31,6 +31,8 @@ foreach(testfile ${ENCRYPT_CONFIG_TESTS})
   target_include_directories(${testfilename} BEFORE PRIVATE "${CMAKE_SOURCE_DIR}/libminifi/include")
   target_include_directories(${testfilename} BEFORE PRIVATE "${CMAKE_SOURCE_DIR}/libminifi/test")
 
+  createTests(${testfilename})
+
   target_link_libraries(${testfilename} ${CATCH_MAIN_LIB} ${LIBMINIFI})
   add_test(NAME ${testfilename} COMMAND ${testfilename} WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 

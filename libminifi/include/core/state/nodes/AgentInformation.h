@@ -780,8 +780,6 @@ class AgentInformation : public AgentNode {
   bool include_agent_status_;
 };
 
-REGISTER_RESOURCE(AgentInformation, "Node part of an AST that defines all agent information, to include the manifest, and bundle information as part of a healthy hearbeat.");
-
 }  // namespace response
 }  // namespace state
 }  // namespace minifi

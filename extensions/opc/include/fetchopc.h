@@ -102,8 +102,6 @@ private:
   std::unordered_map<std::string, std::string> node_timestamp_;  // Key = Full path, Value = Timestamp
 };
 
-REGISTER_RESOURCE(FetchOPCProcessor, "Fetches OPC-UA node");
-
 } /* namespace processors */
 } /* namespace minifi */
 } /* namespace nifi */

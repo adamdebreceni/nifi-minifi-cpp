@@ -56,8 +56,6 @@ class ExecuteSQL : public SQLProcessor, public FlowFileSource {
   static const std::string INPUT_FLOW_FILE_UUID;
 };
 
-REGISTER_RESOURCE(ExecuteSQL, "ExecuteSQL to execute SELECT statement via ODBC.");
-
 }  // namespace processors
 }  // namespace minifi
 }  // namespace nifi

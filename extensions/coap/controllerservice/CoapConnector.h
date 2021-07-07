@@ -109,8 +109,6 @@ class CoapConnectorService : public core::controller::ControllerService {
   std::shared_ptr<logging::Logger> logger_{ logging::LoggerFactory<CoapConnectorService>::getLogger() };
 };
 
-REGISTER_INTERNAL_RESOURCE(CoapConnectorService);
-
 } /* namespace controllers */
 } /* namespace coap */
 } /* namespace minifi */

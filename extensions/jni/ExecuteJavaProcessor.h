@@ -289,8 +289,6 @@ class ExecuteJavaProcessor : public core::Processor {
   JniInitializationContext init_context_;
 };
 
-REGISTER_RESOURCE_AS(ExecuteJavaProcessor, "ExecuteJavaClass runs NiFi processors given a provided system path ", ("ExecuteJavaClass"));
-
 } /* namespace processors */
 } /* namespace jni */
 } /* namespace minifi */

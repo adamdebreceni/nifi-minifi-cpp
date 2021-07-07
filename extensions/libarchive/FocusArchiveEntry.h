@@ -90,10 +90,6 @@ class FocusArchiveEntry : public core::Processor {
   static std::shared_ptr<utils::IdGenerator> id_generator_;
 };
 
-REGISTER_RESOURCE(FocusArchiveEntry, "Allows manipulation of entries within an archive (e.g. TAR) by focusing on one entry within the archive at a time. "
-    "When an archive entry is focused, that entry is treated as the content of the FlowFile and may be manipulated independently of the rest of the archive."
-    " To restore the FlowFile to its original state, use UnfocusArchiveEntry.");
-
 } /* namespace processors */
 } /* namespace minifi */
 } /* namespace nifi */
