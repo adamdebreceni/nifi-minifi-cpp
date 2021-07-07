@@ -132,8 +132,6 @@ class CoapProtocol : public minifi::c2::RESTSender {
   std::shared_ptr<logging::Logger> logger_;
 };
 
-REGISTER_INTERNAL_RESOURCE(CoapProtocol);
-
 } /* namespace c2 */
 } /* namespace coap */
 } /* namespace minifi */

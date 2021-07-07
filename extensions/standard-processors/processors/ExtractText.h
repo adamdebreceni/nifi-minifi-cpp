@@ -95,8 +95,6 @@ class ExtractText : public core::Processor {
     std::shared_ptr<logging::Logger> logger_;
 };
 
-REGISTER_RESOURCE(ExtractText, "Extracts the content of a FlowFile and places it into an attribute.");
-
 }  // namespace processors
 }  // namespace minifi
 }  // namespace nifi

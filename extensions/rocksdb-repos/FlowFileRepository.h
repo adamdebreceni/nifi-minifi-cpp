@@ -239,8 +239,6 @@ class FlowFileRepository : public core::Repository, public std::enable_shared_fr
   std::shared_ptr<minifi::Configure> config_;
 };
 
-REGISTER_INTERNAL_RESOURCE_AS(FlowFileRepository, ("FlowFileRepository", "flowfilerepository"));
-
 } /* namespace repository */
 } /* namespace core */
 } /* namespace minifi */

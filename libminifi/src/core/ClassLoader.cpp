@@ -26,13 +26,30 @@ namespace nifi {
 namespace minifi {
 namespace core {
 
-ClassLoader::ClassLoader()
-  : logger_(logging::LoggerFactory<ClassLoader>::getLogger()) {}
+ClassLoader::ClassLoader(const std::string& name)
+  : logger_(logging::LoggerFactory<ClassLoader>::getLogger()), name_(name) {}
 
 ClassLoader &ClassLoader::getDefaultClassLoader() {
   static ClassLoader ret;
   // populate ret
   return ret;
+}
+
+ClassLoader& ClassLoader::getClassLoader(const std::string& child_name) {
+  std::lock_guard<std::mutex> lock(internal_mutex_);
+  auto it = class_loaders_.find(child_name);
+  if (it != class_loaders_.end()) {
+    return it->second;
+  }
+  std::string full_name = [&] {
+    if (name_ == "/") {
+      return "/" + child_name;
+    }
+    return name_ + "/" + child_name;
+  }();
+  ClassLoader& child = class_loaders_[child_name];
+  child.name_ = std::move(full_name);
+  return child;
 }
 
 } /* namespace core */

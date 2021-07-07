@@ -65,38 +65,35 @@ class ClassLoader {
   /**
    * Constructor.
    */
-  ClassLoader();
+  explicit ClassLoader(const std::string& name = "/");
 
   /**
    * Retrieves a class loader
    * @param name name of class loader
    * @return class loader reference
    */
-  ClassLoader& getClassLoader(const std::string& name) {
-    std::lock_guard<std::mutex> lock(internal_mutex_);
-    return class_loaders_[name];
-  }
+  ClassLoader& getClassLoader(const std::string& child_name);
 
   /**
    * Register a class with the give ProcessorFactory
    */
-  void registerClass(const std::string &name, std::unique_ptr<ObjectFactory> factory) {
+  void registerClass(const std::string &clazz, std::unique_ptr<ObjectFactory> factory) {
     std::lock_guard<std::mutex> lock(internal_mutex_);
-    if (loaded_factories_.find(name) != loaded_factories_.end()) {
-      logger_->log_error("Class '%s' is already registered", name);
+    if (loaded_factories_.find(clazz) != loaded_factories_.end()) {
+      logger_->log_error("Class '%s' is already registered at '%s'", clazz, name_);
       return;
     }
-    logger_->log_error("Registering class '%s'", name);
-    loaded_factories_.insert(std::make_pair(name, std::move(factory)));
+    logger_->log_error("Registering class '%s' at '%s'", clazz, name_);
+    loaded_factories_.insert(std::make_pair(clazz, std::move(factory)));
   }
 
-  void unregisterClass(const std::string& name) {
+  void unregisterClass(const std::string& clazz) {
     std::lock_guard<std::mutex> lock(internal_mutex_);
-    if (loaded_factories_.erase(name) == 0) {
-      logger_->log_error("Could not unregister non-registered class '%s'", name);
+    if (loaded_factories_.erase(clazz) == 0) {
+      logger_->log_error("Could not unregister non-registered class '%s' at '%s'", clazz, name_);
       return;
     } else {
-      logger_->log_error("Unregistered class '%s'", name);
+      logger_->log_error("Unregistered class '%s' at '%s'", clazz, name_);
     }
   }
 
@@ -166,6 +163,8 @@ class ClassLoader {
   mutable std::mutex internal_mutex_;
 
   std::shared_ptr<logging::Logger> logger_;
+
+  std::string name_;
 };
 
 template<class T>

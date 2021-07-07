@@ -163,10 +163,6 @@ class InvokeHTTP : public core::Processor {
   std::shared_ptr<logging::Logger> logger_{logging::LoggerFactory<InvokeHTTP>::getLogger()};
 };
 
-REGISTER_RESOURCE(InvokeHTTP, "An HTTP client processor which can interact with a configurable HTTP Endpoint. "
-    "The destination URL and HTTP Method are configurable. FlowFile attributes are converted to HTTP headers and the "
-    "FlowFile contents are included as the body of the request (if the HTTP Method is PUT, POST or PATCH).");
-
 } /* namespace processors */
 } /* namespace minifi */
 } /* namespace nifi */

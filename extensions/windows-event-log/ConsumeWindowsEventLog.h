@@ -183,8 +183,6 @@ class ConsumeWindowsEventLog : public core::Processor {
   std::string timezone_offset_;  // Represented as UTC offset in (+|-)HH:MM format, like +02:00
 };
 
-REGISTER_RESOURCE(ConsumeWindowsEventLog, "Windows Event Log Subscribe Callback to receive FlowFiles from Events on Windows.");
-
 }  // namespace processors
 }  // namespace minifi
 }  // namespace nifi

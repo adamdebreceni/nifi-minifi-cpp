@@ -482,8 +482,6 @@ class DeviceInfoNode : public DeviceInformation {
   MINIFIAPI static std::mutex cpu_load_tracker_mutex_;
 };
 
-REGISTER_RESOURCE(DeviceInfoNode, "Node part of an AST that defines device characteristics to the C2 protocol");
-
 }  // namespace response
 }  // namespace state
 }  // namespace minifi

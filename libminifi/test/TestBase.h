@@ -55,6 +55,7 @@
 #include "utils/ClassUtils.h"
 #include "Path.h"
 #include "LogUtils.h"
+#include "core/extension/ExtensionManager.h"
 
 class LogTestController {
  public:
@@ -458,3 +459,12 @@ class TestController {
   LogTestController &log;
   std::vector<std::string> directories;
 };
+
+static bool extensionInitializer = [] {
+  LogTestController::getInstance().setTrace<core::extension::ExtensionManager>();
+  LogTestController::getInstance().setTrace<core::extension::Module>();
+  auto config = std::make_shared<minifi::Configure>();
+  config->set(core::extension::nifi_extension_directory, utils::file::FileUtils::get_executable_dir());
+  core::extension::ExtensionManager::initialize(config);
+  return true;
+}();

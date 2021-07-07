@@ -76,8 +76,6 @@ class ManipulateArchive : public core::Processor {
   std::string before_, after_, operation_, destination_, targetEntry_;
 };
 
-REGISTER_RESOURCE(ManipulateArchive, "Performs an operation which manipulates an archive without needing to split the archive into multiple FlowFiles.");
-
 } /* namespace processors */
 } /* namespace minifi */
 } /* namespace nifi */

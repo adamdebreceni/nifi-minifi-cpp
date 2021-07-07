@@ -294,8 +294,6 @@ class BinFiles : public core::Processor {
   FlowFileStore file_store_;
 };
 
-REGISTER_RESOURCE(BinFiles, "Bins flow files into buckets based on the number of entries or size of entries");
-
 } /* namespace processors */
 } /* namespace minifi */
 } /* namespace nifi */

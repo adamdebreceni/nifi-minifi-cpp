@@ -84,9 +84,6 @@ class UpdatePolicyControllerService : public core::controller::ControllerService
   std::shared_ptr<logging::Logger> logger_;
 };
 
-REGISTER_RESOURCE(UpdatePolicyControllerService, "UpdatePolicyControllerService allows a flow specific policy on allowing or disallowing updates. "
-    "Since the flow dictates the purpose of a device it will also be used to dictate updates to specific components.");
-
 }  // namespace controllers
 }  // namespace minifi
 }  // namespace nifi

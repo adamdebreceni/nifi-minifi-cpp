@@ -44,6 +44,8 @@ class Module {
  public:
   virtual ~Module();
 
+  std::string getName() const;
+
   void registerExtension(Extension* extension);
   bool unregisterExtension(Extension* extension);
 

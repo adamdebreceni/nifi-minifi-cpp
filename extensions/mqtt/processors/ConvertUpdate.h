@@ -77,8 +77,6 @@ class ConvertUpdate : public ConvertBase {
   std::shared_ptr<logging::Logger> logger_;
 };
 
-REGISTER_INTERNAL_RESOURCE(ConvertUpdate);
-
 } /* namespace processors */
 } /* namespace minifi */
 } /* namespace nifi */

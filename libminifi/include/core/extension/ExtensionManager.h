@@ -23,6 +23,8 @@
 #include "DynamicLibrary.h"
 #include "properties/Configure.h"
 
+struct TestAccessor;
+
 namespace org {
 namespace apache {
 namespace nifi {
@@ -33,6 +35,7 @@ namespace extension {
 static constexpr const char* nifi_extension_directory = "nifi.extension.directory";
 
 class ExtensionManager {
+  friend struct ::TestAccessor;
   ExtensionManager();
 
  public:
@@ -44,6 +47,8 @@ class ExtensionManager {
   void unregisterExtension(Extension* extension);
 
  private:
+  bool unloadModule(const std::string& name);
+
   std::vector<std::unique_ptr<Module>> modules_;
 
   Module* active_module_;

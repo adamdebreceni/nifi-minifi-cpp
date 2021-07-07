@@ -90,8 +90,6 @@ class QueryDatabaseTable: public SQLProcessor, public FlowFileSource {
   std::unordered_map<std::string, std::string> max_values_;
 };
 
-REGISTER_RESOURCE(QueryDatabaseTable, "QueryDatabaseTable to execute SELECT statement via ODBC.");
-
 }  // namespace processors
 }  // namespace minifi
 }  // namespace nifi

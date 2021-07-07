@@ -237,7 +237,6 @@ class SSLContextService : public core::controller::ControllerService {
   std::shared_ptr<logging::Logger> logger_;
 };
 typedef int (SSLContextService::*ptr)(char *, int, int, void *);
-REGISTER_RESOURCE(SSLContextService, "Controller service that provides SSL/TLS capabilities to consuming interfaces");
 
 }  // namespace controllers
 }  // namespace minifi

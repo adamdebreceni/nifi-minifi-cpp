@@ -134,9 +134,6 @@ class PublishKafka : public core::Processor {
   std::set<std::shared_ptr<Messages>> messages_set_;
 };
 
-REGISTER_RESOURCE(PublishKafka, "This Processor puts the contents of a FlowFile to a Topic in Apache Kafka. The content of a FlowFile becomes the contents of a Kafka message. "
-                  "This message is optionally assigned a key by using the <Kafka Key> Property.");
-
 }  // namespace processors
 }  // namespace minifi
 }  // namespace nifi

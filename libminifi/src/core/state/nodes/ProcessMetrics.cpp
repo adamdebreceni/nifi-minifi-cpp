@@ -1,6 +1,4 @@
 /**
- * @file PutSQL.h
- * PutSQL class declaration
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,39 +16,19 @@
  * limitations under the License.
  */
 
-#pragma once
-
-#include <string>
-
-#include "core/Resource.h"
-#include "core/ProcessSession.h"
-#include "SQLProcessor.h"
+#include "core/state/nodes/ProcessMetrics.h"
 
 namespace org {
 namespace apache {
 namespace nifi {
 namespace minifi {
-namespace processors {
+namespace state {
+namespace response {
 
-//! PutSQL Class
-class PutSQL: public SQLProcessor {
- public:
-  explicit PutSQL(const std::string& name, const utils::Identifier& uuid = {});
+REGISTER_RESOURCE(ProcessMetrics, "Node part of an AST that defines the Processor information and metrics subtree");
 
-  //! Processor Name
-  static const std::string ProcessorName;
-
-  void processOnSchedule(core::ProcessContext& context) override;
-  void processOnTrigger(core::ProcessContext& context, core::ProcessSession& session) override;
-
-  void initialize() override;
-
-  static const core::Property SQLStatement;
-
-  static const core::Relationship Success;
-};
-
-}  // namespace processors
+}  // namespace response
+}  // namespace state
 }  // namespace minifi
 }  // namespace nifi
 }  // namespace apache

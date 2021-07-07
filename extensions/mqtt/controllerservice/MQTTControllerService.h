@@ -317,8 +317,6 @@ class MQTTControllerService : public core::controller::ControllerService {
   std::shared_ptr<logging::Logger> logger_;
 };
 
-REGISTER_INTERNAL_RESOURCE_AS(MQTTControllerService, ("MQTTContextService"));
-
 } /* namespace controllers */
 } /* namespace minifi */
 } /* namespace nifi */

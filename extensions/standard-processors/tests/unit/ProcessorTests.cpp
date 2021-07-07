@@ -43,6 +43,7 @@
 #include "utils/gsl.h"
 #include "utils/PropertyErrors.h"
 #include "utils/IntegrationTestUtils.h"
+#include "Utils.h"
 
 TEST_CASE("Test Creation of GetFile", "[getfileCreate]") {
   TestController testController;
@@ -547,6 +548,10 @@ TEST_CASE("TestEmptyContent", "[emptyContent]") {
   LogTestController::getInstance().reset();
 }
 
+struct TestAccessor {
+  METHOD_ACCESSOR(unloadModule)
+};
+
 /**
  * Tests the RPG bypass feature
  * @param host to configure
@@ -555,6 +560,8 @@ TEST_CASE("TestEmptyContent", "[emptyContent]") {
  * @param hasException dictates if a failure should occur
  */
 void testRPGBypass(const std::string &host, const std::string &port, const std::string &portVal = "-1", bool hasException = true) {
+  // this test expects that the http module not be loaded
+  TestAccessor::call_unloadModule(core::extension::ExtensionManager::instance(), "minifi-http-curl");
   TestController testController;
   LogTestController::getInstance().setTrace<minifi::RemoteProcessorGroupPort>();
   LogTestController::getInstance().setTrace<minifi::core::ProcessSession>();
