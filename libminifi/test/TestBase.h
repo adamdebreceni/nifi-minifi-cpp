@@ -121,7 +121,7 @@ class LogTestController {
 
   template<typename T>
   void setLevel(spdlog::level::level_enum level) {
-    //logging::LoggerFactory<T>::getLogger();
+    // logging::LoggerFactory<T>::getLogger();
     std::string name = core::getClassName<T>();
     if (config)
       config->getLogger(name);

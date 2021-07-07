@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#pragma once
+
 #define COMMA(...) ,
 #define MSVC_HACK(x) x
 

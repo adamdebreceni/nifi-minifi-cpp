@@ -129,7 +129,9 @@ FOREACH(testfile ${NANOFI_UNIT_TESTS})
     target_include_directories(${testfilename} BEFORE PRIVATE "${CMAKE_SOURCE_DIR}/extensions/standard-processors/processors/")
     target_include_directories(${testfilename} BEFORE PRIVATE "${CMAKE_SOURCE_DIR}/libminifi/test")
     appendIncludes("${testfilename}")
-    target_link_libraries(${testfilename} ${CATCH_MAIN_LIB} ${TEST_BASE_LIB} nanofi Threads::Threads)
+    target_link_libraries(${testfilename} ${CATCH_MAIN_LIB} ${TEST_BASE_LIB} Threads::Threads)
+    target_wholearchive_library(${testfilename} nanofi)
+
 
     target_link_libraries(${testfilename} minifi-standard-processors)
 

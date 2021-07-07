@@ -19,6 +19,8 @@
 
 #include <memory>
 #include <vector>
+#include <string>
+
 #include "properties/Configure.h"
 
 namespace org {

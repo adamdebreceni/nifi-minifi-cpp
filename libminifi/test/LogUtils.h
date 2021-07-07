@@ -19,13 +19,15 @@
 
 #include <sstream>
 #include <memory>
+#include <string>
+#include <utility>
 
 #include "spdlog/sinks/sink.h"
 #include "spdlog/sinks/ostream_sink.h"
 
 class StringStreamSink : public spdlog::sinks::sink {
  public:
-  StringStreamSink(std::shared_ptr<std::ostringstream> stream, bool force_flush = false)
+  explicit StringStreamSink(std::shared_ptr<std::ostringstream> stream, bool force_flush = false)
     : stream_(std::move(stream)), sink_(*stream_, force_flush) {}
 
   ~StringStreamSink() override = default;
