@@ -18,6 +18,8 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "core/logging/Logger.h"
 #include "DynamicLibrary.h"

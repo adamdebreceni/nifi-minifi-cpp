@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "core/logging/Logger.h"
 #include "utils/gsl.h"
