@@ -53,13 +53,13 @@ class PerformanceDataMonitor : public core::Processor {
   ~PerformanceDataMonitor() override;
   static constexpr char const* ProcessorName = "PerformanceDataMonitor";
   // Supported Properties
-  static core::Property PredefinedGroups;
-  static core::Property CustomPDHCounters;
-  static core::Property OutputFormatProperty;
-  static core::Property OutputCompactness;
-  static core::Property DecimalPlaces;
+  EXTENSIONAPI static core::Property PredefinedGroups;
+  EXTENSIONAPI static core::Property CustomPDHCounters;
+  EXTENSIONAPI static core::Property OutputFormatProperty;
+  EXTENSIONAPI static core::Property OutputCompactness;
+  EXTENSIONAPI static core::Property DecimalPlaces;
   // Supported Relationships
-  static core::Relationship Success;
+  EXTENSIONAPI static core::Relationship Success;
 
 
  public:
