@@ -52,11 +52,17 @@ static utils::optional<LibraryDescriptor> asDynamicLibrary(const std::string& di
 #else
   const std::string extension = ".so";
 #endif
-  if (!utils::StringUtils::endsWith(filename, extension)) {
+
+#ifdef WIN32
+  const std::string prefix = "";
+#else
+  const std::string prefix = "lib";
+#endif
+  if (!utils::StringUtils::startsWith(filename, prefix) || !utils::StringUtils::endsWith(filename, extension)) {
     return {};
   }
   return LibraryDescriptor{
-    filename.substr(0, filename.length() - extension.length()),
+    filename.substr(prefix.length(), filename.length() - extension.length() - prefix.length()),
     dir,
     filename
   };
