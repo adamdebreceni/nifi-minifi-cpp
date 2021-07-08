@@ -74,6 +74,12 @@ ExtensionManager& ExtensionManager::instance() {
   return instance;
 }
 
+#ifdef WIN32
+static const char* const EXTENSION_PREFIX = "minifi-";
+#else
+static const char* const EXTENSION_PREFIX = "libminifi-";
+#endif
+
 bool ExtensionManager::initialize(const std::shared_ptr<Configure>& config) {
   static bool initialized = ([&] {
     logger_->log_error("Initializing extensions");
@@ -83,7 +89,7 @@ bool ExtensionManager::initialize(const std::shared_ptr<Configure>& config) {
     if (!dir) return;
     std::vector<LibraryDescriptor> libraries;
     utils::file::FileUtils::list_dir(dir.value(), [&] (const std::string& path, const std::string& filename) {
-      if (!utils::StringUtils::startsWith(filename, "minifi-")) return true;
+      if (!utils::StringUtils::startsWith(filename, EXTENSION_PREFIX)) return true;
       utils::optional<LibraryDescriptor> library = asDynamicLibrary(path, filename);
       if (library && library->verify(logger_)) {
         libraries.push_back(std::move(library.value()));
