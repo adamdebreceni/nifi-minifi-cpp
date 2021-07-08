@@ -26,9 +26,12 @@ endif()
 
 file(GLOB SOURCES  "ExecuteScript.cpp" "ScriptFlowFile.cpp" "ScriptProcessContext.cpp" "${OTHER_SOURCES}")
 
-add_library(minifi-script-extensions SHARED ${SOURCES})
+add_library(minifi-script-core STATIC ${SOURCES})
+add_library(minifi-script-extensions SHARED empty.cpp)
 
-target_link_libraries(minifi-script-extensions ${LIBMINIFI} Threads::Threads)
+target_link_libraries(minifi-script-core ${LIBMINIFI} Threads::Threads)
+
+target_wholearchive_library(minifi-script-extensions minifi-script-core)
 
 if (NOT DISABLE_PYTHON_SCRIPTING)
     find_package(PythonLibs 3.5)
@@ -46,7 +49,7 @@ if (NOT DISABLE_PYTHON_SCRIPTING)
     add_library(minifi-python-extensions STATIC ${PY_SOURCES})
     set_target_properties(minifi-python-extensions PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-    target_link_libraries(minifi-python-extensions ${LIBMINIFI})
+    target_link_libraries(minifi-python-extensions ${LIBMINIFI} minifi-script-core)
     target_link_libraries(minifi-python-extensions ${PYTHON_LIBRARIES})
     target_wholearchive_library(minifi-script-extensions minifi-python-extensions)
 endif()
@@ -68,7 +71,7 @@ if (ENABLE_LUA_SCRIPTING)
     add_library(minifi-lua-extensions STATIC ${LUA_SOURCES})
     set_target_properties(minifi-lua-extensions PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-    target_link_libraries(minifi-lua-extensions ${LIBMINIFI})
+    target_link_libraries(minifi-lua-extensions ${LIBMINIFI} minifi-script-core)
     target_link_libraries(minifi-lua-extensions ${LUA_LIBRARIES} sol)
     target_wholearchive_library(minifi-script-extensions minifi-lua-extensions)
 
