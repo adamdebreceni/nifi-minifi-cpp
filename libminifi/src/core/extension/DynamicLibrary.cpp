@@ -65,6 +65,7 @@ bool DynamicLibrary::load() {
 
 bool DynamicLibrary::unload() {
   if (!handle_) {
+    logger_->log_error("Extension does not have a handle_ '%s' at '%s'", name_, library_path_);
     return true;
   }
   dlerror();
@@ -72,7 +73,7 @@ bool DynamicLibrary::unload() {
     logger_->log_error("Failed to unload extension '%s' at '%': %s", name_, library_path_, dlerror());
     return false;
   }
-  logger_->log_info("Unloaded extension '%s' at '%s'", name_, library_path_);
+  logger_->log_error("Unloaded extension '%s' at '%s'", name_, library_path_);
   handle_ = nullptr;
   return true;
 }
