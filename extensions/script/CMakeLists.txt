@@ -74,6 +74,8 @@ if (ENABLE_LUA_SCRIPTING)
 
     target_link_libraries(minifi-lua-extensions ${LIBMINIFI} minifi-script-core)
     target_link_libraries(minifi-lua-extensions ${LUA_LIBRARIES} sol)
+    target_link_libraries(minifi-script-core sol)
+    target_compile_features(minifi-script-core PUBLIC cxx_std_14)
     target_wholearchive_library(minifi-script-extensions minifi-lua-extensions)
 
     target_compile_features(minifi-lua-extensions PUBLIC cxx_std_14)
