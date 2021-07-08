@@ -44,11 +44,12 @@ if (NOT DISABLE_PYTHON_SCRIPTING)
 
     file(GLOB PY_SOURCES  "python/*.cpp")
     add_library(minifi-python-extensions STATIC ${PY_SOURCES})
+    set_target_properties(minifi-python-extensions PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
     target_link_libraries(minifi-python-extensions ${LIBMINIFI})
     target_link_libraries(minifi-python-extensions ${PYTHON_LIBRARIES})
     target_link_libraries(minifi-python-extensions pybind11)
-    target_link_libraries(minifi-script-extensions minifi-python-extensions)
+    target_wholearchive_library(minifi-script-extensions minifi-python-extensions)
 endif()
 
 if (ENABLE_LUA_SCRIPTING)
@@ -66,10 +67,11 @@ if (ENABLE_LUA_SCRIPTING)
 
     file(GLOB LUA_SOURCES  "lua/*.cpp")
     add_library(minifi-lua-extensions STATIC ${LUA_SOURCES})
+    set_target_properties(minifi-lua-extensions PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
     target_link_libraries(minifi-lua-extensions ${LIBMINIFI})
     target_link_libraries(minifi-lua-extensions ${LUA_LIBRARIES} sol)
-    target_link_libraries(minifi-script-extensions minifi-lua-extensions)
+    target_wholearchive_library(minifi-script-extensions minifi-lua-extensions)
 
     target_compile_features(minifi-lua-extensions PUBLIC cxx_std_14)
 endif()
