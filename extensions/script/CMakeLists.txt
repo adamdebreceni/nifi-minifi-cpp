@@ -19,19 +19,15 @@
 
 include(${CMAKE_SOURCE_DIR}/extensions/ExtensionHeader.txt)
 
-set (OTHER_SOURCES "")
-if (NOT DISABLE_PYTHON_SCRIPTING)
-  set (OTHER_SOURCES "pythonloader/PyProcLoader.cpp")
-endif()
-
-file(GLOB SOURCES  "ExecuteScript.cpp" "ScriptFlowFile.cpp" "ScriptProcessContext.cpp" "${OTHER_SOURCES}")
+file(GLOB SOURCES  "ExecuteScript.cpp" "ScriptFlowFile.cpp" "ScriptProcessContext.cpp")
 
 add_library(minifi-script-core STATIC ${SOURCES})
+set_target_properties(minifi-script-core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_library(minifi-script-extensions SHARED empty.cpp)
 
 target_link_libraries(minifi-script-core ${LIBMINIFI} Threads::Threads)
 
-target_wholearchive_library(minifi-script-extensions minifi-script-core)
+target_wholearchive_library_private(minifi-script-extensions minifi-script-core)
 
 if (NOT DISABLE_PYTHON_SCRIPTING)
     find_package(PythonLibs 3.5)
@@ -45,13 +41,14 @@ if (NOT DISABLE_PYTHON_SCRIPTING)
     include_directories(python)
     add_definitions(-DPYTHON_SUPPORT)
 
-    file(GLOB PY_SOURCES  "python/*.cpp")
+    file(GLOB PY_SOURCES  "python/*.cpp" "pythonloader/PyProcLoader.cpp")
     add_library(minifi-python-extensions STATIC ${PY_SOURCES})
     set_target_properties(minifi-python-extensions PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-    target_link_libraries(minifi-python-extensions ${LIBMINIFI} minifi-script-core)
+    target_link_libraries(minifi-python-extensions ${LIBMINIFI})
     target_link_libraries(minifi-python-extensions ${PYTHON_LIBRARIES})
-    target_wholearchive_library(minifi-script-extensions minifi-python-extensions)
+    target_link_libraries(minifi-script-extensions INTERFACE minifi-python-extensions)
+    target_wholearchive_library_private(minifi-script-extensions minifi-python-extensions)
 endif()
 
 if (ENABLE_LUA_SCRIPTING)
@@ -71,11 +68,13 @@ if (ENABLE_LUA_SCRIPTING)
     add_library(minifi-lua-extensions STATIC ${LUA_SOURCES})
     set_target_properties(minifi-lua-extensions PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-    target_link_libraries(minifi-lua-extensions ${LIBMINIFI} minifi-script-core)
+    target_link_libraries(minifi-lua-extensions ${LIBMINIFI})
     target_link_libraries(minifi-lua-extensions ${LUA_LIBRARIES} sol)
     target_link_libraries(minifi-script-core sol)
     target_compile_features(minifi-script-core PUBLIC cxx_std_14)
-    target_wholearchive_library(minifi-script-extensions minifi-lua-extensions)
+
+    target_link_libraries(minifi-script-extensions INTERFACE minifi-lua-extensions)
+    target_wholearchive_library_private(minifi-script-extensions minifi-lua-extensions)
 
     target_compile_features(minifi-lua-extensions PUBLIC cxx_std_14)
 endif()
