@@ -21,13 +21,20 @@ include(${CMAKE_SOURCE_DIR}/extensions/ExtensionHeader.txt)
 
 file(GLOB SOURCES  "ExecuteScript.cpp" "ScriptFlowFile.cpp" "ScriptProcessContext.cpp")
 
-add_library(minifi-script-core STATIC ${SOURCES})
-set_target_properties(minifi-script-core PROPERTIES POSITION_INDEPENDENT_CODE ON)
-add_library(minifi-script-extensions SHARED empty.cpp)
+#if (NOT DISABLE_PYTHON_SCRIPTING)
+#    file(GLOB PY_SOURCES  "python/*.cpp")
+#    list(APPEND SOURCES ${PY_SOURCES} "pythonloader/PyProcLoader.cpp")
+#endif()
+#
+#if (ENABLE_LUA_SCRIPTING)
+#    file(GLOB LUA_SOURCES  "lua/*.cpp")
+#    list(APPEND SOURCES ${LUA_SOURCES})
+#endif()
 
-target_link_libraries(minifi-script-core ${LIBMINIFI} Threads::Threads)
+add_library(minifi-script-extensions SHARED ${SOURCES})
+set_target_properties(minifi-script-extensions PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-target_wholearchive_library_private(minifi-script-extensions minifi-script-core)
+target_link_libraries(minifi-script-extensions ${LIBMINIFI} Threads::Threads)
 
 if (NOT DISABLE_PYTHON_SCRIPTING)
     find_package(PythonLibs 3.5)
@@ -42,14 +49,8 @@ if (NOT DISABLE_PYTHON_SCRIPTING)
     add_definitions(-DPYTHON_SUPPORT)
 
     file(GLOB PY_SOURCES  "python/*.cpp" "pythonloader/PyProcLoader.cpp")
-    add_library(minifi-python-extensions STATIC ${PY_SOURCES})
-    set_target_properties(minifi-python-extensions PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-    target_link_libraries(minifi-python-extensions ${LIBMINIFI} minifi-script-core)
-    target_link_libraries(minifi-python-extensions ${PYTHON_LIBRARIES})
-
-    target_link_libraries(minifi-script-extensions INTERFACE minifi-python-extensions)
-    target_wholearchive_library_private(minifi-script-extensions minifi-python-extensions)
+    target_sources(minifi-script-extensions PRIVATE ${PY_SOURCES})
+    target_link_libraries(minifi-script-extensions ${PYTHON_LIBRARIES})
 endif()
 
 if (ENABLE_LUA_SCRIPTING)
@@ -66,18 +67,10 @@ if (ENABLE_LUA_SCRIPTING)
     add_definitions(-DLUA_SUPPORT)
 
     file(GLOB LUA_SOURCES  "lua/*.cpp")
-    add_library(minifi-lua-extensions STATIC ${LUA_SOURCES})
-    set_target_properties(minifi-lua-extensions PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    target_sources(minifi-script-extensions PRIVATE ${LUA_SOURCES})
 
-    target_link_libraries(minifi-lua-extensions ${LIBMINIFI} minifi-script-core)
-    target_link_libraries(minifi-lua-extensions ${LUA_LIBRARIES} sol)
-    target_link_libraries(minifi-script-core sol)
-    target_compile_features(minifi-script-core PUBLIC cxx_std_14)
-
-    target_link_libraries(minifi-script-extensions INTERFACE minifi-lua-extensions)
-    target_wholearchive_library_private(minifi-script-extensions minifi-lua-extensions)
-
-    target_compile_features(minifi-lua-extensions PUBLIC cxx_std_14)
+    target_link_libraries(minifi-script-extensions ${LUA_LIBRARIES} sol)
+    target_compile_features(minifi-script-extensions PUBLIC cxx_std_14)
 endif()
 
 SET (SCRIPTING-EXTENSIONS minifi-script-extensions PARENT_SCOPE)

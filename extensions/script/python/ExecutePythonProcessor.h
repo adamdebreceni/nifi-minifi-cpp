@@ -53,12 +53,12 @@ class ExecutePythonProcessor : public core::Processor {
         script_engine_q_() {
   }
 
-  static core::Property ScriptFile;
-  static core::Property ScriptBody;
-  static core::Property ModuleDirectory;
+  EXTENSIONAPI static core::Property ScriptFile;
+  EXTENSIONAPI static core::Property ScriptBody;
+  EXTENSIONAPI static core::Property ModuleDirectory;
 
-  static core::Relationship Success;
-  static core::Relationship Failure;
+  EXTENSIONAPI static core::Relationship Success;
+  EXTENSIONAPI static core::Relationship Failure;
 
   void initialize() override;
   void onSchedule(const std::shared_ptr<core::ProcessContext> &context, const std::shared_ptr<core::ProcessSessionFactory> &sessionFactory) override;
