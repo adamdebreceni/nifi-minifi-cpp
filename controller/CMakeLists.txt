@@ -33,19 +33,17 @@ set_cpp_version()
 add_executable(minificontroller MiNiFiController.cpp ../main/MainHelper.cpp)
 target_link_libraries(minificontroller cxxopts Threads::Threads)
 
-get_property(extensions GLOBAL PROPERTY EXTENSION-OPTIONS)
-foreach(EXTENSION ${extensions})
-	target_link_libraries(minificontroller ${EXTENSION})
-endforeach()
-
 set_target_properties(minificontroller PROPERTIES
 		OUTPUT_NAME minificontroller
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
-install(TARGETS minificontroller
-        RUNTIME
-        DESTINATION bin
-        COMPONENT bin)
+if (NOT WIN32)
+	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+		target_link_options(minificontroller PRIVATE "-Wl,--disable-new-dtags")
+	endif()
+	set_target_properties(minificontroller PROPERTIES INSTALL_RPATH "$ORIGIN")
+	install(TARGETS minificontroller RUNTIME DESTINATION bin COMPONENT bin)
+endif()
 
 add_custom_command(TARGET minificontroller POST_BUILD
            COMMAND cat ${CMAKE_BINARY_DIR}/all.log)
