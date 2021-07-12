@@ -20,6 +20,8 @@
 
 class OpenCVExtension : org::apache::nifi::minifi::core::extension::Extension {
  public:
+  using Extension::Extension;
+
   bool doInitialize(const std::shared_ptr<org::apache::nifi::minifi::Configure>& /*config*/) override {
     // By default in OpenCV, ffmpeg capture is hardcoded to use TCP and this is a workaround
     // also if UDP timeout, ffmpeg will retry with TCP
