@@ -33,6 +33,6 @@ endif()
 include_directories(../../extensions/http-curl/ ../../extensions/http-curl/client ../../extensions/http-curl/sitetosite ../../extensions/http-curl/protocols ../../extensions/http-curl/processors)
 
 add_library(python-lib SHARED python_lib.cpp)
-target_link_libraries(python-lib nanofi core-minifi minifi)
+target_link_libraries(python-lib nanofi core-minifi)
 
 target_link_libraries(python-lib minifi-http-curl)
