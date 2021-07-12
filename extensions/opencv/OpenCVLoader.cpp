@@ -18,7 +18,7 @@
 #include "core/extension/Extension.h"
 #include "utils/Environment.h"
 
-class OpenCVExtension : core::extension::Extension {
+class OpenCVExtension : org::apache::nifi::minifi::core::extension::Extension {
  public:
   bool doInitialize(const std::shared_ptr<org::apache::nifi::minifi::Configure>& /*config*/) override {
     // By default in OpenCV, ffmpeg capture is hardcoded to use TCP and this is a workaround
