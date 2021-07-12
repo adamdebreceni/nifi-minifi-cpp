@@ -134,6 +134,7 @@ if(NOT WIN32 AND ENABLE_NANOFI)
     target_link_libraries(${testfilename} ${CATCH_MAIN_LIB} ${TEST_BASE_LIB} Threads::Threads)
     target_wholearchive_library(${testfilename} nanofi)
 
+    createTests(${testfilename})
 
     target_link_libraries(${testfilename} minifi-standard-processors)
 
