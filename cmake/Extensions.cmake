@@ -38,12 +38,10 @@ macro(register_extension extension-name)
     set_target_properties(${extension-name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
   endif()
 
-  if (NOT WIN32)
-    install(
-        TARGETS ${extension-name}
-        LIBRARY DESTINATION extensions
-        COMPONENT bin
-    )
+  if (WIN32)
+    install(TARGETS ${extension-name} RUNTIME DESTINATION extensions COMPONENT bin)
+  else()
+    install(TARGETS ${extension-name} LIBRARY DESTINATION extensions COMPONENT bin)
   endif()
 endmacro()
 
