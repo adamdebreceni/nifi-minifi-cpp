@@ -31,7 +31,7 @@ include(CppVersion)
 set_cpp_version()
 
 add_executable(minificontroller MiNiFiController.cpp ../main/MainHelper.cpp)
-target_link_libraries(minificontroller cxxopts Threads::Threads)
+target_link_libraries(minificontroller ${LIBMINIFI} cxxopts Threads::Threads)
 
 set_target_properties(minificontroller PROPERTIES
 		OUTPUT_NAME minificontroller
