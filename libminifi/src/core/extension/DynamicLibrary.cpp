@@ -64,6 +64,7 @@ bool DynamicLibrary::load() {
 }
 
 bool DynamicLibrary::unload() {
+  logger_->log_error("Unloading library '%s' at '%s'", name_, library_path_);
   if (!handle_) {
     logger_->log_error("Extension does not have a handle_ '%s' at '%s'", name_, library_path_);
     return true;
@@ -78,9 +79,7 @@ bool DynamicLibrary::unload() {
   return true;
 }
 
-DynamicLibrary::~DynamicLibrary() {
-  unload();
-}
+DynamicLibrary::~DynamicLibrary() {}
 
 #ifdef WIN32
 
