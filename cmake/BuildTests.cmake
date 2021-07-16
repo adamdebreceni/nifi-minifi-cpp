@@ -82,6 +82,7 @@ function(createTests testName)
         target_link_libraries(${testName} ${Boost_FILESYSTEM_LIBRARY})
     endif()
 
+  target_compile_definitions(${testName} PRIVATE LOAD_EXTENSIONS)
   set_target_properties(${testName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 endfunction()
 

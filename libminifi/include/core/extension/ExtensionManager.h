@@ -25,8 +25,6 @@
 #include "DynamicLibrary.h"
 #include "properties/Configure.h"
 
-struct TestAccessor;
-
 namespace org {
 namespace apache {
 namespace nifi {
@@ -34,10 +32,13 @@ namespace minifi {
 namespace core {
 namespace extension {
 
-static constexpr const char* nifi_extension_directory = "nifi.extension.directory";
+/**
+ * Comma separated list of path patterns. Patterns prepended with "!" result in the exclusion
+ * of the extensions matching that pattern, unless some subsequent pattern re-enables it.
+ */
+static constexpr const char* nifi_extension_path = "nifi.extension.path";
 
 class ExtensionManager {
-  friend struct ::TestAccessor;
   ExtensionManager();
 
  public:
@@ -49,8 +50,6 @@ class ExtensionManager {
   void unregisterExtension(Extension* extension);
 
  private:
-  bool unloadModule(const std::string& name);
-
   std::vector<std::unique_ptr<Module>> modules_;
 
   Module* active_module_;

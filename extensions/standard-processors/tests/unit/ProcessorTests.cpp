@@ -15,6 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#define CUSTOM_EXTENSION_INIT
+
 #include <cstdio>
 #include <utility>
 #include <memory>
@@ -43,6 +45,23 @@
 #include "utils/PropertyErrors.h"
 #include "utils/IntegrationTestUtils.h"
 #include "Utils.h"
+
+static bool extensionInitializer = [] {
+  LogTestController::getInstance().setTrace<core::extension::ExtensionManager>();
+  LogTestController::getInstance().setTrace<core::extension::Module>();
+  auto config = std::make_shared<minifi::Configure>();
+#ifdef WIN32
+  config->set(core::extension::nifi_extension_path,
+              utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "minifi-*") +
+              ",!" + utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "*http-curl*"));
+#else
+  config->set(core::extension::nifi_extension_path,
+              utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "libminifi-*") +
+              ",!" + utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "*http-curl*"));
+#endif
+  core::extension::ExtensionManager::initialize(config);
+  return true;
+}();
 
 TEST_CASE("Test Creation of GetFile", "[getfileCreate]") {
   TestController testController;
@@ -547,10 +566,6 @@ TEST_CASE("TestEmptyContent", "[emptyContent]") {
   LogTestController::getInstance().reset();
 }
 
-struct TestAccessor {
-  METHOD_ACCESSOR(unloadModule)
-};
-
 /**
  * Tests the RPG bypass feature
  * @param host to configure
@@ -559,8 +574,6 @@ struct TestAccessor {
  * @param hasException dictates if a failure should occur
  */
 void testRPGBypass(const std::string &host, const std::string &port, const std::string &portVal = "-1", bool hasException = true) {
-  // this test expects that the http module not be loaded
-  TestAccessor::call_unloadModule(core::extension::ExtensionManager::instance(), "minifi-http-curl");
   TestController testController;
   LogTestController::getInstance().setTrace<minifi::RemoteProcessorGroupPort>();
   LogTestController::getInstance().setTrace<minifi::core::ProcessSession>();
