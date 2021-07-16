@@ -458,10 +458,10 @@ static bool extensionInitializer = [] {
   LogTestController::getInstance().setTrace<core::extension::ExtensionManager>();
   LogTestController::getInstance().setTrace<core::extension::Module>();
   auto config = std::make_shared<minifi::Configure>();
-#ifdef WIN32
-  config->set(core::extension::nifi_extension_path, utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "minifi-*"));
+#ifdef EXTENSION_LIST
+  config->set(core::extension::nifi_extension_path, EXTENSION_LIST);
 #else
-  config->set(core::extension::nifi_extension_path, utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "libminifi-*"));
+  config->set(core::extension::nifi_extension_path, "*minifi-*");
 #endif
   core::extension::ExtensionManager::initialize(config);
   return true;
