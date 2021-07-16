@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+// including the extensions messes up the memory usage
+#define EXTENSION_LIST ""
 
 #include "utils/gsl.h"
 #include "utils/OsUtils.h"
