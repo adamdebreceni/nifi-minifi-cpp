@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <utility>
+#include <memory>
 
 #include "utils/OptionalUtils.h"
 #include "core/logging/Logger.h"
@@ -40,8 +42,8 @@ class FileMatcher {
       : directory_segments_(std::move(directory_segments)),
         file_pattern_(std::move(file_pattern)),
         excluding_(excluding) {}
-   public:
 
+   public:
     static optional<FilePattern> fromPattern(std::string pattern, bool log_errors = true);
 
     bool isExcluding() const {
@@ -72,6 +74,7 @@ class FileMatcher {
 
     static std::shared_ptr<core::logging::Logger> logger_;
   };
+
  public:
   explicit FileMatcher(const std::string& patterns);
 
