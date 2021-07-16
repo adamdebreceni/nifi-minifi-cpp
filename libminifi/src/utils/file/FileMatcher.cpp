@@ -224,6 +224,11 @@ void FileMatcher::forEachFile(const std::function<bool(const std::string&, const
     std::function<bool(const std::string&, const utils::optional<std::string>&)> matcher = [&] (const std::string& dir, const utils::optional<std::string>& file) -> bool {
       if (terminate) return false;
       if (!it->match(dir, file)) {
+        if (file) {
+          // keep iterating
+          return true;
+        }
+        // do not descend into this directory
         return false;
       }
       // check all subsequent patterns in reverse (later ones have higher precedence)
