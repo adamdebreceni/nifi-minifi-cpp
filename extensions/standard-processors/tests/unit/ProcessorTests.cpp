@@ -54,11 +54,13 @@ static bool extensionInitializer = [] {
 #ifdef WIN32
   config->set(core::extension::nifi_extension_path,
               utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "minifi-*") +
-              ",!" + utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "*http-curl*"));
+              ",!" + utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "*http-curl*") +
+              ",!" + utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "*coap*"));
 #else
   config->set(core::extension::nifi_extension_path,
               utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "libminifi-*") +
-              ",!" + utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "*http-curl*"));
+              ",!" + utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "*http-curl*") +
+              ",!" + utils::file::concat_path(utils::file::FileUtils::get_executable_dir(), "*coap*"));
 #endif
   core::extension::ExtensionManager::initialize(config);
   return true;
