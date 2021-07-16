@@ -19,6 +19,7 @@
 #include "core/logging/LoggerConfiguration.h"
 #include "utils/file/FileUtils.h"
 #include "core/extension/Executable.h"
+#include "utils/file/FileMatcher.h"
 
 namespace org {
 namespace apache {
@@ -80,28 +81,21 @@ ExtensionManager& ExtensionManager::instance() {
   return instance;
 }
 
-#ifdef WIN32
-static const char* const EXTENSION_PREFIX = "minifi-";
-#else
-static const char* const EXTENSION_PREFIX = "libminifi-";
-#endif
-
 bool ExtensionManager::initialize(const std::shared_ptr<Configure>& config) {
   static bool initialized = ([&] {
     logger_->log_error("Initializing extensions");
     // initialize executable
     instance().active_module_->initialize(config);
-    utils::optional<std::string> dir = config ? config->get(nifi_extension_directory) : utils::nullopt;
-    if (!dir) return;
+    utils::optional<std::string> pattern = config ? config->get(nifi_extension_path) : utils::nullopt;
+    if (!pattern) return;
     std::vector<LibraryDescriptor> libraries;
-    utils::file::FileUtils::list_dir(dir.value(), [&] (const std::string& path, const std::string& filename) {
-      if (!utils::StringUtils::startsWith(filename, EXTENSION_PREFIX)) return true;
-      utils::optional<LibraryDescriptor> library = asDynamicLibrary(path, filename);
+    utils::file::FileMatcher(pattern.value()).forEachFile([&] (const std::string& dir, const std::string& filename) {
+      utils::optional<LibraryDescriptor> library = asDynamicLibrary(dir, filename);
       if (library && library->verify(logger_)) {
         libraries.push_back(std::move(library.value()));
       }
       return true;
-    }, logger_, false);
+    });
     for (const auto& library : libraries) {
       auto module = utils::make_unique<DynamicLibrary>(library.name, library.getFullPath());
       instance().active_module_ = module.get();
@@ -129,29 +123,6 @@ void ExtensionManager::unregisterExtension(Extension *extension) {
       return;
     }
   }
-}
-
-bool ExtensionManager::unloadModule(const std::string& name) {
-  logger_->log_info("Trying to unload module '%s'", name);
-  auto it = std::find_if(modules_.begin(), modules_.end(), [&] (const std::unique_ptr<Module>& module) {
-    gsl_Expects(module);
-    return module->getName() == name;
-  });
-  if (it == modules_.end()) {
-    logger_->log_error("Could not find module '%s'", name);
-    return false;
-  }
-  auto* lib = dynamic_cast<DynamicLibrary*>(it->get());
-  if (lib == nullptr) {
-    logger_->log_error("Cannot unload non-dynamic library '%s'", name);
-    return false;
-  }
-  if (!lib->unload()) {
-    logger_->log_error("Unloading library '%s' failed", name);
-    return false;
-  }
-  modules_.erase(it);
-  return true;
 }
 
 }  // namespace extension
