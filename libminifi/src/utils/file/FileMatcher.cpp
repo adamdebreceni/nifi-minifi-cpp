@@ -33,26 +33,22 @@ static bool isGlobPattern(const std::string& pattern) {
   return pattern.find_first_of("?*") != std::string::npos;
 }
 
-static std::vector<std::string> split(std::string str, const std::string& delimiter) {
+static std::vector<std::string> split(const std::string& str, const std::vector<std::string>& delimiters) {
   std::vector<std::string> result;
-  if (delimiter.empty()) {
-    for (auto c : str) {
-      result.push_back(std::string(1, c));
-    }
-    return result;
-  }
 
-  size_t pos = str.find(delimiter);
-  if (pos == std::string::npos) {
-    result.push_back(str);
-    return result;
-  }
-  while (pos != std::string::npos) {
-    result.push_back(str.substr(0, pos));
-    str = str.substr(pos + delimiter.size());
-    pos = str.find(delimiter);
-  }
-  result.push_back(str);
+  size_t prev_delim_end = 0;
+  size_t next_delim_begin = std::string::npos;
+  do {
+    for (const auto& delim : delimiters) {
+      next_delim_begin = str.find(delim, prev_delim_end);
+      if (next_delim_begin != std::string::npos) {
+        result.push_back(str.substr(prev_delim_end, next_delim_begin - prev_delim_end));
+        prev_delim_end = next_delim_begin + delim.length();
+        break;
+      }
+    }
+  } while (next_delim_begin != std::string::npos);
+  result.push_back(str.substr(prev_delim_end));
   return result;
 }
 
@@ -72,7 +68,7 @@ optional<FileMatcher::FilePattern> FileMatcher::FilePattern::fromPattern(std::st
     return nullopt;
   }
   pattern = resolve(exe_dir, pattern);
-  auto segments = split(pattern, std::string{get_separator()});
+  auto segments = split(pattern, {"/", "\\"});
   gsl_Expects(!segments.empty());
   auto file_pattern = segments.back();
   if (file_pattern == "**") {
@@ -100,7 +96,7 @@ std::string FileMatcher::FilePattern::getBaseDirectory() const {
 }
 
 FileMatcher::FileMatcher(const std::string &patterns) {
-  for (auto&& pattern : split(patterns, ",")) {
+  for (auto&& pattern : split(patterns, {","})) {
     if (auto&& p = FilePattern::fromPattern(pattern)) {
       patterns_.push_back(std::move(p.value()));
     }
@@ -197,7 +193,7 @@ FileMatcher::FilePattern::DirMatchResult FileMatcher::FilePattern::matchDirector
 }
 
 bool FileMatcher::FilePattern::match(const std::string& directory, const optional<std::string>& filename) const {
-  auto value = split(directory, std::string{get_separator()});
+  auto value = split(directory, {"/", "\\"});
   auto result = matchDirectory(directory_segments_.begin(), directory_segments_.end(), value.begin(), value.end());
   if (!filename) {
     if (excluding_) {
