@@ -71,6 +71,10 @@ function(use_bundled_libaws SOURCE_DIR BINARY_DIR)
             -DENABLE_UNITY_BUILD=${AWS_ENABLE_UNITY_BUILD}
             -DBUILD_DEPS=OFF)
 
+    if(WIN32)
+        list(APPEND AWS_SDK_CPP_CMAKE_ARGS -DFORCE_EXPORT_CORE_API=ON -DFORCE_EXPORT_S3_API=ON)
+    endif()
+
     append_third_party_passthrough_args(AWS_SDK_CPP_CMAKE_ARGS "${AWS_SDK_CPP_CMAKE_ARGS}")
 
     # Build project
@@ -107,6 +111,8 @@ function(use_bundled_libaws SOURCE_DIR BINARY_DIR)
             BUILD_BYPRODUCTS "${BINARY_DIR}/thirdparty/libaws-install/${CMAKE_INSTALL_LIBDIR}/${PREFIX}aws-c-event-stream.${SUFFIX}"
             EXCLUDE_FROM_ALL TRUE
     )
+    set(AWS_SDK_PC git reset --hard HEAD && "${Patch_EXECUTABLE}" -p1 -i "${SOURCE_DIR}/thirdparty/aws/aws-sdk-cpp.patch")
+    message(WARNING ${AWS_SDK_PC})
     ExternalProject_Add(
             aws-sdk-cpp-external
             GIT_REPOSITORY "https://github.com/aws/aws-sdk-cpp.git"
@@ -114,6 +120,7 @@ function(use_bundled_libaws SOURCE_DIR BINARY_DIR)
             SOURCE_DIR "${BINARY_DIR}/thirdparty/aws-sdk-cpp-src"
             INSTALL_DIR "${BINARY_DIR}/thirdparty/libaws-install"
             LIST_SEPARATOR % # This is needed for passing semicolon-separated lists
+            PATCH_COMMAND ${AWS_SDK_PC}
             CMAKE_ARGS ${AWS_SDK_CPP_CMAKE_ARGS}
             BUILD_BYPRODUCTS "${AWSSDK_LIBRARIES_LIST}"
             EXCLUDE_FROM_ALL TRUE

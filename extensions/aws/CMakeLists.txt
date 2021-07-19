@@ -24,9 +24,15 @@ file(GLOB SOURCES "*.cpp" "s3/*.cpp" "controllerservices/*.cpp" "processors/*.cp
 
 add_library(minifi-aws SHARED ${SOURCES})
 
-target_link_libraries(minifi-aws ${LIBMINIFI} Threads::Threads)
+target_link_libraries(minifi-aws PUBLIC ${LIBMINIFI} Threads::Threads)
 
-target_link_libraries(minifi-aws AWS::aws-cpp-sdk-s3)
+target_wholearchive_library_private(minifi-aws AWS::aws-cpp-sdk-s3)
+get_target_property(AWS_INTERFACE AWS::aws-cpp-sdk-s3 INTERFACE_INCLUDE_DIRECTORIES)
+target_include_directories(minifi-aws INTERFACE ${AWS_INTERFACE})
+if(WIN32)
+  target_compile_definitions(minifi-aws INTERFACE "AWS_CORE_API=__declspec(dllimport)")
+  target_compile_definitions(minifi-aws INTERFACE "AWS_S3_API=__declspec(dllimport)")
+endif()
 
 SET (AWS-EXTENSION minifi-aws PARENT_SCOPE)
 register_extension(minifi-aws)
