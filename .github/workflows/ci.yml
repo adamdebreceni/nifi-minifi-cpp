@@ -12,7 +12,6 @@ jobs:
         uses: actions/checkout@v2
       - name: Setup PATH
         uses: microsoft/setup-msbuild@v1.0.2
-        shell: powershell
       - name: Setup clcache
         run: |
           (New-Object System.Net.WebClient).DownloadFile('https://github.com/frerich/clcache/releases/download/v4.2.0/clcache-4.2.0.zip', "$pwd\clcache.zip")
