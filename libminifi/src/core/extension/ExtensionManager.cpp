@@ -76,7 +76,7 @@ ExtensionManager::ExtensionManager() {
   active_module_ = modules_[0].get();
 }
 
-ExtensionManager& ExtensionManager::instance() {
+ExtensionManager& ExtensionManager::get() {
   static ExtensionManager instance;
   return instance;
 }
@@ -85,7 +85,7 @@ bool ExtensionManager::initialize(const std::shared_ptr<Configure>& config) {
   static bool initialized = ([&] {
     logger_->log_error("Initializing extensions");
     // initialize executable
-    instance().active_module_->initialize(config);
+    active_module_->initialize(config);
     utils::optional<std::string> pattern = config ? config->get(nifi_extension_path) : utils::nullopt;
     if (!pattern) return;
     std::vector<LibraryDescriptor> libraries;
@@ -98,7 +98,7 @@ bool ExtensionManager::initialize(const std::shared_ptr<Configure>& config) {
     });
     for (const auto& library : libraries) {
       auto module = utils::make_unique<DynamicLibrary>(library.name, library.getFullPath());
-      instance().active_module_ = module.get();
+      active_module_ = module.get();
       if (!module->load()) {
         // error already logged by method
         continue;
@@ -106,7 +106,7 @@ bool ExtensionManager::initialize(const std::shared_ptr<Configure>& config) {
       if (!module->initialize(config)) {
         logger_->log_error("Failed to initialize module '%s' at '%s'", library.name, library.getFullPath());
       } else {
-        instance().modules_.push_back(std::move(module));
+        modules_.push_back(std::move(module));
       }
     }
   }(), true);

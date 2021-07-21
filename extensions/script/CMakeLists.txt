@@ -21,18 +21,7 @@ include(${CMAKE_SOURCE_DIR}/extensions/ExtensionHeader.txt)
 
 file(GLOB SOURCES  "ExecuteScript.cpp" "ScriptFlowFile.cpp" "ScriptProcessContext.cpp")
 
-#if (NOT DISABLE_PYTHON_SCRIPTING)
-#    file(GLOB PY_SOURCES  "python/*.cpp")
-#    list(APPEND SOURCES ${PY_SOURCES} "pythonloader/PyProcLoader.cpp")
-#endif()
-#
-#if (ENABLE_LUA_SCRIPTING)
-#    file(GLOB LUA_SOURCES  "lua/*.cpp")
-#    list(APPEND SOURCES ${LUA_SOURCES})
-#endif()
-
 add_library(minifi-script-extensions SHARED ${SOURCES})
-set_target_properties(minifi-script-extensions PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(minifi-script-extensions ${LIBMINIFI} Threads::Threads)
 

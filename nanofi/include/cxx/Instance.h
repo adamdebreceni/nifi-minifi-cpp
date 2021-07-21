@@ -86,7 +86,7 @@ class Instance {
     uuid = port;
     rpg_ = std::make_shared<minifi::RemoteProcessorGroupPort>(stream_factory_, url, url, configure_, uuid);
     proc_node_ = std::make_shared<core::ProcessorNode>(rpg_);
-    core::extension::ExtensionManager::initialize(configure_);
+    core::extension::ExtensionManager::get().initialize(configure_);
     content_repo_->initialize(configure_);
   }
 

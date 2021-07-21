@@ -29,11 +29,11 @@ namespace extension {
 static std::shared_ptr<logging::Logger> init_logger = logging::LoggerFactory<ExtensionInitializer>::getLogger();
 
 Extension::Extension(std::string name, ExtensionInit init): name_(std::move(name)), init_(init) {
-  ExtensionManager::instance().registerExtension(this);
+  ExtensionManager::get().registerExtension(this);
 }
 
 Extension::~Extension() {
-  ExtensionManager::instance().unregisterExtension(this);
+  ExtensionManager::get().unregisterExtension(this);
 }
 
 ExtensionInitializer::ExtensionInitializer(Extension* extension, const ExtensionConfig& config): extension_(extension) {

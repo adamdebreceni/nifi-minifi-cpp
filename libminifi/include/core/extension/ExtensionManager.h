@@ -42,9 +42,9 @@ class ExtensionManager {
   ExtensionManager();
 
  public:
-  static ExtensionManager &instance();
+  static ExtensionManager& get();
 
-  static bool initialize(const std::shared_ptr<Configure>& config);
+  bool initialize(const std::shared_ptr<Configure>& config);
 
   void registerExtension(Extension* extension);
   void unregisterExtension(Extension* extension);

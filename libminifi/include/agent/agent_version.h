@@ -36,7 +36,7 @@ class AgentBuild {
   MINIFIAPI static const char* const COMPILER;
   MINIFIAPI static const char* const COMPILER_VERSION;
   MINIFIAPI static const char* const COMPILER_FLAGS;
-  MINIFIAPI static std::vector<std::string> getExtensions();
+  static std::vector<std::string> getExtensions();
 };
 
 }  // namespace minifi

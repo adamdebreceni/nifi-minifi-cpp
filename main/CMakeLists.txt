@@ -53,8 +53,7 @@ endif()
 
 get_property(extensions GLOBAL PROPERTY EXTENSION-OPTIONS)
 target_link_libraries(minifiexe spdlog libsodium gsl-lite optional-lite ${LIBMINIFI})
-if (WIN32)
-endif()
+
 set_target_properties(minifiexe PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set_target_properties(minifiexe PROPERTIES OUTPUT_NAME minifi)
 set_target_properties(minifiexe PROPERTIES ENABLE_EXPORTS True)

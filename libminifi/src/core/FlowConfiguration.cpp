@@ -58,9 +58,10 @@ FlowConfiguration::FlowConfiguration(
       logger_->log_error("Couldn't find config file \"%s\".", *path);
       config_path_ = path;
     }
+    checksum_calculator_.setFileLocation(*config_path_);
   }
 
-  extension::ExtensionManager::initialize(configuration_);
+  extension::ExtensionManager::get().initialize(configuration_);
 }
 
 static_initializers &get_static_functions() {

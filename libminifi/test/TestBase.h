@@ -121,7 +121,6 @@ class LogTestController {
 
   template<typename T>
   void setLevel(spdlog::level::level_enum level) {
-    // logging::LoggerFactory<T>::getLogger();
     std::string name = core::getClassName<T>();
     if (config)
       config->getLogger(name);
@@ -470,7 +469,7 @@ static bool extensionInitializer = [] {
 #else
   config->set(core::extension::nifi_extension_path, "*minifi-*");
 #endif
-  core::extension::ExtensionManager::initialize(config);
+  core::extension::ExtensionManager::get().initialize(config);
   return true;
 }();
 #endif

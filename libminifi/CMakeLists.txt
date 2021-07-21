@@ -107,7 +107,6 @@ endif()
 target_link_libraries(core-minifi ${CMAKE_DL_LIBS} ${LIBMINIFI_LIBRARIES})
 
 SET (LIBMINIFI core-minifi PARENT_SCOPE)
-set_target_properties(core-minifi PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 
 if (ENABLE_PYTHON AND NOT STATIC_BUILD)
 	add_library(core-minifi-shared SHARED ${SOURCES})
