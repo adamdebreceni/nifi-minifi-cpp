@@ -40,7 +40,7 @@ if (NOT DISABLE_PYTHON_SCRIPTING)
     file(GLOB PY_SOURCES  "python/*.cpp" "pythonloader/PyProcLoader.cpp")
     target_sources(minifi-script-extensions PRIVATE ${PY_SOURCES})
     target_link_libraries(minifi-script-extensions ${PYTHON_LIBRARIES})
-    target_link_libraries(minifi-python-extensions pybind11)
+    target_link_libraries(minifi-script-extensions pybind11)
 endif()
 
 if (ENABLE_LUA_SCRIPTING)
