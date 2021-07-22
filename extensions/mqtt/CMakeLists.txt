@@ -24,8 +24,7 @@ file(GLOB SOURCES "*.cpp" "protocol/*.cpp" "processors/*.cpp" "controllerservice
 
 set(PAHO_BUILD_STATIC "ON" CACHE STRING "" FORCE)
 
-add_library(minifi-mqtt-extensions STATIC ${SOURCES})
-set_property(TARGET minifi-mqtt-extensions PROPERTY POSITION_INDEPENDENT_CODE ON)
+add_library(minifi-mqtt-extensions SHARED ${SOURCES})
 
 target_link_libraries(minifi-mqtt-extensions ${LIBMINIFI})
 target_link_libraries(minifi-mqtt-extensions paho.mqtt.c)

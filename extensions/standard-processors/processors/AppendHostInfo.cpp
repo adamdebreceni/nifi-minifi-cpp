@@ -107,6 +107,8 @@ void AppendHostInfo::onTrigger(core::ProcessContext *context, core::ProcessSessi
   session->transfer(flow, Success);
 }
 
+REGISTER_RESOURCE(AppendHostInfo, "Appends host information such as IP address and hostname as an attribute to incoming flowfiles.");
+
 } /* namespace processors */
 } /* namespace minifi */
 } /* namespace nifi */
