@@ -16,8 +16,11 @@
 # under the License.
 
 function(use_bundled_libaws SOURCE_DIR BINARY_DIR)
-    set(PATCH_FILE "${SOURCE_DIR}/thirdparty/aws-sdk-cpp/core-wstr-fix.patch")
-    set(AWS_SDK_CPP_PATCH_COMMAND "${Patch_EXECUTABLE}" -p1 -R -s -f --dry-run -i "${PATCH_FILE}" || "${Patch_EXECUTABLE}" -p1 -N -i "${PATCH_FILE}")
+    set(PATCH_FILE1 "${SOURCE_DIR}/thirdparty/aws-sdk-cpp/core-wstr-fix.patch")
+    set(PATCH_FILE2 "${SOURCE_DIR}/thirdparty/aws-sdk-cpp/dll-export-injection.patch")
+    set(AWS_SDK_CPP_PATCH_COMMAND ${Bash_EXECUTABLE} -c "set -x &&\
+            (\"${Patch_EXECUTABLE}\" -p1 -R -s -f --dry-run -i \"${PATCH_FILE1}\" || \"${Patch_EXECUTABLE}\" -p1 -N -i \"${PATCH_FILE1}\") &&\
+            (\"${Patch_EXECUTABLE}\" -p1 -R -s -f --dry-run -i \"${PATCH_FILE2}\" || \"${Patch_EXECUTABLE}\" -p1 -N -i \"${PATCH_FILE2}\") ")
 
     if (WIN32)
         set(CMAKE_INSTALL_LIBDIR "lib")
@@ -114,8 +117,6 @@ function(use_bundled_libaws SOURCE_DIR BINARY_DIR)
             BUILD_BYPRODUCTS "${BINARY_DIR}/thirdparty/libaws-install/${CMAKE_INSTALL_LIBDIR}/${PREFIX}aws-c-event-stream.${SUFFIX}"
             EXCLUDE_FROM_ALL TRUE
     )
-    set(AWS_SDK_PC git reset --hard HEAD && "${Patch_EXECUTABLE}" -p1 -i "${SOURCE_DIR}/thirdparty/aws/aws-sdk-cpp.patch")
-    message(WARNING ${AWS_SDK_PC})
     ExternalProject_Add(
             aws-sdk-cpp-external
             GIT_REPOSITORY "https://github.com/aws/aws-sdk-cpp.git"
@@ -123,7 +124,6 @@ function(use_bundled_libaws SOURCE_DIR BINARY_DIR)
             SOURCE_DIR "${BINARY_DIR}/thirdparty/aws-sdk-cpp-src"
             INSTALL_DIR "${BINARY_DIR}/thirdparty/libaws-install"
             LIST_SEPARATOR % # This is needed for passing semicolon-separated lists
-            PATCH_COMMAND ${AWS_SDK_PC}
             CMAKE_ARGS ${AWS_SDK_CPP_CMAKE_ARGS}
             PATCH_COMMAND ${AWS_SDK_CPP_PATCH_COMMAND}
             BUILD_BYPRODUCTS "${AWSSDK_LIBRARIES_LIST}"
