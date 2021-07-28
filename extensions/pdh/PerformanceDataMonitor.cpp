@@ -25,6 +25,7 @@
 #include "MemoryConsumptionCounter.h"
 #include "utils/StringUtils.h"
 #include "utils/JsonCallback.h"
+#include "core/Resource.h"
 
 namespace org {
 namespace apache {
