@@ -30,7 +30,6 @@
 #include "core/Processor.h"
 #include "core/ProcessSession.h"
 #include "core/Property.h"
-#include "core/Resource.h"
 #include "utils/Id.h"
 #include "utils/RegexUtils.h"
 #include "controllers/keyvalue/PersistableKeyValueStoreService.h"

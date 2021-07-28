@@ -25,6 +25,7 @@
 #include <utility>
 #include <string>
 
+#include "core/Resource.h"
 #include "utils/gsl.h"
 
 namespace org {

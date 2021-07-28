@@ -23,7 +23,6 @@
 
 #include "utils/GeneralUtils.h"
 #include "DatabaseService.h"
-#include "core/Resource.h"
 #include "data/DatabaseConnectors.h"
 #include <memory>
 #include <unordered_map>

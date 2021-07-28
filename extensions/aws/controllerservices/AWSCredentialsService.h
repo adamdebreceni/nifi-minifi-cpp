@@ -25,7 +25,6 @@
 
 #include "utils/AWSInitializer.h"
 #include "utils/OptionalUtils.h"
-#include "core/Resource.h"
 #include "core/controller/ControllerService.h"
 #include "core/logging/LoggerConfiguration.h"
 #include "AWSCredentialsProvider.h"

@@ -34,6 +34,7 @@
 #include <set>
 
 #include "core/Property.h"
+#include "core/Resource.h"
 #include "io/validation.h"
 #include "properties/Configure.h"
 #include "utils/gsl.h"

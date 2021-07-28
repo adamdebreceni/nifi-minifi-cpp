@@ -30,7 +30,6 @@
 #include "core/Processor.h"
 #include "core/ProcessSession.h"
 #include "core/Core.h"
-#include "core/Resource.h"
 #include "core/logging/LoggerConfiguration.h"
 #include "utils/OptionalUtils.h"
 #include "utils/Export.h"

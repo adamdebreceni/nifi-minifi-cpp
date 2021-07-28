@@ -23,6 +23,7 @@
 #include "date/date.h"
 #include "spdlog/spdlog.h"  // TODO(szaszm): make fmt directly available
 #include "utils/GeneralUtils.h"
+#include "core/Resource.h"
 
 namespace org { namespace apache { namespace nifi { namespace minifi { namespace extensions { namespace systemd {
 
