@@ -28,6 +28,7 @@
 #include "utils/gsl.h"
 #include "utils/StringUtils.h"
 #include "utils/RegexUtils.h"
+#include "core/Resource.h"
 
 namespace org {
 namespace apache {
