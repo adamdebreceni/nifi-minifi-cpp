@@ -167,6 +167,8 @@ class C2Payload : public state::Update {
    */
   std::vector<char> getRawData() const { return raw_data_; }
 
+  std::vector<char> moveRawData() && {return std::move(raw_data_);}
+
   /**
    * Add a nested payload.
    * @param payload payload to move into this object.
