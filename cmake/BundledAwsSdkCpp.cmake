@@ -57,6 +57,7 @@ function(use_bundled_libaws SOURCE_DIR BINARY_DIR)
     ENDFOREACH(BYPRODUCT)
 
     set(AWS_SDK_CPP_CMAKE_ARGS ${PASSTHROUGH_CMAKE_ARGS}
+            -DCMAKE_CXX_STANDARD=17
             -DCMAKE_PREFIX_PATH=${BINARY_DIR}/thirdparty/libaws-install
             -DCMAKE_INSTALL_PREFIX=${BINARY_DIR}/thirdparty/libaws-install
             -DBUILD_ONLY=s3
