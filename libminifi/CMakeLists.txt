@@ -111,5 +111,8 @@ endif()
 target_precompile_headers(core-minifi PRIVATE "include/libminifi.h")
 
 set_source_files_properties(src/utils/Id.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties(src/controllers/SSLContextService.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties(src/utils/tls/ExtendedKeyUsage.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties(test/unit/ExtendedKeyUsageTests.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 
 SET (LIBMINIFI core-minifi PARENT_SCOPE)
