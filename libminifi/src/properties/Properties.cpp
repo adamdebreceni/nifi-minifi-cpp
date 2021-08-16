@@ -29,8 +29,6 @@ namespace apache {
 namespace nifi {
 namespace minifi {
 
-#define TRACE_BUFFER_SIZE 512
-
 Properties::Properties(const std::string& name)
     : logger_(logging::LoggerFactory<Properties>::getLogger()),
     name_(name) {

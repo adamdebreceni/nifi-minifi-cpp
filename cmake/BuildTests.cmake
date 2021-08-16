@@ -87,6 +87,8 @@ function(createTests testName)
     target_link_libraries(${testName} ${Boost_SYSTEM_LIBRARY})
     target_link_libraries(${testName} ${Boost_FILESYSTEM_LIBRARY})
   endif()
+
+  target_precompile_headers(${testName} REUSE_FROM core-minifi)
 endfunction()
 
 enable_testing(test)

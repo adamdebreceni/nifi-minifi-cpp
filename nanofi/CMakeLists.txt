@@ -47,22 +47,6 @@ target_wholearchive_library(nanofi core-minifi)
 target_wholearchive_library(nanofi minifi)
 target_wholearchive_library(nanofi minifi-standard-processors)
 
-
-if (ENABLE_PYTHON AND NOT STATIC_BUILD)
-
-add_library(nanofi-shared SHARED ${NANOFI_SOURCES})
-
-target_link_libraries(nanofi-shared spdlog ut)
-target_wholearchive_library(nanofi-shared core-minifi-shared)
-target_wholearchive_library(nanofi-shared minifi-shared)
-target_wholearchive_library(nanofi-shared minifi-standard-processors)
-
-add_dependencies(nanofi-shared minifi-standard-processors)
-
-set_property(TARGET nanofi-shared PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-endif(ENABLE_PYTHON AND NOT STATIC_BUILD)
-
 if (NOT DISABLE_CURL)
 add_subdirectory(examples)
 add_subdirectory(ecu)
