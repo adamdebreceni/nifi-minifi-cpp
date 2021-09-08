@@ -57,7 +57,7 @@ if (ENABLE_LUA_SCRIPTING)
     file(GLOB LUA_SOURCES  "lua/*.cpp")
     target_sources(minifi-script-extensions PRIVATE ${LUA_SOURCES})
 
-    target_link_libraries(minifi-script-extensions ${LUA_LIBRARIES} sol)
+    target_link_libraries(minifi-script-extensions ${LUA_LIBRARIES} sol2)
     target_compile_features(minifi-script-extensions PUBLIC cxx_std_14)
 endif()
 
