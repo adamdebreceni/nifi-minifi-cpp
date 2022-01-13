@@ -125,7 +125,7 @@ Through JNI extensions you can run NiFi processors using NARs. The JNI extension
 ##### External Projects
 
 The following utilities are needed to build external projects, when bundled
-versions of LibreSSL, cURL, or zlib are used:
+versions of OpenSSL, cURL, or zlib are used:
 
 * patch
 * autoconf
@@ -181,7 +181,7 @@ On all distributions please use -DUSE_SHARED_LIBS=OFF to statically link zlib, l
 * libuuid
 * librocksdb (built and statically linked)
 * libcurl-openssl (If not available or desired, NSS will be used)
-* libssl and libcrypto from libressl (built and statically linked)
+* libssl and libcrypto from openssl (built and statically linked)
 * libarchive (built and statically linked)
 * librdkafka (built and statically linked)
 * Python 3 -- Required if Python support is enabled

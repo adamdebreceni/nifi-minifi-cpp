@@ -165,6 +165,8 @@ bool SSLContextService::configure_ssl_context(SSL_CTX *ctx) {
     }
   }
 
+  SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1_3);
+
   return true;
 }
 
@@ -387,7 +389,7 @@ std::unique_ptr<SSLContext> SSLContextService::createSSLContext() {
 
   OpenSSL_add_all_algorithms();
   SSL_load_error_strings();
-  method = TLSv1_2_client_method();
+  method = TLS_client_method();
   SSL_CTX *ctx = SSL_CTX_new(method);
 
   if (ctx == nullptr) {

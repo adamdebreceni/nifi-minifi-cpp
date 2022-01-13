@@ -172,7 +172,7 @@ std::optional<std::chrono::system_clock::time_point> getCertificateExpiration(co
     return {};
   }
   std::tm end{};
-  int ret = ASN1_time_parse(reinterpret_cast<const char*>(asn1_end->data), asn1_end->length, &end, 0);
+  int ret = ASN1_TIME_to_tm(asn1_end, &end);
   if (ret == -1) {
     return {};
   }

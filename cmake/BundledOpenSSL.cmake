@@ -15,8 +15,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-function(use_libre_ssl SOURCE_DIR BINARY_DIR)
-    message("Using bundled LibreSSL")
+function(use_openssl SOURCE_DIR BINARY_DIR)
+    message("Using bundled OpenSSL")
+
+    if(APPLE OR CMAKE_SIZEOF_VOID_P EQUAL 4)
+        set(LIBDIR "lib")
+    else()
+        set(LIBDIR "lib64")
+    endif()
 
     # Define byproducts
     if (WIN32)
@@ -28,46 +34,51 @@ function(use_libre_ssl SOURCE_DIR BINARY_DIR)
     endif()
 
     set(BYPRODUCTS
-            "lib/${BYPRODUCT_PREFIX}tls${BYPRODUCT_SUFFIX}"
-            "lib/${BYPRODUCT_PREFIX}ssl${BYPRODUCT_SUFFIX}"
-            "lib/${BYPRODUCT_PREFIX}crypto${BYPRODUCT_SUFFIX}"
+            "${LIBDIR}/${BYPRODUCT_PREFIX}ssl${BYPRODUCT_SUFFIX}"
+            "${LIBDIR}/${BYPRODUCT_PREFIX}crypto${BYPRODUCT_SUFFIX}"
             )
 
-    set(LIBRESSL_BIN_DIR "${BINARY_DIR}/thirdparty/libressl-install" CACHE STRING "" FORCE)
+    set(OPENSSL_BIN_DIR "${BINARY_DIR}/thirdparty/openssl-install" CACHE STRING "" FORCE)
 
     FOREACH(BYPRODUCT ${BYPRODUCTS})
-        LIST(APPEND LIBRESSL_LIBRARIES_LIST "${LIBRESSL_BIN_DIR}/${BYPRODUCT}")
+        LIST(APPEND OPENSSL_LIBRARIES_LIST "${OPENSSL_BIN_DIR}/${BYPRODUCT}")
     ENDFOREACH(BYPRODUCT)
 
     # Set build options
-    set(LIBRESSL_CMAKE_ARGS ${PASSTHROUGH_CMAKE_ARGS}
-            "-DCMAKE_INSTALL_PREFIX=${LIBRESSL_BIN_DIR}"
-            -DLIBRESSL_APPS=OFF
-            -DLIBRESSL_TESTS=OFF
-            -DCMAKE_POLICY_DEFAULT_CMP0063=NEW
+    set(OPENSSL_CMAKE_ARGS ${PASSTHROUGH_CMAKE_ARGS}
+            "-DCMAKE_INSTALL_PREFIX=${OPENSSL_BIN_DIR}"
+            "-DCMAKE_POLICY_DEFAULT_CMP0063=NEW"
             # avoid polluting the global namespace, otherwise could interfere with the system openssl (e.g. python script extension using numpy)
-            -DCMAKE_C_VISIBILITY_PRESET=hidden
-            -DCMAKE_CXX_VISIBILITY_PRESET=hidden
-            -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON
+            "-DCMAKE_C_VISIBILITY_PRESET=hidden"
+            "-DCMAKE_CXX_VISIBILITY_PRESET=hidden"
+            "-DCMAKE_VISIBILITY_INLINES_HIDDEN=ON"
             )
 
-    # Build project
+    if (WIN32)
+        set(CONFIGURE_EXE perl Configure)
+    else()
+        set(CONFIGURE_EXE ./Configure)
+    endif()
+
+    set(CONFIGURE_COMMAND ${CONFIGURE_EXE} "CFLAGS=${PASSTHROUGH_CMAKE_C_FLAGS} -fPIC" "CXXFLAGS=${PASSTHROUGH_CMAKE_CXX_FLAGS} -fPIC" "--prefix=${OPENSSL_BIN_DIR}" "--openssldir=${OPENSSL_BIN_DIR}")
+
     ExternalProject_Add(
-        libressl-portable
-        URL https://cdn.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.0.2.tar.gz https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.0.2.tar.gz https://gentoo.osuosl.org/distfiles/libressl-3.0.2.tar.gz
-        URL_HASH "SHA256=df7b172bf79b957dd27ef36dcaa1fb162562c0e8999e194aa8c1a3df2f15398e"
-        SOURCE_DIR "${BINARY_DIR}/thirdparty/libressl-src"
-        CMAKE_ARGS ${LIBRESSL_CMAKE_ARGS}
-        BUILD_BYPRODUCTS ${LIBRESSL_LIBRARIES_LIST}
-        EXCLUDE_FROM_ALL TRUE
-    )
+            openssl-external
+            URL https://github.com/openssl/openssl/releases/download/openssl-3.1.0/openssl-3.1.0.tar.gz
+            URL_HASH "SHA256=aaa925ad9828745c4cad9d9efeb273deca820f2cdcf2c3ac7d7c1212b7c497b4"
+            SOURCE_DIR "${BINARY_DIR}/thirdparty/openssl-src"
+            BUILD_IN_SOURCE true
+            CONFIGURE_COMMAND "${CONFIGURE_COMMAND}"
+            BUILD_BYPRODUCTS ${OPENSSL_LIBRARIES_LIST}
+            EXCLUDE_FROM_ALL TRUE
+        )
 
     # Set variables
     set(OPENSSL_FOUND "YES" CACHE STRING "" FORCE)
-    set(OPENSSL_INCLUDE_DIR "${LIBRESSL_BIN_DIR}/include" CACHE STRING "" FORCE)
-    set(OPENSSL_LIBRARIES ${LIBRESSL_LIBRARIES_LIST} CACHE STRING "" FORCE)
-    set(OPENSSL_CRYPTO_LIBRARY "${LIBRESSL_BIN_DIR}/lib/${BYPRODUCT_PREFIX}crypto${BYPRODUCT_SUFFIX}" CACHE STRING "" FORCE)
-    set(OPENSSL_SSL_LIBRARY "${LIBRESSL_BIN_DIR}/lib/${BYPRODUCT_PREFIX}ssl${BYPRODUCT_SUFFIX}" CACHE STRING "" FORCE)
+    set(OPENSSL_INCLUDE_DIR "${OPENSSL_BIN_DIR}/include" CACHE STRING "" FORCE)
+    set(OPENSSL_LIBRARIES "${OPENSSL_LIBRARIES_LIST};${CMAKE_DL_LIBS}"  CACHE STRING "" FORCE)
+    set(OPENSSL_CRYPTO_LIBRARY "${OPENSSL_BIN_DIR}/${LIBDIR}/${BYPRODUCT_PREFIX}crypto${BYPRODUCT_SUFFIX}" CACHE STRING "" FORCE)
+    set(OPENSSL_SSL_LIBRARY "${OPENSSL_BIN_DIR}/${LIBDIR}/${BYPRODUCT_PREFIX}ssl${BYPRODUCT_SUFFIX}" CACHE STRING "" FORCE)
 
     # Set exported variables for FindPackage.cmake
     set(PASSTHROUGH_VARIABLES ${PASSTHROUGH_VARIABLES} "-DEXPORTED_OPENSSL_INCLUDE_DIR=${OPENSSL_INCLUDE_DIR}" CACHE STRING "" FORCE)
@@ -84,24 +95,15 @@ function(use_libre_ssl SOURCE_DIR BINARY_DIR)
             INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE_DIR}")
     set_target_properties(OpenSSL::Crypto PROPERTIES
             IMPORTED_LINK_INTERFACE_LANGUAGES "C"
-            IMPORTED_LOCATION "${LIBRESSL_BIN_DIR}/lib/${BYPRODUCT_PREFIX}crypto${BYPRODUCT_SUFFIX}")
-    add_dependencies(OpenSSL::Crypto libressl-portable)
+            IMPORTED_LOCATION "${OPENSSL_BIN_DIR}/${LIBDIR}/${BYPRODUCT_PREFIX}crypto${BYPRODUCT_SUFFIX}")
+    add_dependencies(OpenSSL::Crypto openssl-external)
 
     add_library(OpenSSL::SSL STATIC IMPORTED)
     set_target_properties(OpenSSL::SSL PROPERTIES
             INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE_DIR}")
     set_target_properties(OpenSSL::SSL PROPERTIES
             IMPORTED_LINK_INTERFACE_LANGUAGES "C"
-            IMPORTED_LOCATION "${LIBRESSL_BIN_DIR}/lib/${BYPRODUCT_PREFIX}ssl${BYPRODUCT_SUFFIX}")
-    add_dependencies(OpenSSL::SSL libressl-portable)
+            IMPORTED_LOCATION "${OPENSSL_BIN_DIR}/${LIBDIR}/${BYPRODUCT_PREFIX}ssl${BYPRODUCT_SUFFIX}")
+    add_dependencies(OpenSSL::SSL openssl-external)
     set_property(TARGET OpenSSL::SSL APPEND PROPERTY INTERFACE_LINK_LIBRARIES OpenSSL::Crypto)
-
-    add_library(LibreSSL::TLS STATIC IMPORTED)
-    set_target_properties(LibreSSL::TLS PROPERTIES
-            INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE_DIR}")
-    set_target_properties(LibreSSL::TLS PROPERTIES
-            IMPORTED_LINK_INTERFACE_LANGUAGES "C"
-            IMPORTED_LOCATION "${LIBRESSL_BIN_DIR}/lib/${BYPRODUCT_PREFIX}tls${BYPRODUCT_SUFFIX}")
-    add_dependencies(LibreSSL::TLS libressl-portable)
-    set_property(TARGET LibreSSL::TLS APPEND PROPERTY INTERFACE_LINK_LIBRARIES OpenSSL::Crypto)
-endfunction(use_libre_ssl)
+endfunction(use_openssl)
