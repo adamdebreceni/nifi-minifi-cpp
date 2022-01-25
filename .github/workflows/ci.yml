@@ -1,46 +1,6 @@
 name: "MiNiFi-CPP CI"
 on: [push, pull_request, workflow_dispatch]
 jobs:
-  macos_xcode:
-    name: "macos-xcode"
-    runs-on: macos-11
-    timeout-minutes: 90
-    env:
-      CCACHE_BASEDIR: ${{ GITHUB.WORKSPACE }}
-      CCACHE_DIR: ${{ GITHUB.WORKSPACE }}/.ccache
-    steps:
-      - id: checkout
-        uses: actions/checkout@v2
-      - id: cache
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.CCACHE_DIR }}
-          key: macos-xcode-ccache-${{github.ref}}-${{github.sha}}
-          restore-keys: |
-            macos-xcode-ccache-${{github.ref}}-
-            macos-xcode-ccache-refs/heads/main-
-      - id: install_dependencies
-        run: |
-          brew update
-          brew install ossp-uuid boost flex lua ccache sqliteodbc automake autoconf
-      - id: setup_env
-        name: setup enviroment
-        run: |
-          echo "PATH=/usr/lib/ccache:/usr/local/opt/ccache/bin:/usr/local/opt/ccache/libexec:$PATH" >> $GITHUB_ENV
-          echo -e "127.0.0.1\t$HOSTNAME" | sudo tee -a /etc/hosts > /dev/null
-          # https://github.com/actions/virtual-environments/blob/main/images/macos/macos-11-Readme.md#xcode
-          sudo xcode-select -switch /Applications/Xcode_13.2.1.app
-      - name: build
-        run: |
-          export PATH="/usr/local/opt/flex/bin:$PATH"
-          export LDFLAGS="-L/usr/local/opt/flex/lib"
-          export CPPFLAGS="-I/usr/local/opt/flex/include"
-          # CPPFLAGS are not recognized by cmake, so we have to force them to CFLAGS and CXXFLAGS to have flex 2.6 working
-          ./bootstrap.sh -e -t && cd build  && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="${CPPFLAGS} ${CFLAGS}" -DCMAKE_CXX_FLAGS="${CPPFLAGS} ${CXXFLAGS}" -DENABLE_SCRIPTING=ON -DENABLE_LUA_SCRIPTING=ON -DENABLE_SQL=ON -DUSE_REAL_ODBC_TEST_DRIVER=ON -DENABLE_AZURE=ON -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_RULE_MESSAGES=OFF -DSTRICT_GSL_CHECKS=AUDIT -DFAIL_ON_WARNINGS=ON .. && cmake --build . --parallel 4
-      - name: test
-        run: cd build && make test ARGS="--timeout 300 -j4 --output-on-failure"
-      - name: linter
-        run: cd build && make -j4 linter
   windows_VS2019:
     name: "windows-vs2019"
     runs-on: windows-2019
