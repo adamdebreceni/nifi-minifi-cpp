@@ -12,5 +12,6 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
       - id: install-sqliteodbc-driver
         run: |
+          Get-Service
           sqlcmd -Q "CREATE DATABASE minifi_test_db"
         shell: powershell
