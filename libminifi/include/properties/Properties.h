@@ -29,6 +29,7 @@
 
 #include "core/logging/Logger.h"
 #include "utils/ChecksumCalculator.h"
+#include "AgentProperty.h"
 
 namespace org {
 namespace apache {
@@ -61,11 +62,21 @@ class Properties {
     properties_[key] = PropertyValue{value, true};
     dirty_ = true;
   }
+
+  void set(const AgentProperty& key, const std::string& value) {
+    set(key.getName(), value);
+  }
+
   // Check whether the config value existed
   bool has(const std::string& key) const {
     std::lock_guard<std::mutex> lock(mutex_);
     return properties_.count(key) > 0;
   }
+
+  bool has(const AgentProperty& key) const {
+    return has(key.getName());
+  }
+
   /**
    * Returns the config value by placing it into the referenced param value
    * @param key key to look up
@@ -74,11 +85,19 @@ class Properties {
    */
   bool getString(const std::string &key, std::string &value) const;
 
+  bool getString(const AgentProperty& key, std::string& value) const {
+    return getString(key.getName(), value);
+  }
+
   /**
    * Returns the configuration value or an empty string.
    * @return value corresponding to key or empty value.
    */
   int getInt(const std::string &key, int default_value) const;
+
+  int getInt(const AgentProperty& key, int default_value) const {
+    return getInt(key.getName(), default_value);
+  }
 
   /**
    * Returns the config value.
@@ -87,6 +106,10 @@ class Properties {
    * @returns the value if found, nullopt otherwise.
    */
   std::optional<std::string> getString(const std::string& key) const;
+
+  std::optional<std::string> getString(const AgentProperty& key) const {
+    return getString(key.getName());
+  }
 
   /**
    * Load configure file

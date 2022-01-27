@@ -149,7 +149,7 @@ RESTProtocol::RESTProtocol() = default;
 void RESTProtocol::initialize(core::controller::ControllerServiceProvider* /*controller*/, const std::shared_ptr<Configure> &configure) {
   if (configure) {
     std::string value_str;
-    if (configure->get("nifi.c2.rest.heartbeat.minimize.updates", "c2.rest.heartbeat.minimize.updates", value_str)) {
+    if (configure->get(Configure::nifi_c2_rest_heartbeat_minimize_updates, "c2.rest.heartbeat.minimize.updates", value_str)) {
       auto opt_value = utils::StringUtils::toBool(value_str);
       if (!opt_value) {
         logger_->log_error("Cannot convert '%s' to bool for property '%s'", value_str, "nifi.c2.rest.heartbeat.minimize.updates");

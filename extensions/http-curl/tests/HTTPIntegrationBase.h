@@ -63,7 +63,7 @@ class HTTPIntegrationBase : public IntegrationBase {
 
   std::string getC2RestUrl() const {
     std::string c2_rest_url;
-    configuration->get("nifi.c2.rest.url", c2_rest_url);
+    configuration->get(minifi::Configure::nifi_c2_rest_url, c2_rest_url);
     return c2_rest_url;
   }
 
@@ -106,8 +106,8 @@ void HTTPIntegrationBase::setUrl(const std::string &url, ServerAwareHandler *han
     }
   }
   std::string c2_url = std::string("http") + (secure ? "s" : "") + "://localhost:" + getWebPort() + url_path;
-  configuration->set("nifi.c2.rest.url", c2_url);
-  configuration->set("nifi.c2.rest.url.ack", c2_url);
+  configuration->set(minifi::Configure::nifi_c2_rest_url, c2_url);
+  configuration->set(minifi::Configure::nifi_c2_rest_url_ack, c2_url);
 }
 
 void HTTPIntegrationBase::setC2Url(const std::string &heartbeat_path, const std::string &acknowledge_path) {
@@ -116,8 +116,8 @@ void HTTPIntegrationBase::setC2Url(const std::string &heartbeat_path, const std:
   }
   bool secure = port.back() == 's';
   std::string base = std::string("http") + (secure ? "s" : "") + "://localhost:" + getWebPort();
-  configuration->set("nifi.c2.rest.url", base + heartbeat_path);
-  configuration->set("nifi.c2.rest.url.ack", base + acknowledge_path);
+  configuration->set(minifi::Configure::nifi_c2_rest_url, base + heartbeat_path);
+  configuration->set(minifi::Configure::nifi_c2_rest_url_ack, base + acknowledge_path);
 }
 
 class VerifyC2Base : public HTTPIntegrationBase {

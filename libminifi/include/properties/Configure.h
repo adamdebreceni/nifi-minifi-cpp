@@ -23,6 +23,7 @@
 #include "properties/Configuration.h"
 #include "properties/Decryptor.h"
 #include "core/AgentIdentificationProvider.h"
+#include "properties/AgentProperty.h"
 
 namespace org {
 namespace apache {
@@ -35,8 +36,22 @@ class Configure : public Configuration, public core::AgentIdentificationProvider
       : Configuration{}, decryptor_(std::move(decryptor)) {}
 
   bool get(const std::string& key, std::string& value) const;
+
+  bool get(const AgentProperty& key, std::string& value) const {
+    return get(key.getName(), value);
+  }
+
   bool get(const std::string& key, const std::string& alternate_key, std::string& value) const;
+
+  bool get(const AgentProperty& key, const std::string& alternate_key, std::string& value) const {
+    return get(key.getName(), alternate_key, value);
+  }
+
   std::optional<std::string> get(const std::string& key) const;
+
+  std::optional<std::string> get(const AgentProperty& key) const {
+    return get(key.getName());
+  }
 
   std::optional<std::string> getAgentClass() const override;
   std::string getAgentIdentifier() const override;

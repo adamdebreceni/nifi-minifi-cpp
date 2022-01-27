@@ -31,7 +31,7 @@ MQTTC2Protocol::MQTTC2Protocol(const std::string& name, const utils::Identifier&
 MQTTC2Protocol::~MQTTC2Protocol() = default;
 
 void MQTTC2Protocol::initialize(core::controller::ControllerServiceProvider* controller, const std::shared_ptr<Configure> &configure) {
-  if (configure->get("nifi.c2.mqtt.connector.service", controller_service_name_)) {
+  if (configure->get(Configure::nifi_c2_mqtt_connector_service, controller_service_name_)) {
     auto service = controller->getControllerService(controller_service_name_);
     mqtt_service_ = std::static_pointer_cast<controllers::MQTTControllerService>(service);
   } else {
@@ -42,12 +42,12 @@ void MQTTC2Protocol::initialize(core::controller::ControllerServiceProvider* con
 
   std::stringstream outputStream;
   std::string updateTopicOpt, heartbeatTopicOpt;
-  if (configure->get("nifi.c2.mqtt.heartbeat.topic", heartbeatTopicOpt)) {
+  if (configure->get(Configure::nifi_c2_mqtt_heartbeat_topic, heartbeatTopicOpt)) {
     heartbeat_topic_ = heartbeatTopicOpt;
   } else {
     heartbeat_topic_ = "heartbeats";  // outputStream.str();
   }
-  if (configure->get("nifi.c2.mqtt.update.topic", updateTopicOpt)) {
+  if (configure->get(Configure::nifi_c2_mqtt_update_topic, updateTopicOpt)) {
     update_topic_ = updateTopicOpt;
   } else {
     update_topic_ = "updates";

@@ -310,7 +310,7 @@ bool SSLContextService::useClientCertificate(SSL_CTX* ctx, PCCERT_CONTEXT certif
 
   if (!(client_cert_key_usage_.isSubsetOf(utils::tls::ExtendedKeyUsage{*key_usage}))) {
     logger_->log_debug("Skipping client certificate %s because its extended key usage set does not contain all usages specified in %s",
-                       x509_cert->name, Configuration::nifi_security_windows_client_cert_key_usage);
+                       x509_cert->name, Configure::nifi_security_windows_client_cert_key_usage);
     return false;
   }
 

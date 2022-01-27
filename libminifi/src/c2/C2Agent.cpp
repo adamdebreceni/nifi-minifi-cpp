@@ -138,7 +138,7 @@ void C2Agent::configure(const std::shared_ptr<Configure> &configure, bool reconf
   std::string clazz, heartbeat_period, device;
 
   if (!reconfigure) {
-    if (!configure->get("nifi.c2.agent.protocol.class", "c2.agent.protocol.class", clazz)) {
+    if (!configure->get(Configure::nifi_c2_agent_protocol_class, "c2.agent.protocol.class", clazz)) {
       clazz = "RESTSender";
     }
     logger_->log_info("Class is %s", clazz);
@@ -164,7 +164,7 @@ void C2Agent::configure(const std::shared_ptr<Configure> &configure, bool reconf
     protocol_.load()->update(configure);
   }
 
-  if (configure->get("nifi.c2.agent.heartbeat.period", "c2.agent.heartbeat.period", heartbeat_period)) {
+  if (configure->get(Configure::nifi_c2_agent_heartbeat_period, "c2.agent.heartbeat.period", heartbeat_period)) {
     try {
       if (auto heartbeat_period_ms = utils::timeutils::StringToDuration<std::chrono::milliseconds>(heartbeat_period)) {
         heart_beat_period_ = *heartbeat_period_ms;
@@ -181,7 +181,7 @@ void C2Agent::configure(const std::shared_ptr<Configure> &configure, bool reconf
   }
 
   std::string heartbeat_reporters;
-  if (configure->get("nifi.c2.agent.heartbeat.reporter.classes", "c2.agent.heartbeat.reporter.classes", heartbeat_reporters)) {
+  if (configure->get(Configure::nifi_c2_agent_heartbeat_reporter_classes, "c2.agent.heartbeat.reporter.classes", heartbeat_reporters)) {
     std::vector<std::string> reporters = utils::StringUtils::splitAndTrim(heartbeat_reporters, ",");
     std::lock_guard<std::mutex> lock(heartbeat_mutex);
     for (const auto& reporter : reporters) {
@@ -745,7 +745,7 @@ std::optional<std::string> C2Agent::resolveFlowUrl(const std::string& url) const
     }
     base += url;
     return base;
-  } else if (configuration_->get("nifi.c2.rest.url", "c2.rest.url", base)) {
+  } else if (configuration_->get(Configure::nifi_c2_rest_url, "c2.rest.url", base)) {
     utils::URL base_url{utils::StringUtils::trim(base)};
     if (base_url.isValid()) {
       return base_url.hostPort() + "/c2/api/" + url;
@@ -761,7 +761,7 @@ std::optional<std::string> C2Agent::resolveUrl(const std::string& url) const {
     return url;
   }
   std::string base;
-  if (!configuration_->get("nifi.c2.rest.url", "c2.rest.url", base)) {
+  if (!configuration_->get(Configure::nifi_c2_rest_url, "c2.rest.url", base)) {
     logger_->log_error("Missing C2 REST URL");
     return std::nullopt;
   }
