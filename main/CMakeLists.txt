@@ -72,7 +72,7 @@ else()
 endif()
 
 if (NOT WIN32)
-	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND NOT APPLE)
 		target_link_options(minifiexe PRIVATE "-Wl,--disable-new-dtags")
 	endif()
 	set_target_properties(minifiexe PROPERTIES INSTALL_RPATH "$ORIGIN")

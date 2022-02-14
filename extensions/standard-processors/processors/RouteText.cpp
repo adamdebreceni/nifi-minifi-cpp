@@ -23,15 +23,9 @@
 #include <algorithm>
 #include <set>
 
-#ifdef __APPLE__
-#include <experimental/functional>
-template<typename It, typename Hash, typename Eq>
-using boyer_moore_searcher = std::experimental::boyer_moore_searcher<It, Hash, Eq>;
-#else
 #include <functional>
 template<typename It, typename Hash, typename Eq>
 using boyer_moore_searcher = std::boyer_moore_searcher<It, Hash, Eq>;
-#endif
 
 #include "logging/LoggerConfiguration.h"
 #include "utils/ProcessorConfigUtils.h"
