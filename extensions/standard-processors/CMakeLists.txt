@@ -17,6 +17,8 @@
 # under the License.
 #
 
+ADD_FEATURE_INFO("STANDARD PROCESSORS" STANDARD-PROCESSORS "Provides standard processors")
+mark_as_advanced(STANDARD-PROCESSORS)
 
 include(${CMAKE_SOURCE_DIR}/extensions/ExtensionHeader.txt)
 
@@ -27,8 +29,7 @@ add_library(minifi-standard-processors SHARED ${SOURCES})
 include(RangeV3)
 target_link_libraries(minifi-standard-processors ${LIBMINIFI} Threads::Threads range-v3)
 
-SET (STANDARD-PROCESSORS minifi-standard-processors PARENT_SCOPE)
-register_extension(minifi-standard-processors)
+register_extension(minifi-standard-processors "STANDARD PROCESSORS" STANDARD-PROCESSORS "Provides standard processors" "extensions/standard-processors/tests/")
 
 
 register_extension_linter(minifi-standard-processors-linter)
