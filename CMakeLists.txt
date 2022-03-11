@@ -422,17 +422,6 @@ foreach(extension-dir ${extension-directories})
 	endif()
 endforeach()
 
-## Add the test-processors extension
-# ENABLE_TEST_PROCESSORS option is to only build test processors but not unit tests in docker integration tests.
-if (NOT SKIP_TESTS OR ENABLE_TEST_PROCESSORS)
-	createExtension(TEST-PROCESSORS-EXTENSION "TEST-PROCESSORS EXTENSION" "This enables processors purely for testing purposes" "extensions/test-processors")
-endif()
-
-## Google Cloud Platform Extension
-if (ENABLE_ALL OR ENABLE_GCP)
-	createExtension(GCP-EXTENSIONS "GCP EXTENSIONS" "This enables Google Cloud Platform support" "extensions/gcp" "extensions/gcp/tests")
-endif()
-
 ## NOW WE CAN ADD LIBRARIES AND EXTENSIONS TO MAIN
 add_subdirectory(main)
 
