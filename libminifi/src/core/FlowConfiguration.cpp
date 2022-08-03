@@ -28,34 +28,30 @@
 
 namespace org::apache::nifi::minifi::core {
 
-FlowConfiguration::FlowConfiguration(
-    std::shared_ptr<core::Repository> /*repo*/, std::shared_ptr<core::Repository> flow_file_repo,
-    std::shared_ptr<core::ContentRepository> content_repo, std::shared_ptr<io::StreamFactory> stream_factory,
-    std::shared_ptr<Configure> configuration, const std::optional<std::string>& path,
-    std::shared_ptr<utils::file::FileSystem> filesystem)
+FlowConfiguration::FlowConfiguration(ConfigurationContext ctx)
     : CoreComponent(core::getClassName<FlowConfiguration>()),
-      flow_file_repo_(std::move(flow_file_repo)),
-      content_repo_(std::move(content_repo)),
-      stream_factory_(std::move(stream_factory)),
-      configuration_(configuration),
-      filesystem_(std::move(filesystem)),
+      flow_file_repo_(std::move(ctx.flow_file_repo)),
+      content_repo_(std::move(ctx.content_repo)),
+      stream_factory_(std::move(ctx.stream_factory)),
+      configuration_(std::move(ctx.configuration)),
+      filesystem_(std::move(ctx.filesystem)),
       logger_(logging::LoggerFactory<FlowConfiguration>::getLogger()) {
   controller_services_ = std::make_shared<core::controller::ControllerServiceMap>();
-  service_provider_ = std::make_shared<core::controller::StandardControllerServiceProvider>(controller_services_, nullptr, configuration);
+  service_provider_ = std::make_shared<core::controller::StandardControllerServiceProvider>(controller_services_, nullptr, configuration_);
   std::string flowUrl;
   std::string bucket_id = "default";
   std::string flowId;
-  configuration->get(Configure::nifi_c2_flow_id, flowId);
-  configuration->get(Configure::nifi_c2_flow_url, flowUrl);
+  configuration_->get(Configure::nifi_c2_flow_id, flowId);
+  configuration_->get(Configure::nifi_c2_flow_url, flowUrl);
   flow_version_ = std::make_shared<state::response::FlowVersion>(flowUrl, bucket_id, flowId);
 
-  if (!path) {
+  if (!ctx.path) {
     logger_->log_error("Configuration path is not specified.");
   } else {
-    config_path_ = utils::file::PathUtils::canonicalize(*path);
+    config_path_ = utils::file::PathUtils::canonicalize(*ctx.path);
     if (!config_path_) {
-      logger_->log_error("Couldn't find config file \"%s\".", *path);
-      config_path_ = path;
+      logger_->log_error("Couldn't find config file \"%s\".", *ctx.path);
+      config_path_ = ctx.path;
     }
     checksum_calculator_.setFileLocation(*config_path_);
   }
