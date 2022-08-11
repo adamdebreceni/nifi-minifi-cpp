@@ -27,6 +27,8 @@ include(${CMAKE_SOURCE_DIR}/extensions/ExtensionHeader.txt)
 
 file(GLOB SOURCES  "ExecuteScript.cpp" "ScriptFlowFile.cpp" "ScriptProcessContext.cpp")
 
+add_library(minifi-scripting SHARED script-loader/ScriptLoader.cpp)
+
 add_library(minifi-script-extensions SHARED ${SOURCES})
 
 target_link_libraries(minifi-script-extensions ${LIBMINIFI} Threads::Threads)
@@ -42,7 +44,6 @@ if (NOT DISABLE_PYTHON_SCRIPTING)
 
     file(GLOB PY_SOURCES  "python/*.cpp" "pythonloader/PyProcLoader.cpp")
     target_sources(minifi-script-extensions PRIVATE ${PY_SOURCES})
-    target_link_libraries(minifi-script-extensions ${PYTHON_LIBRARIES})
     target_link_libraries(minifi-script-extensions pybind11)
 
     target_include_directories(minifi-script-extensions PRIVATE python)
@@ -66,5 +67,7 @@ if (ENABLE_LUA_SCRIPTING)
     target_compile_features(minifi-script-extensions PUBLIC cxx_std_14)
 endif()
 
-register_extension(minifi-script-extensions "SCRIPTING EXTENSIONS" SCRIPTING-EXTENSIONS "This enables scripting" "extensions/script/tests")
+register_extension(minifi-scripting "SCRIPTING EXTENSIONS" SCRIPTING-EXTENSIONS "This enables scripting" "extensions/script/tests")
+set_target_properties(minifi-script-extensions PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
 register_extension_linter(minifi-script-extensions-linter)
