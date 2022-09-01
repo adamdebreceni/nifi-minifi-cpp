@@ -4,8 +4,8 @@
 namespace org::apache::nifi::minifi::extensions::script {
   class ScriptLoader {
     ScriptLoader() {
-      lib_python_handle_ = dlopen("/usr/lib/libpython3.10.so", RTLD_NOW | RTLD_GLOBAL);
-      concrete_scripting_extension_ = dlopen("./libminifi-script-extensions.so", RTLD_NOW | RTLD_LOCAL);
+      lib_python_handle_ = dlopen("libpython3.10d.so", RTLD_NOW | RTLD_GLOBAL);
+      concrete_scripting_extension_ = dlopen("libminifi-script-extensions.so", RTLD_NOW | RTLD_LOCAL);
       assert(lib_python_handle_);
       assert(concrete_scripting_extension_);
     }

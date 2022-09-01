@@ -22,10 +22,8 @@
 #include <memory>
 #include <string>
 
+#include "Ssl.h"
 #include "core/logging/Logger.h"
-
-struct stack_st_ASN1_OBJECT;
-typedef stack_st_ASN1_OBJECT EXTENDED_KEY_USAGE;
 
 namespace org {
 namespace apache {
@@ -35,14 +33,14 @@ namespace utils {
 namespace tls {
 
 struct EXTENDED_KEY_USAGE_deleter {
-  void operator()(EXTENDED_KEY_USAGE* key_usage) const;
+  void operator()(ssl::EXTENDED_KEY_USAGE* key_usage) const;
 };
-using EXTENDED_KEY_USAGE_unique_ptr = std::unique_ptr<EXTENDED_KEY_USAGE, EXTENDED_KEY_USAGE_deleter>;
+using EXTENDED_KEY_USAGE_unique_ptr = std::unique_ptr<ssl::EXTENDED_KEY_USAGE, EXTENDED_KEY_USAGE_deleter>;
 
 class ExtendedKeyUsage {
  public:
   ExtendedKeyUsage();
-  explicit ExtendedKeyUsage(const EXTENDED_KEY_USAGE& key_usage_asn1);
+  explicit ExtendedKeyUsage(const ssl::EXTENDED_KEY_USAGE& key_usage_asn1);
   explicit ExtendedKeyUsage(const std::string& key_usage_str);
 
   bool isSubsetOf(const ExtendedKeyUsage& other) const;

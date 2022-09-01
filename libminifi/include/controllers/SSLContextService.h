@@ -26,10 +26,7 @@
 #endif
 
 #ifdef OPENSSL_SUPPORT
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-#include <openssl/bio.h>
-#include <openssl/pkcs12.h>
+#include "Ssl.h"
 #endif
 #include <iostream>
 #include <memory>
@@ -47,7 +44,7 @@ namespace org::apache::nifi::minifi::controllers {
 class SSLContext {
  public:
 #ifdef OPENSSL_SUPPORT
-  SSLContext(SSL_CTX *context) // NOLINT
+  SSLContext(ssl::SSL_CTX *context) // NOLINT
       : context_(context) {
   }
 #else
@@ -56,13 +53,13 @@ class SSLContext {
   ~SSLContext() {
 #ifdef OPENSSL_SUPPORT
     if (context_) {
-      SSL_CTX_free(context_);
+      ssl::SSL_CTX_free(context_);
     }
 #endif
   }
  protected:
 #ifdef OPENSSL_SUPPORT
-  SSL_CTX *context_;
+  ssl::SSL_CTX *context_;
 #endif
 };
 
@@ -162,7 +159,7 @@ class SSLContextService : public core::controller::ControllerService {
   }
 
 #ifdef OPENSSL_SUPPORT
-  bool configure_ssl_context(SSL_CTX *ctx);
+  bool configure_ssl_context(ssl::SSL_CTX *ctx);
 #endif
 
   void onEnable() override;
@@ -223,12 +220,12 @@ class SSLContextService : public core::controller::ControllerService {
 
 #ifdef OPENSSL_SUPPORT
   static std::string getLatestOpenSSLErrorString() {
-    unsigned long err = ERR_peek_last_error(); // NOLINT
+    unsigned long err = ssl::ERR_peek_last_error(); // NOLINT
     if (err == 0U) {
       return "";
     }
     char buf[4096];
-    ERR_error_string_n(err, buf, sizeof(buf));
+    ssl::ERR_error_string_n(err, buf, sizeof(buf));
     return buf;
   }
 #endif
@@ -239,10 +236,10 @@ class SSLContextService : public core::controller::ControllerService {
 
  private:
 #ifdef OPENSSL_SUPPORT
-  bool addP12CertificateToSSLContext(SSL_CTX* ctx) const;
-  bool addPemCertificateToSSLContext(SSL_CTX* ctx) const;
-  bool addClientCertificateFromSystemStoreToSSLContext(SSL_CTX* ctx) const;
-  bool addServerCertificatesFromSystemStoreToSSLContext(SSL_CTX* ctx) const;
+  bool addP12CertificateToSSLContext(ssl::SSL_CTX* ctx) const;
+  bool addPemCertificateToSSLContext(ssl::SSL_CTX* ctx) const;
+  bool addClientCertificateFromSystemStoreToSSLContext(ssl::SSL_CTX* ctx) const;
+  bool addServerCertificatesFromSystemStoreToSSLContext(ssl::SSL_CTX* ctx) const;
 #ifdef WIN32
   using ClientCertCallback = std::function<bool(utils::tls::X509_unique_ptr cert, utils::tls::EVP_PKEY_unique_ptr priv_key)>;
   using ServerCertCallback = std::function<bool(utils::tls::X509_unique_ptr cert)>;

@@ -16,7 +16,7 @@
  */
 #ifdef OPENSSL_SUPPORT
 
-#include <openssl/x509v3.h>
+#include "Ssl.h"
 
 #include "utils/gsl.h"
 #include "utils/tls/ExtendedKeyUsage.h"
@@ -58,7 +58,7 @@ utils::tls::EXTENDED_KEY_USAGE_unique_ptr createExtendedKeyUsage(const std::vect
   std::vector<unsigned char> der_encoded_key_usage = createDerEncodedExtendedKeyUsage(last_bytes_of_oids);
   const unsigned char* data = der_encoded_key_usage.data();
   long length = gsl::narrow<long>(der_encoded_key_usage.size());  // NOLINT: cpplint hates `long`, but that is the param type in the API
-  utils::tls::EXTENDED_KEY_USAGE_unique_ptr key_usage{d2i_EXTENDED_KEY_USAGE(nullptr, &data, length)};
+  utils::tls::EXTENDED_KEY_USAGE_unique_ptr key_usage{org::apache::nifi::minifi::ssl::d2i_EXTENDED_KEY_USAGE(nullptr, &data, length)};
   return key_usage;
 }
 

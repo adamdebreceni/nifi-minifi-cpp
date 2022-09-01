@@ -38,6 +38,10 @@ class DynamicLibrary : public Module {
   DynamicLibrary(std::string name, std::filesystem::path library_path);
   ~DynamicLibrary() override;
 
+  bool load();
+  bool unload();
+  void* dlsym(const char* name);
+
  private:
 #ifdef WIN32
   std::map<void*, std::string> resource_mapping_;
@@ -51,9 +55,6 @@ class DynamicLibrary : public Module {
   void* dlopen(const char* file, int mode);
   int dlclose(void* handle);
 #endif
-
-  bool load();
-  bool unload();
 
   std::filesystem::path library_path_;
   gsl::owner<void*> handle_ = nullptr;

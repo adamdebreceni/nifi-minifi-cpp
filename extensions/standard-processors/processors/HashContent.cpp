@@ -17,7 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#if 0
 #ifdef OPENSSL_SUPPORT
 
 #include <algorithm>
@@ -106,3 +106,4 @@ REGISTER_RESOURCE(HashContent, Processor);
 }  // namespace org
 
 #endif  // OPENSSL_SUPPORT
+#endif

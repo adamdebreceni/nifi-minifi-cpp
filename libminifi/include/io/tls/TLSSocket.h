@@ -18,8 +18,7 @@
 #ifndef LIBMINIFI_INCLUDE_IO_TLS_TLSSOCKET_H_
 #define LIBMINIFI_INCLUDE_IO_TLS_TLSSOCKET_H_
 
-#include <openssl/err.h>
-#include <openssl/ssl.h>
+#include "Ssl.h"
 
 #include <atomic>
 #include <cstdint>
@@ -54,9 +53,9 @@ class OpenSSLInitializer {
   }
 
   OpenSSLInitializer() {
-    SSL_library_init();
-    OpenSSL_add_all_algorithms();
-    SSL_load_error_strings();
+    ssl::SSL_library_init();
+    ssl::add_all_algorithms();
+    ssl::SSL_load_error_strings();
   }
 };
 
@@ -66,7 +65,7 @@ class TLSContext : public SocketContext {
 
   virtual ~TLSContext() = default;
 
-  SSL_CTX *getContext() {
+  ssl::SSL_CTX *getContext() {
     return ctx.get();
   }
 
@@ -77,12 +76,12 @@ class TLSContext : public SocketContext {
   int16_t initialize(bool server_method = false);
 
  private:
-  static void deleteContext(SSL_CTX* ptr) { SSL_CTX_free(ptr); }
+  static void deleteContext(ssl::SSL_CTX* ptr) { ssl::SSL_CTX_free(ptr); }
 
   std::shared_ptr<core::logging::Logger> logger_ = core::logging::LoggerFactory<TLSContext>::getLogger();
   std::shared_ptr<Configure> configure_;
   std::shared_ptr<minifi::controllers::SSLContextService> ssl_service_;
-  std::unique_ptr<SSL_CTX, decltype(&deleteContext)> ctx;
+  std::unique_ptr<ssl::SSL_CTX, decltype(&deleteContext)> ctx;
 
   int16_t error_value;
 };
@@ -158,7 +157,7 @@ class TLSSocket : public Socket {
  protected:
   size_t writeData(const uint8_t *value, size_t size, int fd);
 
-  SSL *get_ssl(int fd) {
+  ssl::SSL *get_ssl(int fd) {
     if (UNLIKELY(listeners_ > 0)) {
       std::lock_guard<std::mutex> lock(ssl_mutex_);
       return ssl_map_[fd];
@@ -171,9 +170,9 @@ class TLSSocket : public Socket {
 
   std::atomic<bool> connected_{ false };
   std::shared_ptr<TLSContext> context_;
-  SSL* ssl_{ nullptr };
+  ssl::SSL* ssl_{ nullptr };
   std::mutex ssl_mutex_;
-  std::map<int, SSL*> ssl_map_;
+  std::map<int, ssl::SSL*> ssl_map_;
 };
 
 }  // namespace io

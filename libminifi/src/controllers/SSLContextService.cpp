@@ -18,9 +18,7 @@
 #include "controllers/SSLContextService.h"
 
 #ifdef OPENSSL_SUPPORT
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-#include <openssl/x509v3.h>
+#include "Ssl.h"
 #ifdef WIN32
 #pragma comment(lib, "crypt32.lib")
 #pragma comment(lib, "Ws2_32.lib")
@@ -128,7 +126,7 @@ void SSLContextService::initialize() {
 }
 
 #ifdef OPENSSL_SUPPORT
-bool SSLContextService::configure_ssl_context(SSL_CTX *ctx) {
+bool SSLContextService::configure_ssl_context(ssl::SSL_CTX *ctx) {
   if (!IsNullOrEmpty(certificate_)) {
     if (isFileTypeP12(certificate_)) {
       if (!addP12CertificateToSSLContext(ctx)) {
@@ -140,16 +138,16 @@ bool SSLContextService::configure_ssl_context(SSL_CTX *ctx) {
       }
     }
 
-    if (!SSL_CTX_check_private_key(ctx)) {
+    if (!ssl::SSL_CTX_check_private_key(ctx)) {
       core::logging::LOG_ERROR(logger_) << "Private key does not match the public certificate, " << getLatestOpenSSLErrorString();
       return false;
     }
   }
 
-  SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, nullptr);
+  ssl::SSL_CTX_set_verify(ctx, ssl::VERIFY_PEER, nullptr);
 
   if (!IsNullOrEmpty(ca_certificate_)) {
-    if (SSL_CTX_load_verify_locations(ctx, ca_certificate_.c_str(), nullptr) == 0) {
+    if (ssl::SSL_CTX_load_verify_locations(ctx, ca_certificate_.c_str(), nullptr) == 0) {
       core::logging::LOG_ERROR(logger_) << "Cannot load CA certificate, exiting, " << getLatestOpenSSLErrorString();
       return false;
     }
@@ -170,23 +168,23 @@ bool SSLContextService::configure_ssl_context(SSL_CTX *ctx) {
   return true;
 }
 
-bool SSLContextService::addP12CertificateToSSLContext(SSL_CTX* ctx) const {
+bool SSLContextService::addP12CertificateToSSLContext(ssl::SSL_CTX* ctx) const {
   auto error = utils::tls::processP12Certificate(certificate_, passphrase_, {
     .cert_cb = [&] (auto cert) -> std::error_code {
-      if (SSL_CTX_use_certificate(ctx, cert.get()) != 1) {
+      if (ssl::SSL_CTX_use_certificate(ctx, cert.get()) != 1) {
         return utils::tls::get_last_ssl_error_code();
       }
       return {};
     },
     .chain_cert_cb = [&] (auto cacert) -> std::error_code {
-      if (SSL_CTX_add_extra_chain_cert(ctx, cacert.get()) != 1) {
+      if (ssl::add_extra_chain_cert(ctx, cacert.get()) != 1) {
         return utils::tls::get_last_ssl_error_code();
       }
       static_cast<void>(cacert.release());  // a successful SSL_CTX_add_extra_chain_cert() takes ownership of cacert
       return {};
     },
     .priv_key_cb = [&] (auto priv_key) -> std::error_code {
-      if (SSL_CTX_use_PrivateKey(ctx, priv_key.get()) != 1) {
+      if (ssl::SSL_CTX_use_PrivateKey(ctx, priv_key.get()) != 1) {
         return utils::tls::get_last_ssl_error_code();
       }
       return {};
@@ -199,20 +197,20 @@ bool SSLContextService::addP12CertificateToSSLContext(SSL_CTX* ctx) const {
   return true;
 }
 
-bool SSLContextService::addPemCertificateToSSLContext(SSL_CTX* ctx) const {
-  if (SSL_CTX_use_certificate_chain_file(ctx, certificate_.c_str()) <= 0) {
+bool SSLContextService::addPemCertificateToSSLContext(ssl::SSL_CTX* ctx) const {
+  if (ssl::SSL_CTX_use_certificate_chain_file(ctx, certificate_.c_str()) <= 0) {
     core::logging::LOG_ERROR(logger_) << "Could not load client certificate " << certificate_ << ", " << getLatestOpenSSLErrorString();
     return false;
   }
 
   if (!IsNullOrEmpty(passphrase_)) {
     void* passphrase = const_cast<std::string*>(&passphrase_);
-    SSL_CTX_set_default_passwd_cb_userdata(ctx, passphrase);
-    SSL_CTX_set_default_passwd_cb(ctx, minifi::utils::tls::pemPassWordCb);
+    ssl::SSL_CTX_set_default_passwd_cb_userdata(ctx, passphrase);
+    ssl::SSL_CTX_set_default_passwd_cb(ctx, minifi::utils::tls::pemPassWordCb);
   }
 
   if (!IsNullOrEmpty(private_key_)) {
-    int retp = SSL_CTX_use_PrivateKey_file(ctx, private_key_.c_str(), SSL_FILETYPE_PEM);
+    int retp = ssl::SSL_CTX_use_PrivateKey_file(ctx, private_key_.c_str(), ssl::FILETYPE_PEM);
     if (retp != 1) {
       core::logging::LOG_ERROR(logger_) << "Could not load private key, " << retp << " on " << private_key_ << ", " << getLatestOpenSSLErrorString();
       return false;
@@ -260,7 +258,7 @@ bool SSLContextService::addClientCertificateFromSystemStoreToSSLContext(SSL_CTX*
   });
 }
 #else
-bool SSLContextService::addClientCertificateFromSystemStoreToSSLContext(SSL_CTX* /*ctx*/) const {
+bool SSLContextService::addClientCertificateFromSystemStoreToSSLContext(ssl::SSL_CTX* /*ctx*/) const {
   logger_->log_error("Getting client certificate from the system store is only supported on Windows");
   return false;
 }
@@ -311,7 +309,7 @@ bool SSLContextService::useClientCertificate(PCCERT_CONTEXT certificate, ClientC
 }
 #endif  // WIN32
 
-bool SSLContextService::addServerCertificatesFromSystemStoreToSSLContext(SSL_CTX* ctx) const {  // NOLINT(readability-convert-member-functions-to-static)
+bool SSLContextService::addServerCertificatesFromSystemStoreToSSLContext(ssl::SSL_CTX* ctx) const {  // NOLINT(readability-convert-member-functions-to-static)
 #ifdef WIN32
   X509_STORE* ssl_store = SSL_CTX_get_cert_store(ctx);
   if (!ssl_store) {
@@ -339,7 +337,7 @@ bool SSLContextService::addServerCertificatesFromSystemStoreToSSLContext(SSL_CTX
 
   return true;
 #else
-  SSL_CTX_set_default_verify_paths(ctx);
+  ssl::SSL_CTX_set_default_verify_paths(ctx);
   return true;
 #endif  // WIN32
 }
@@ -384,20 +382,20 @@ bool SSLContextService::useServerCertificate(PCCERT_CONTEXT certificate, ServerC
  */
 std::unique_ptr<SSLContext> SSLContextService::createSSLContext() {
 #ifdef OPENSSL_SUPPORT
-  SSL_library_init();
-  const SSL_METHOD *method;
+  ssl::SSL_library_init();
+  const ssl::SSL_METHOD *method;
 
-  OpenSSL_add_all_algorithms();
-  SSL_load_error_strings();
-  method = TLSv1_2_client_method();
-  SSL_CTX *ctx = SSL_CTX_new(method);
+  ssl::add_all_algorithms();
+  ssl::SSL_load_error_strings();
+  method = ssl::TLSv1_2_client_method();
+  ssl::SSL_CTX *ctx = ssl::SSL_CTX_new(method);
 
   if (ctx == nullptr) {
     return nullptr;
   }
 
   if (!configure_ssl_context(ctx)) {
-    SSL_CTX_free(ctx);
+    ssl::SSL_CTX_free(ctx);
     return nullptr;
   }
 

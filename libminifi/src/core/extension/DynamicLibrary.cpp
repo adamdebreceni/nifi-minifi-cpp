@@ -82,6 +82,14 @@ bool DynamicLibrary::unload() {
 
 DynamicLibrary::~DynamicLibrary() = default;
 
+void* DynamicLibrary::dlsym(const char *name) {
+#ifdef WIN32
+  return dlsym(handle_, name);
+#else
+  return ::dlsym(handle_, name);
+#endif
+}
+
 #ifdef WIN32
 
 void DynamicLibrary::store_error() {

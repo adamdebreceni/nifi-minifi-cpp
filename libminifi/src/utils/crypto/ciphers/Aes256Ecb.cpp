@@ -17,10 +17,7 @@
  */
 
 #include "utils/crypto/ciphers/Aes256Ecb.h"
-#include "openssl/conf.h"
-#include "openssl/evp.h"
-#include "openssl/err.h"
-#include "openssl/rand.h"
+#include "Ssl.h"
 #include "core/logging/LoggerConfiguration.h"
 
 namespace org {
@@ -30,7 +27,7 @@ namespace minifi {
 namespace utils {
 namespace crypto {
 
-using EVP_CIPHER_CTX_ptr = std::unique_ptr<EVP_CIPHER_CTX, decltype(&EVP_CIPHER_CTX_free)>;
+using EVP_CIPHER_CTX_ptr = std::unique_ptr<ssl::EVP_CIPHER_CTX, decltype(ssl::EVP_CIPHER_CTX_free)>;
 
 std::shared_ptr<core::logging::Logger> Aes256EcbCipher::logger_{core::logging::LoggerFactory<Aes256EcbCipher>::getLogger()};
 
@@ -42,11 +39,11 @@ Aes256EcbCipher::Aes256EcbCipher(Bytes encryption_key) : encryption_key_(std::mo
 
 void Aes256EcbCipher::handleOpenSSLError(const char* msg) {
   std::array<char, 128> errmsg = {0};
-  const auto errcode = ERR_peek_last_error();
+  const auto errcode = ssl::ERR_peek_last_error();
   if (!errcode) {
     handleError("%s: %s", msg, "Unknown OpenSSL error");
   }
-  ERR_error_string_n(errcode, errmsg.data(), errmsg.size());
+  ssl::ERR_error_string_n(errcode, errmsg.data(), errmsg.size());
   handleError("%s: %s", msg, errmsg.data());
 }
 
@@ -56,30 +53,30 @@ Bytes Aes256EcbCipher::generateKey() {
 
 void Aes256EcbCipher::encrypt(gsl::span<unsigned char /*, BLOCK_SIZE*/> data) const {
   gsl_Expects(data.size() == BLOCK_SIZE);
-  EVP_CIPHER_CTX_ptr ctx(EVP_CIPHER_CTX_new(), EVP_CIPHER_CTX_free);
+  EVP_CIPHER_CTX_ptr ctx(ssl::EVP_CIPHER_CTX_new(), ssl::EVP_CIPHER_CTX_free);
   if (!ctx) {
     handleOpenSSLError("Could not create cipher context");
   }
 
-  if (1 != EVP_EncryptInit_ex(ctx.get(), EVP_aes_256_ecb(), nullptr, reinterpret_cast<const unsigned char*>(encryption_key_.data()), nullptr)) {
+  if (1 != ssl::EVP_EncryptInit_ex(ctx.get(), ssl::EVP_aes_256_ecb(), nullptr, reinterpret_cast<const unsigned char*>(encryption_key_.data()), nullptr)) {
     handleOpenSSLError("Could not initialize encryption cipher context");
   }
 
   // EVP_EncryptFinal_ex pads the data even if there is none thus data that
   // is exactly BLOCK_SIZE long would result in 2*BLOCK_SIZE ciphertext
-  if (1 != EVP_CIPHER_CTX_set_padding(ctx.get(), 0)) {
+  if (1 != ssl::EVP_CIPHER_CTX_set_padding(ctx.get(), 0)) {
     handleOpenSSLError("Could not disable padding for cipher");
   }
 
   int ciphertext_len = 0;
   int len;
 
-  if (1 != EVP_EncryptUpdate(ctx.get(), data.begin(), &len, data.begin(), data.size())) {
+  if (1 != ssl::EVP_EncryptUpdate(ctx.get(), data.begin(), &len, data.begin(), data.size())) {
     handleOpenSSLError("Could not update cipher content");
   }
   ciphertext_len += len;
 
-  if (1 != EVP_EncryptFinal_ex(ctx.get(), data.begin() + len, &len)) {
+  if (1 != ssl::EVP_EncryptFinal_ex(ctx.get(), data.begin() + len, &len)) {
     handleOpenSSLError("Could not finalize encryption");
   }
   ciphertext_len += len;
@@ -89,29 +86,29 @@ void Aes256EcbCipher::encrypt(gsl::span<unsigned char /*, BLOCK_SIZE*/> data) co
 
 void Aes256EcbCipher::decrypt(gsl::span<unsigned char /*, BLOCK_SIZE*/> data) const {
   gsl_Expects(data.size() == BLOCK_SIZE);
-  EVP_CIPHER_CTX_ptr ctx(EVP_CIPHER_CTX_new(), EVP_CIPHER_CTX_free);
+  EVP_CIPHER_CTX_ptr ctx(ssl::EVP_CIPHER_CTX_new(), ssl::EVP_CIPHER_CTX_free);
   if (!ctx) {
     handleOpenSSLError("Could not create cipher context");
   }
 
-  if (1 != EVP_DecryptInit_ex(ctx.get(), EVP_aes_256_ecb(), nullptr, reinterpret_cast<const unsigned char*>(encryption_key_.data()), nullptr)) {
+  if (1 != ssl::EVP_DecryptInit_ex(ctx.get(), ssl::EVP_aes_256_ecb(), nullptr, reinterpret_cast<const unsigned char*>(encryption_key_.data()), nullptr)) {
     handleOpenSSLError("Could not initialize decryption cipher context");
   }
 
   // as we did not use padding during encryption
-  if (1 != EVP_CIPHER_CTX_set_padding(ctx.get(), 0)) {
+  if (1 != ssl::EVP_CIPHER_CTX_set_padding(ctx.get(), 0)) {
     handleOpenSSLError("Could not disable padding for cipher");
   }
 
   int plaintext_len = 0;
   int len;
 
-  if (1 != EVP_DecryptUpdate(ctx.get(), data.begin(), &len, data.begin(), data.size())) {
+  if (1 != ssl::EVP_DecryptUpdate(ctx.get(), data.begin(), &len, data.begin(), data.size())) {
     handleOpenSSLError("Could not update cipher content");
   }
   plaintext_len += len;
 
-  if (1 != EVP_DecryptFinal_ex(ctx.get(), data.begin() + len, &len)) {
+  if (1 != ssl::EVP_DecryptFinal_ex(ctx.get(), data.begin() + len, &len)) {
     handleOpenSSLError("Could not finalize decryption");
   }
   plaintext_len += len;
@@ -122,7 +119,7 @@ void Aes256EcbCipher::decrypt(gsl::span<unsigned char /*, BLOCK_SIZE*/> data) co
 bool Aes256EcbCipher::operator==(const Aes256EcbCipher &other) const {
   gsl_Expects(encryption_key_.size() == KEY_SIZE);
   if (encryption_key_.size() != other.encryption_key_.size()) return false;
-  return CRYPTO_memcmp(encryption_key_.data(), other.encryption_key_.data(), KEY_SIZE) == 0;
+  return ssl::CRYPTO_memcmp(encryption_key_.data(), other.encryption_key_.data(), KEY_SIZE) == 0;
 }
 
 }  // namespace crypto

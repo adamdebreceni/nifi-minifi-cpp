@@ -18,8 +18,7 @@
 #ifndef LIBMINIFI_INCLUDE_IO_TLS_SECUREDESCRIPTORSTREAM_H_
 #define LIBMINIFI_INCLUDE_IO_TLS_SECUREDESCRIPTORSTREAM_H_
 
-#include <openssl/err.h>
-#include <openssl/ssl.h>
+#include "Ssl.h"
 
 #include <cstdint>
 #include <iostream>
@@ -55,7 +54,7 @@ class SecureDescriptorStream : public io::BaseStream {
    * File Stream constructor that accepts an fstream shared pointer.
    * It must already be initialized for read and write.
    */
-  explicit SecureDescriptorStream(int fd, SSL *s);
+  explicit SecureDescriptorStream(int fd, ssl::SSL *s);
 
   ~SecureDescriptorStream() override = default;
 
@@ -90,7 +89,7 @@ class SecureDescriptorStream : public io::BaseStream {
 
   int fd_;
 
-  SSL *ssl_;
+  ssl::SSL *ssl_;
 
  private:
   std::shared_ptr<core::logging::Logger> logger_ = core::logging::LoggerFactory<SecureDescriptorStream>::getLogger();

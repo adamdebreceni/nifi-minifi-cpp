@@ -18,9 +18,6 @@
 
 #include "utils/tls/CertificateUtils.h"
 
-#include <openssl/rsa.h>
-#include <openssl/err.h>
-
 #ifdef WIN32
 #pragma comment(lib, "ncrypt.lib")
 #pragma comment(lib, "Ws2_32.lib")
@@ -43,12 +40,12 @@ std::string ssl_error_category::message(int value) const {
     return "";
   }
   char buf[4096];
-  ERR_error_string_n(err, buf, sizeof(buf));
+  ssl::ERR_error_string_n(err, buf, sizeof(buf));
   return buf;
 }
 
 std::error_code get_last_ssl_error_code() {
-  return std::error_code{gsl::narrow<int>(ERR_peek_last_error()), ssl_error_category::get()};
+  return std::error_code{gsl::narrow<int>(ssl::ERR_peek_last_error()), ssl_error_category::get()};
 }
 
 #ifdef WIN32
@@ -167,12 +164,12 @@ std::string getLatestOpenSSLErrorString() {
 }
 
 std::optional<std::chrono::system_clock::time_point> getCertificateExpiration(const X509_unique_ptr& cert) {
-  const ASN1_TIME* asn1_end = X509_get0_notAfter(cert.get());
+  const ssl::ASN1_TIME* asn1_end = ssl::X509_get0_notAfter(cert.get());
   if (!asn1_end) {
     return {};
   }
   std::tm end{};
-  int ret = ASN1_time_parse(reinterpret_cast<const char*>(asn1_end->data), asn1_end->length, &end, 0);
+  int ret = ssl::ASN1_time_parse(reinterpret_cast<const char*>(ssl::ASN1_data(asn1_end)), ssl::ASN1_length(asn1_end), &end, 0);
   if (ret == -1) {
     return {};
   }
@@ -180,27 +177,27 @@ std::optional<std::chrono::system_clock::time_point> getCertificateExpiration(co
 }
 
 std::error_code processP12Certificate(const std::string& cert_file, const std::string& passphrase, const CertHandler& handler) {
-  utils::tls::BIO_unique_ptr fp{BIO_new(BIO_s_file())};
+  utils::tls::BIO_unique_ptr fp{ssl::BIO_new(ssl::BIO_s_file())};
   if (fp == nullptr) {
     return get_last_ssl_error_code();
   }
-  if (BIO_read_filename(fp.get(), cert_file.c_str()) <= 0) {
+  if (ssl::read_filename(fp.get(), cert_file.c_str()) <= 0) {
     return get_last_ssl_error_code();
   }
-  utils::tls::PKCS12_unique_ptr  p12{d2i_PKCS12_bio(fp.get(), nullptr)};
+  utils::tls::PKCS12_unique_ptr  p12{ssl::d2i_PKCS12_bio(fp.get(), nullptr)};
   if (p12 == nullptr) {
     return get_last_ssl_error_code();
   }
 
-  EVP_PKEY* pkey = nullptr;
-  X509* cert = nullptr;
-  STACK_OF(X509)* ca = nullptr;
-  if (!PKCS12_parse(p12.get(), passphrase.c_str(), &pkey, &cert, &ca)) {
+  ssl::EVP_PKEY* pkey = nullptr;
+  ssl::X509* cert = nullptr;
+  ssl::stack_of_X509* ca = nullptr;
+  if (!ssl::PKCS12_parse(p12.get(), passphrase.c_str(), &pkey, &cert, &ca)) {
     return get_last_ssl_error_code();
   }
   utils::tls::EVP_PKEY_unique_ptr pkey_ptr{pkey};
   utils::tls::X509_unique_ptr cert_ptr{cert};
-  const auto ca_deleter = gsl::finally([ca] { sk_X509_pop_free(ca, X509_free); });
+  const auto ca_deleter = gsl::finally([ca] { ssl::X509_pop_free(ca, ssl::X509_free); });
 
   if (handler.cert_cb) {
     if (auto error = handler.cert_cb(std::move(cert_ptr))) {
@@ -209,8 +206,8 @@ std::error_code processP12Certificate(const std::string& cert_file, const std::s
   }
 
   if (handler.chain_cert_cb) {
-    while (ca != nullptr && sk_X509_num(ca) > 0) {
-      if (auto error = handler.chain_cert_cb(utils::tls::X509_unique_ptr{sk_X509_pop(ca)})) {
+    while (ca != nullptr && ssl::X509_num(ca) > 0) {
+      if (auto error = handler.chain_cert_cb(utils::tls::X509_unique_ptr{ssl::X509_pop(ca)})) {
         return error;
       }
     }
@@ -224,11 +221,11 @@ std::error_code processP12Certificate(const std::string& cert_file, const std::s
 }
 
 std::error_code processPEMCertificate(const std::string& cert_file, const std::optional<std::string>& passphrase, const CertHandler& handler) {
-  utils::tls::BIO_unique_ptr fp{BIO_new(BIO_s_file())};
+  utils::tls::BIO_unique_ptr fp{ssl::BIO_new(ssl::BIO_s_file())};
   if (fp == nullptr) {
     return get_last_ssl_error_code();
   }
-  if (BIO_read_filename(fp.get(), cert_file.c_str()) <= 0) {
+  if (ssl::read_filename(fp.get(), cert_file.c_str()) <= 0) {
     return get_last_ssl_error_code();
   }
   std::decay_t<decltype(pemPassWordCb)> pwd_cb = nullptr;
@@ -238,7 +235,7 @@ std::error_code processPEMCertificate(const std::string& cert_file, const std::o
     pwd_data = const_cast<std::string*>(&passphrase.value());
   }
 
-  X509_unique_ptr cert{PEM_read_bio_X509_AUX(fp.get(), nullptr, pwd_cb, pwd_data)};
+  X509_unique_ptr cert{ssl::PEM_read_bio_X509_AUX(fp.get(), nullptr, pwd_cb, pwd_data)};
   if (!cert) {
     return get_last_ssl_error_code();
   }
@@ -250,7 +247,7 @@ std::error_code processPEMCertificate(const std::string& cert_file, const std::o
   }
 
   if (handler.chain_cert_cb) {
-    while (X509_unique_ptr chain_cert{PEM_read_bio_X509(fp.get(), nullptr, pwd_cb, pwd_data)}) {
+    while (X509_unique_ptr chain_cert{ssl::PEM_read_bio_X509(fp.get(), nullptr, pwd_cb, pwd_data)}) {
       if (auto error = handler.chain_cert_cb(std::move(chain_cert))) {
         return error;
       }

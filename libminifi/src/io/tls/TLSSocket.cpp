@@ -15,8 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <openssl/ssl.h>
-#include <openssl/err.h>
+
 #ifdef WIN32
 #include <WS2tcpip.h>
 #pragma comment(lib, "Ws2_32.lib")
@@ -67,9 +66,9 @@ int16_t TLSContext::initialize(bool server_method) {
   bool need_client_cert = (!configure_->get(Configure::nifi_security_need_ClientAuth, clientAuthStr) ||
        org::apache::nifi::minifi::utils::StringUtils::toBool(clientAuthStr).value_or(true));
 
-  const SSL_METHOD *method;
-  method = server_method ? TLSv1_2_server_method() : TLSv1_2_client_method();
-  auto local_context = std::unique_ptr<SSL_CTX, decltype(&deleteContext)>(SSL_CTX_new(method), deleteContext);
+  const ssl::SSL_METHOD *method;
+  method = server_method ? ssl::TLSv1_2_server_method() : ssl::TLSv1_2_client_method();
+  auto local_context = std::unique_ptr<ssl::SSL_CTX, decltype(&deleteContext)>(ssl::SSL_CTX_new(method), deleteContext);
   if (local_context == nullptr) {
     logger_->log_error("Could not create SSL context, error: %s.", std::strerror(errno));
     error_value = TLS_ERROR_CONTEXT;
@@ -98,7 +97,7 @@ int16_t TLSContext::initialize(bool server_method) {
         return error_value;
     }
     // load certificates and private key in PEM format
-    if (SSL_CTX_use_certificate_chain_file(local_context.get(), certificate.c_str()) <= 0) {
+    if (ssl::SSL_CTX_use_certificate_chain_file(local_context.get(), certificate.c_str()) <= 0) {
       logger_->log_error("Could not load certificate %s, for %X and %X error : %s", certificate, this, local_context.get(), std::strerror(errno));
       error_value = TLS_ERROR_CERT_MISSING;
       return error_value;
@@ -112,25 +111,25 @@ int16_t TLSContext::initialize(bool server_method) {
         file.close();
         passphrase = password;
       }
-      SSL_CTX_set_default_passwd_cb(local_context.get(), utils::tls::pemPassWordCb);
-      SSL_CTX_set_default_passwd_cb_userdata(local_context.get(), &passphrase);
+      ssl::SSL_CTX_set_default_passwd_cb(local_context.get(), utils::tls::pemPassWordCb);
+      ssl::SSL_CTX_set_default_passwd_cb_userdata(local_context.get(), &passphrase);
     }
 
-    int retp = SSL_CTX_use_PrivateKey_file(local_context.get(), privatekey.c_str(), SSL_FILETYPE_PEM);
+    int retp = ssl::SSL_CTX_use_PrivateKey_file(local_context.get(), privatekey.c_str(), ssl::FILETYPE_PEM);
     if (retp != 1) {
       logger_->log_error("Could not create load private key,%i on %s error : %s", retp, privatekey, std::strerror(errno));
       error_value = TLS_ERROR_KEY_ERROR;
       return error_value;
     }
     // verify private key
-    if (!SSL_CTX_check_private_key(local_context.get())) {
+    if (!ssl::SSL_CTX_check_private_key(local_context.get())) {
       logger_->log_error("Private key does not match the public certificate, error : %s", std::strerror(errno));
       error_value = TLS_ERROR_KEY_ERROR;
       return error_value;
     }
     // load CA certificates
     if (ssl_service_ != nullptr || configure_->get(Configure::nifi_security_client_ca_certificate, caCertificate)) {
-      retp = SSL_CTX_load_verify_locations(local_context.get(), caCertificate.c_str(), 0);
+      retp = ssl::SSL_CTX_load_verify_locations(local_context.get(), caCertificate.c_str(), 0);
       if (retp == 0) {
         logger_->log_error("Can not load CA certificate, Exiting, error : %s", std::strerror(errno));
         error_value = TLS_ERROR_CERT_ERROR;
@@ -151,7 +150,7 @@ TLSSocket::~TLSSocket() {
 
 void TLSSocket::close() {
   if (ssl_ != 0) {
-    SSL_free(ssl_);
+    ssl::SSL_free(ssl_);
     ssl_ = nullptr;
   }
   Socket::close();
@@ -219,18 +218,18 @@ int16_t TLSSocket::initialize(bool blocking) {
   }
 
   if (!is_server) {
-    ssl_ = SSL_new(context_->getContext());
-    SSL_set_fd(ssl_, socket_file_descriptor_);
-    SSL_set_tlsext_host_name(ssl_, requested_hostname_.c_str());  // SNI extension
+    ssl_ = ssl::SSL_new(context_->getContext());
+    ssl::SSL_set_fd(ssl_, socket_file_descriptor_);
+    ssl::set_tlsext_host_name(ssl_, requested_hostname_.c_str());  // SNI extension
     connected_ = false;
-    int rez = SSL_connect(ssl_);
+    int rez = ssl::SSL_connect(ssl_);
     if (rez < 0) {
-      ERR_print_errors_fp(stderr);
-      int ssl_error = SSL_get_error(ssl_, rez);
-      if (ssl_error == SSL_ERROR_WANT_WRITE) {
+      ssl::ERR_print_errors_fp(stderr);
+      int ssl_error = ssl::SSL_get_error(ssl_, rez);
+      if (ssl_error == ssl::ERROR_WANT_WRITE) {
         logger_->log_trace("want write");
         return 0;
-      } else if (ssl_error == SSL_ERROR_WANT_READ) {
+      } else if (ssl_error == ssl::ERROR_WANT_READ) {
         logger_->log_trace("want read");
         return 0;
       } else {
@@ -254,7 +253,7 @@ void TLSSocket::close_ssl(int fd) {
     std::lock_guard<std::mutex> lock(ssl_mutex_);
     auto fd_ssl = ssl_map_[fd];
     if (nullptr != fd_ssl) {
-      SSL_free(fd_ssl);
+      ssl::SSL_free(fd_ssl);
       ssl_map_[fd] = nullptr;
       close();
     }
@@ -299,28 +298,28 @@ int16_t TLSSocket::select_descriptor(const uint16_t msec) {
       if (newfd > socket_max_) {    // keep track of the max
         socket_max_ = newfd;
       }
-      auto ssl = SSL_new(context_->getContext());
-      SSL_set_fd(ssl, newfd);
-      auto accept_value = SSL_accept(ssl);
+      auto ssl = ssl::SSL_new(context_->getContext());
+      ssl::SSL_set_fd(ssl, newfd);
+      auto accept_value = ssl::SSL_accept(ssl);
       if (accept_value != -1) {
         logger_->log_trace("Accepted on %d", newfd);
         ssl_map_[newfd] = ssl;
         return newfd;
       }
-      int ssl_err = SSL_get_error(ssl, accept_value);
+      int ssl_err = ssl::SSL_get_error(ssl, accept_value);
       logger_->log_error("Could not accept %d, error code %d", newfd, ssl_err);
       close_ssl(newfd);
       return -1;
     }
     if (!connected_) {
-      int rez = SSL_connect(ssl_);
+      int rez = ssl::SSL_connect(ssl_);
       if (rez < 0) {
-        ERR_print_errors_fp(stderr);
-        int ssl_error = SSL_get_error(ssl_, rez);
-        if (ssl_error == SSL_ERROR_WANT_WRITE) {
+        ssl::ERR_print_errors_fp(stderr);
+        int ssl_error = ssl::SSL_get_error(ssl_, rez);
+        if (ssl_error == ssl::ERROR_WANT_WRITE) {
           logger_->log_trace("want write");
           return socket_file_descriptor_;
-        } else if (ssl_error == SSL_ERROR_WANT_READ) {
+        } else if (ssl_error == ssl::ERROR_WANT_READ) {
           logger_->log_trace("want read");
           return socket_file_descriptor_;
         } else {
@@ -363,7 +362,7 @@ size_t TLSSocket::read(gsl::span<std::byte> buffer, bool) {
   if (IsNullOrEmpty(fd_ssl)) {
     return STREAM_ERROR;
   }
-  if (!SSL_pending(fd_ssl)) {
+  if (!ssl::SSL_pending(fd_ssl)) {
     return 0;
   }
   while (buflen) {
@@ -373,9 +372,9 @@ size_t TLSSocket::read(gsl::span<std::byte> buffer, bool) {
     int sslStatus;
     do {
       const auto ssl_read_size = gsl::narrow<int>(std::min(buflen, gsl::narrow<size_t>(std::numeric_limits<int>::max())));
-      status = SSL_read(fd_ssl, buf + loc, ssl_read_size);
-      sslStatus = SSL_get_error(fd_ssl, status);
-    } while (status < 0 && sslStatus == SSL_ERROR_WANT_READ && SSL_pending(fd_ssl));
+      status = ssl::SSL_read(fd_ssl, buf + loc, ssl_read_size);
+      sslStatus = ssl::SSL_get_error(fd_ssl, status);
+    } while (status < 0 && sslStatus == ssl::ERROR_WANT_READ && ssl::SSL_pending(fd_ssl));
 
     if (status < 0) break;
 
@@ -394,11 +393,11 @@ size_t TLSSocket::writeData(const uint8_t *value, size_t size, int fd) {
     return STREAM_ERROR;
   }
   while (bytes < size) {
-    const auto sent = SSL_write(fd_ssl, value + bytes, gsl::narrow<int>(size - bytes));
+    const auto sent = ssl::SSL_write(fd_ssl, value + bytes, gsl::narrow<int>(size - bytes));
     // check for errors
     if (sent < 0) {
       int ret = 0;
-      ret = SSL_get_error(fd_ssl, sent);
+      ret = ssl::SSL_get_error(fd_ssl, sent);
       logger_->log_trace("WriteData socket %d send failed %s %d", fd, strerror(errno), ret);
       return STREAM_ERROR;
     }
@@ -436,9 +435,9 @@ size_t TLSSocket::read(gsl::span<std::byte> buffer) {
         return STREAM_ERROR;
       }
       const auto ssl_read_size = gsl::narrow<int>(std::min(buflen, gsl::narrow<size_t>(std::numeric_limits<int>::max())));
-      status = SSL_read(fd_ssl, buf, ssl_read_size);
-      sslStatus = SSL_get_error(fd_ssl, status);
-    } while (status <= 0 && sslStatus == SSL_ERROR_WANT_READ);
+      status = ssl::SSL_read(fd_ssl, buf, ssl_read_size);
+      sslStatus = ssl::SSL_get_error(fd_ssl, status);
+    } while (status <= 0 && sslStatus == ssl::ERROR_WANT_READ);
 
     if (status <= 0)
       break;

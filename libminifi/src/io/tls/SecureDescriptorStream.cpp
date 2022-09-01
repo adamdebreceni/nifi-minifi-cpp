@@ -31,7 +31,7 @@ namespace nifi {
 namespace minifi {
 namespace io {
 
-SecureDescriptorStream::SecureDescriptorStream(int fd, SSL *ssl)
+SecureDescriptorStream::SecureDescriptorStream(int fd, ssl::SSL *ssl)
     : fd_(fd), ssl_(ssl) {
 }
 
@@ -63,10 +63,10 @@ size_t SecureDescriptorStream::write(const uint8_t *value, size_t size) {
   std::lock_guard<std::recursive_mutex> lock(file_lock_);
   size_t bytes = 0;
   while (bytes < size) {
-    const auto write_status = SSL_write(ssl_, value + bytes, gsl::narrow_cast<int>(size - bytes));
+    const auto write_status = ssl::SSL_write(ssl_, value + bytes, gsl::narrow_cast<int>(size - bytes));
     // check for errors
     if (write_status < 0) {
-      const auto ret = SSL_get_error(ssl_, write_status);
+      const auto ret = ssl::SSL_get_error(ssl_, write_status);
       logger_->log_error("WriteData socket %d send failed %s %d", fd_, strerror(errno), ret);
       return STREAM_ERROR;
     }
@@ -84,9 +84,9 @@ size_t SecureDescriptorStream::read(gsl::span<std::byte> buf) {
     int sslStatus;
     do {
       const auto ssl_read_size = gsl::narrow<int>(std::min(buf.size() - total_read, gsl::narrow<size_t>(std::numeric_limits<int>::max())));
-      status = SSL_read(ssl_, writepos, ssl_read_size);
-      sslStatus = SSL_get_error(ssl_, status);
-    } while (status < 0 && sslStatus == SSL_ERROR_WANT_READ);
+      status = ssl::SSL_read(ssl_, writepos, ssl_read_size);
+      sslStatus = ssl::SSL_get_error(ssl_, status);
+    } while (status < 0 && sslStatus == ssl::ERROR_WANT_READ);
 
     if (status < 0)
       break;

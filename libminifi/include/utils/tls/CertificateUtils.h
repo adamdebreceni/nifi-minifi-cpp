@@ -17,8 +17,7 @@
 #pragma once
 #ifdef OPENSSL_SUPPORT
 
-#include <openssl/ssl.h>
-#include <openssl/pkcs12.h>
+#include "Ssl.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -52,24 +51,24 @@ class ssl_error_category : public std::error_category {
 std::error_code get_last_ssl_error_code();
 
 struct EVP_PKEY_deleter {
-  void operator()(EVP_PKEY* pkey) const { EVP_PKEY_free(pkey); }
+  void operator()(ssl::EVP_PKEY* pkey) const { ssl::EVP_PKEY_free(pkey); }
 };
-using EVP_PKEY_unique_ptr = std::unique_ptr<EVP_PKEY, EVP_PKEY_deleter>;
+using EVP_PKEY_unique_ptr = std::unique_ptr<ssl::EVP_PKEY, EVP_PKEY_deleter>;
 
 struct X509_deleter {
-  void operator()(X509* cert) const { X509_free(cert); }
+  void operator()(ssl::X509* cert) const { ssl::X509_free(cert); }
 };
-using X509_unique_ptr = std::unique_ptr<X509, X509_deleter>;
+using X509_unique_ptr = std::unique_ptr<ssl::X509, X509_deleter>;
 
 struct BIO_deleter {
-  void operator()(BIO* bio) const  { BIO_free(bio); }
+  void operator()(ssl::BIO* bio) const  { ssl::BIO_free(bio); }
 };
-using BIO_unique_ptr = std::unique_ptr<BIO, BIO_deleter>;
+using BIO_unique_ptr = std::unique_ptr<ssl::BIO, BIO_deleter>;
 
 struct PKCS12_deleter {
-  void operator()(PKCS12* cert) const  { PKCS12_free(cert); }
+  void operator()(ssl::PKCS12* cert) const  { ssl::PKCS12_free(cert); }
 };
-using PKCS12_unique_ptr = std::unique_ptr<PKCS12, PKCS12_deleter>;
+using PKCS12_unique_ptr = std::unique_ptr<ssl::PKCS12, PKCS12_deleter>;
 
 #ifdef WIN32
 class WindowsCertStore {

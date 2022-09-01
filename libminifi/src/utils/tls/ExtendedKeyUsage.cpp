@@ -18,7 +18,7 @@
 
 #include "utils/tls/ExtendedKeyUsage.h"
 
-#include <openssl/x509v3.h>
+#include "Ssl.h"
 
 #include <array>
 #include <cassert>
@@ -52,16 +52,16 @@ constexpr std::array<KeyValuePair, 6> EXT_KEY_USAGE_NAME_TO_BIT_POS{{
 
 }  // namespace
 
-void EXTENDED_KEY_USAGE_deleter::operator()(EXTENDED_KEY_USAGE* key_usage) const { EXTENDED_KEY_USAGE_free(key_usage); }
+void EXTENDED_KEY_USAGE_deleter::operator()(ssl::EXTENDED_KEY_USAGE* key_usage) const { ssl::EXTENDED_KEY_USAGE_free(key_usage); }
 
 ExtendedKeyUsage::ExtendedKeyUsage() : logger_(core::logging::LoggerFactory<ExtendedKeyUsage>::getLogger()) {}
 
-ExtendedKeyUsage::ExtendedKeyUsage(const EXTENDED_KEY_USAGE& key_usage_asn1) : ExtendedKeyUsage{} {
-  const int num_oids = sk_ASN1_OBJECT_num(&key_usage_asn1);
+ExtendedKeyUsage::ExtendedKeyUsage(const ssl::EXTENDED_KEY_USAGE& key_usage_asn1) : ExtendedKeyUsage{} {
+  const int num_oids = ssl::ASN1_OBJECT_num(&key_usage_asn1);
   for (int i = 0; i < num_oids; ++i) {
-    const ASN1_OBJECT* const oid = sk_ASN1_OBJECT_value(&key_usage_asn1, i);
-    assert(oid && oid->length > 0);
-    const unsigned char last_byte_of_oid = oid->data[oid->length - 1];
+    const ssl::ASN1_OBJECT* const oid = ssl::ASN1_OBJECT_value(&key_usage_asn1, i);
+    assert(oid && ssl::ASN1_OBJECT_length(oid) > 0);
+    const unsigned char last_byte_of_oid = ssl::ASN1_OBJECT_data(oid)[ssl::ASN1_OBJECT_length(oid) - 1];
     if (last_byte_of_oid < bits_.size()) {
       bits_.set(last_byte_of_oid);
     }
