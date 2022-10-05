@@ -158,12 +158,11 @@ namespace HTTPRequestResponse {
 
   /**
    * Callback for post, put, and patch operations
-   * @param buffer
-   * @param size size of buffer
-   * @param nitems items to add
-   * @param insteam input stream object.
+   * @param data output buffer to write to
+   * @param size number of elements to write
+   * @param nmemb size of each element to write
+   * @param p input object to read from
    */
-
   static size_t send_write(char * data, size_t size, size_t nmemb, void * p) {
     try {
       if (p == nullptr) {
