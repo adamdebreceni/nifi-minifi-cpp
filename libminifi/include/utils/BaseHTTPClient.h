@@ -132,28 +132,10 @@ struct HTTPHeaderResponse {
   bool parsed{false};
 };
 
-/**
- * HTTP Response object
- */
-class HTTPRequestResponse {
-  std::vector<char> data;
-  std::condition_variable space_available_;
-  std::mutex data_mutex_;
-
-  size_t max_queue;
-
- public:
-  static const size_t CALLBACK_ABORT = 0x10000000;
-  static const int SEEKFUNC_OK = 0;
-  static const int SEEKFUNC_FAIL = 1;
-
-  const std::vector<char> &getData() {
-    return data;
-  }
-
-  HTTPRequestResponse(const HTTPRequestResponse &other)
-      : max_queue(other.max_queue) {
-  }
+namespace HTTPRequestResponse {
+  const size_t CALLBACK_ABORT = 0x10000000;
+  const int SEEKFUNC_OK = 0;
+  const int SEEKFUNC_FAIL = 1;
 
   /**
    * Receive HTTP Response.
@@ -234,25 +216,7 @@ class HTTPRequestResponse {
       return SEEKFUNC_FAIL;
     }
   }
-
-  int read_data(uint8_t *buf, size_t size) {
-    size_t size_to_read = size;
-    if (size_to_read > data.size()) {
-      size_to_read = data.size();
-    }
-    memcpy(buf, data.data(), size_to_read);
-    return gsl::narrow<int>(size_to_read);
-  }
-
-  size_t write_content(char* ptr, size_t size, size_t nmemb) {
-    if (data.size() + (size * nmemb) > max_queue) {
-      std::unique_lock<std::mutex> lock(data_mutex_);
-      space_available_.wait(lock, [&] {return data.size() + (size*nmemb) < max_queue;});
-    }
-    data.insert(data.end(), ptr, ptr + size * nmemb);
-    return size * nmemb;
-  }
-};
+}
 
 class BaseHTTPClient {
  public:
