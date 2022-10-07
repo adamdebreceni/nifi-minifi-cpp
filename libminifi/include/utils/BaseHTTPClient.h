@@ -137,84 +137,9 @@ namespace HTTPRequestResponse {
   const int SEEKFUNC_OK = 0;
   const int SEEKFUNC_FAIL = 1;
 
-  /**
-   * Receive HTTP Response.
-   */
-  static size_t receiveWrite(char * data, size_t size, size_t nmemb, void * p) {
-    try {
-      if (p == nullptr) {
-        return CALLBACK_ABORT;
-      }
-      auto *callback = static_cast<HTTPReadCallback *>(p);
-      if (callback->stop) {
-        return CALLBACK_ABORT;
-      }
-      callback->write(data, (size * nmemb));
-      return (size * nmemb);
-    } catch (...) {
-      return CALLBACK_ABORT;
-    }
-  }
-
-  /**
-   * Callback for post, put, and patch operations
-   * @param data output buffer to write to
-   * @param size number of elements to write
-   * @param nmemb size of each element to write
-   * @param p input object to read from
-   */
-  static size_t send_write(char * data, size_t size, size_t nmemb, void * p) {
-    try {
-      if (p == nullptr) {
-        return CALLBACK_ABORT;
-      }
-      auto *callback = reinterpret_cast<HTTPUploadByteArrayInputCallback*>(p);
-      if (callback->stop) {
-        return CALLBACK_ABORT;
-      }
-      size_t buffer_size = callback->getBufferSize();
-      if (callback->pos <= buffer_size) {
-        size_t len = buffer_size - callback->pos;
-        if (len <= 0) {
-          return 0;
-        }
-        auto *ptr = callback->getBuffer(callback->pos);
-
-        if (ptr == nullptr) {
-          return 0;
-        }
-        if (len > size * nmemb)
-          len = size * nmemb;
-        memcpy(data, ptr, len);
-        callback->pos += len;
-        callback->seek(callback->pos);
-        return len;
-      }
-      return 0;
-    } catch (...) {
-      return CALLBACK_ABORT;
-    }
-  }
-
-  static int seek_callback(void *p, int64_t offset, int) {
-    try {
-      if (p == nullptr) {
-        return SEEKFUNC_FAIL;
-      }
-      auto *callback = reinterpret_cast<HTTPUploadByteArrayInputCallback*>(p);
-      if (callback->stop) {
-        return SEEKFUNC_FAIL;
-      }
-      if (callback->getBufferSize() <= static_cast<size_t>(offset)) {
-        return SEEKFUNC_FAIL;
-      }
-      callback->pos = offset;
-      callback->seek(callback->pos);
-      return SEEKFUNC_OK;
-    } catch (...) {
-      return SEEKFUNC_FAIL;
-    }
-  }
+  size_t receiveWrite(char * data, size_t size, size_t nmemb, void * p);
+  size_t send_write(char * data, size_t size, size_t nmemb, void * p);
+  int seek_callback(void *p, int64_t offset, int);
 }
 
 class BaseHTTPClient {
