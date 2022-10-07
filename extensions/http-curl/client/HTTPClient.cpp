@@ -52,7 +52,7 @@ HTTPClient::HTTPClient()
   http_session_.reset(curl_easy_init());
 }
 
-void HTTPClient::addFormPart(const std::string& content_type, const std::string& name, std::unique_ptr<utils::HTTPUploadCallback> form_callback, const std::optional<std::string>& filename) {
+void HTTPClient::addFormPart(const std::string& content_type, const std::string& name, std::unique_ptr<utils::HTTPUploadByteArrayInputCallback> form_callback, const std::optional<std::string>& filename) {
   if (!form_) {
     form_.reset(curl_mime_init(http_session_.get()));
   }
@@ -209,7 +209,7 @@ void HTTPClient::setReadCallback(std::unique_ptr<utils::HTTPReadCallback> callba
   curl_easy_setopt(http_session_.get(), CURLOPT_WRITEDATA, static_cast<void*>(read_callback_.get()));
 }
 
-void HTTPClient::setUploadCallback(std::unique_ptr<utils::HTTPUploadCallback> callback) {
+void HTTPClient::setUploadCallback(std::unique_ptr<utils::HTTPUploadByteArrayInputCallback> callback) {
   logger_->log_debug("Setting callback for %s", url_);
   write_callback_ = std::move(callback);
   if (method_ == "PUT") {

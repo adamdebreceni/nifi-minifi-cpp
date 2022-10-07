@@ -340,7 +340,7 @@ void InvokeHTTP::onTriggerWithClient(const std::shared_ptr<core::ProcessContext>
     logger_->log_trace("InvokeHTTP -- reading flowfile");
     std::shared_ptr<ResourceClaim> claim = flow_file->getResourceClaim();
     if (claim) {
-      auto callback_obj = std::make_unique<utils::HTTPUploadCallback>();
+      auto callback_obj = std::make_unique<utils::HTTPUploadByteArrayInputCallback>();
       callback_obj->pos = 0;
       if (send_message_body_) {
         session->read(flow_file, std::ref(*callback_obj));

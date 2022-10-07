@@ -39,7 +39,7 @@ struct HTTPProxy {
   int port = 0;
 };
 
-class HTTPUploadCallback : public ByteInputCallback {
+class HTTPUploadByteArrayInputCallback : public ByteInputCallback {
  public:
   using ByteInputCallback::ByteInputCallback;
 
@@ -168,7 +168,7 @@ namespace HTTPRequestResponse {
       if (p == nullptr) {
         return CALLBACK_ABORT;
       }
-      auto *callback = reinterpret_cast<HTTPUploadCallback*>(p);
+      auto *callback = reinterpret_cast<HTTPUploadByteArrayInputCallback*>(p);
       if (callback->stop) {
         return CALLBACK_ABORT;
       }
@@ -201,7 +201,7 @@ namespace HTTPRequestResponse {
       if (p == nullptr) {
         return SEEKFUNC_FAIL;
       }
-      auto *callback = reinterpret_cast<HTTPUploadCallback*>(p);
+      auto *callback = reinterpret_cast<HTTPUploadByteArrayInputCallback*>(p);
       if (callback->stop) {
         return SEEKFUNC_FAIL;
       }
@@ -231,7 +231,7 @@ class BaseHTTPClient {
 
   virtual void setReadTimeout(std::chrono::milliseconds timeout) = 0;
 
-  virtual void setUploadCallback(std::unique_ptr<HTTPUploadCallback> callbackObj) = 0;
+  virtual void setUploadCallback(std::unique_ptr<HTTPUploadByteArrayInputCallback> callbackObj) = 0;
 
   virtual void setContentType(std::string content_type) = 0;
 
