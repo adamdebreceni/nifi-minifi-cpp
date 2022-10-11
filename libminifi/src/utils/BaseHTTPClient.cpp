@@ -191,29 +191,8 @@ size_t HTTPRequestResponse::send_write(char *data, size_t size, size_t nmemb, vo
     if (p == nullptr) {
       return CALLBACK_ABORT;
     }
-    auto *callback = reinterpret_cast<HTTPUploadByteArrayInputCallback *>(p);
-    if (callback->stop) {
-      return CALLBACK_ABORT;
-    }
-    size_t buffer_size = callback->getBufferSize();
-    if (callback->pos <= buffer_size) {
-      size_t len = buffer_size - callback->pos;
-      if (len <= 0) {
-        return 0;
-      }
-      auto *ptr = callback->getBuffer(callback->pos);
-
-      if (ptr == nullptr) {
-        return 0;
-      }
-      if (len > size * nmemb)
-        len = size * nmemb;
-      memcpy(data, ptr, len);
-      callback->pos += len;
-      callback->seek(callback->pos);
-      return len;
-    }
-    return 0;
+    auto *callback = reinterpret_cast<HTTPUploadCallback *>(p);
+    return callback->perform_upload(data, size * nmemb);
   } catch (...) {
     return CALLBACK_ABORT;
   }
@@ -224,19 +203,48 @@ int HTTPRequestResponse::seek_callback(void *p, int64_t offset, int) {
     if (p == nullptr) {
       return SEEKFUNC_FAIL;
     }
-    auto *callback = reinterpret_cast<HTTPUploadByteArrayInputCallback *>(p);
-    if (callback->stop) {
-      return SEEKFUNC_FAIL;
-    }
-    if (callback->getBufferSize() <= static_cast<size_t>(offset)) {
-      return SEEKFUNC_FAIL;
-    }
-    callback->pos = offset;
-    callback->seek(callback->pos);
-    return SEEKFUNC_OK;
+    auto *callback = reinterpret_cast<HTTPUploadCallback *>(p);
+    return callback->perform_seek(offset);
   } catch (...) {
     return SEEKFUNC_FAIL;
   }
+}
+
+size_t HTTPUploadByteArrayInputCallback::perform_upload(char *data, size_t size) {
+  if (stop) {
+    return HTTPRequestResponse::CALLBACK_ABORT;
+  }
+  size_t buffer_size = getBufferSize();
+  if (pos <= buffer_size) {
+    size_t len = buffer_size - pos;
+    if (len <= 0) {
+      return 0;
+    }
+    auto *ptr = getBuffer(pos);
+
+    if (ptr == nullptr) {
+      return 0;
+    }
+    if (len > size)
+      len = size;
+    memcpy(data, ptr, len);
+    pos += len;
+    seek(pos);
+    return len;
+  }
+  return 0;
+}
+
+size_t HTTPUploadByteArrayInputCallback::perform_seek(int64_t offset) {
+  if (stop) {
+    return HTTPRequestResponse::SEEKFUNC_FAIL;
+  }
+  if (getBufferSize() <= static_cast<size_t>(offset)) {
+    return HTTPRequestResponse::SEEKFUNC_FAIL;
+  }
+  pos = offset;
+  seek(pos);
+  return HTTPRequestResponse::SEEKFUNC_OK;
 }
 
 }  // namespace org::apache::nifi::minifi::utils

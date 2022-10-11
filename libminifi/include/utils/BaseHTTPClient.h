@@ -39,9 +39,18 @@ struct HTTPProxy {
   int port = 0;
 };
 
-class HTTPUploadByteArrayInputCallback : public ByteInputCallback {
+class HTTPUploadCallback {
+ public:
+  virtual size_t perform_upload(char* data, size_t size) = 0;
+  virtual size_t perform_seek(int64_t offset) = 0;
+};
+
+class HTTPUploadByteArrayInputCallback : public HTTPUploadCallback, public ByteInputCallback {
  public:
   using ByteInputCallback::ByteInputCallback;
+
+  size_t perform_upload(char* data, size_t size) override;
+  size_t perform_seek(int64_t offset) override;
 
   std::atomic<bool> stop = false;
   std::atomic<size_t> pos = 0;
