@@ -41,16 +41,25 @@ struct HTTPProxy {
 
 class HTTPUploadCallback {
  public:
-  virtual size_t perform_upload(char* data, size_t size) = 0;
-  virtual size_t perform_seek(int64_t offset) = 0;
+  virtual ~HTTPUploadCallback() = default;
+
+  virtual size_t getDataChunk(char* data, size_t size) = 0;
+  virtual size_t setPosition(int64_t offset) = 0;
+
+  virtual size_t size() = 0;
+  virtual void requestStop() = 0;
+  virtual void close() = 0;
 };
 
 class HTTPUploadByteArrayInputCallback : public HTTPUploadCallback, public ByteInputCallback {
  public:
   using ByteInputCallback::ByteInputCallback;
 
-  size_t perform_upload(char* data, size_t size) override;
-  size_t perform_seek(int64_t offset) override;
+  size_t size() override { return getBufferSize(); }
+  void requestStop() override { stop = true; }
+  void close() override { ByteInputCallback::close(); }
+  size_t getDataChunk(char* data, size_t size) override;
+  size_t setPosition(int64_t offset) override;
 
   std::atomic<bool> stop = false;
   std::atomic<size_t> pos = 0;
@@ -165,7 +174,7 @@ class BaseHTTPClient {
 
   virtual void setReadTimeout(std::chrono::milliseconds timeout) = 0;
 
-  virtual void setUploadCallback(std::unique_ptr<HTTPUploadByteArrayInputCallback> callbackObj) = 0;
+  virtual void setUploadCallback(std::unique_ptr<HTTPUploadCallback> callbackObj) = 0;
 
   virtual void setContentType(std::string content_type) = 0;
 

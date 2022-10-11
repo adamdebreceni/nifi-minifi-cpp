@@ -85,7 +85,7 @@ class HTTPClient : public utils::BaseHTTPClient, public core::Connectable {
 
   void setVerbose(bool use_stderr) override;
 
-  void addFormPart(const std::string& content_type, const std::string& name, std::unique_ptr<utils::HTTPUploadByteArrayInputCallback> form_callback, const std::optional<std::string>& filename);
+  void addFormPart(const std::string& content_type, const std::string& name, std::unique_ptr<utils::HTTPUploadCallback> form_callback, const std::optional<std::string>& filename);
 
   void forceClose();
 
@@ -95,11 +95,11 @@ class HTTPClient : public utils::BaseHTTPClient, public core::Connectable {
 
   void setReadTimeout(std::chrono::milliseconds timeout) override;
 
-  void setUploadCallback(std::unique_ptr<utils::HTTPUploadByteArrayInputCallback> callback) override;
+  void setUploadCallback(std::unique_ptr<utils::HTTPUploadCallback> callback) override;
 
   void setReadCallback(std::unique_ptr<utils::HTTPReadCallback> callback);
 
-  utils::HTTPUploadByteArrayInputCallback* getUploadCallback() const { return write_callback_.get(); }
+  utils::HTTPUploadCallback* getUploadCallback() const { return write_callback_.get(); }
   utils::HTTPReadCallback* getReadCallback() const { return read_callback_.get(); }
 
   void setContentType(std::string content_type) override;
@@ -244,8 +244,8 @@ class HTTPClient : public utils::BaseHTTPClient, public core::Connectable {
   std::unique_ptr<CURL, CurlEasyCleanup> http_session_;
   std::unique_ptr<curl_mime, CurlMimeFree> form_;
   std::unique_ptr<utils::HTTPReadCallback> read_callback_;
-  std::unique_ptr<utils::HTTPUploadByteArrayInputCallback> write_callback_;
-  std::unique_ptr<utils::HTTPUploadByteArrayInputCallback> form_callback_;
+  std::unique_ptr<utils::HTTPUploadCallback> write_callback_;
+  std::unique_ptr<utils::HTTPUploadCallback> form_callback_;
 
   std::shared_ptr<core::logging::Logger> logger_{core::logging::LoggerFactory<HTTPClient>::getLogger()};
 };

@@ -192,7 +192,7 @@ size_t HTTPRequestResponse::send_write(char *data, size_t size, size_t nmemb, vo
       return CALLBACK_ABORT;
     }
     auto *callback = reinterpret_cast<HTTPUploadCallback *>(p);
-    return callback->perform_upload(data, size * nmemb);
+    return callback->getDataChunk(data, size * nmemb);
   } catch (...) {
     return CALLBACK_ABORT;
   }
@@ -204,13 +204,13 @@ int HTTPRequestResponse::seek_callback(void *p, int64_t offset, int) {
       return SEEKFUNC_FAIL;
     }
     auto *callback = reinterpret_cast<HTTPUploadCallback *>(p);
-    return callback->perform_seek(offset);
+    return callback->setPosition(offset);
   } catch (...) {
     return SEEKFUNC_FAIL;
   }
 }
 
-size_t HTTPUploadByteArrayInputCallback::perform_upload(char *data, size_t size) {
+size_t HTTPUploadByteArrayInputCallback::getDataChunk(char *data, size_t size) {
   if (stop) {
     return HTTPRequestResponse::CALLBACK_ABORT;
   }
@@ -235,7 +235,7 @@ size_t HTTPUploadByteArrayInputCallback::perform_upload(char *data, size_t size)
   return 0;
 }
 
-size_t HTTPUploadByteArrayInputCallback::perform_seek(int64_t offset) {
+size_t HTTPUploadByteArrayInputCallback::setPosition(int64_t offset) {
   if (stop) {
     return HTTPRequestResponse::SEEKFUNC_FAIL;
   }
