@@ -247,4 +247,14 @@ size_t HTTPUploadByteArrayInputCallback::setPosition(int64_t offset) {
   return HTTPRequestResponse::SEEKFUNC_OK;
 }
 
+size_t HTTPUploadStreamContentsCallback::getDataChunk(char *data, size_t size) {
+  // TODO
+  return 0;
+}
+
+size_t HTTPUploadStreamContentsCallback::setPosition(int64_t offset) {
+  logger_->log_warn("Cannot seek in HTTPUploadStreamContentsCallback; seek called with offset %" PRId64, offset);
+  return HTTPRequestResponse::SEEKFUNC_FAIL;
+}
+
 }  // namespace org::apache::nifi::minifi::utils

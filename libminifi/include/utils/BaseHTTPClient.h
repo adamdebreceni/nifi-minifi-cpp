@@ -55,14 +55,31 @@ class HTTPUploadByteArrayInputCallback : public HTTPUploadCallback, public ByteI
  public:
   using ByteInputCallback::ByteInputCallback;
 
-  size_t size() override { return getBufferSize(); }
-  void requestStop() override { stop = true; }
-  void close() override { ByteInputCallback::close(); }
   size_t getDataChunk(char* data, size_t size) override;
   size_t setPosition(int64_t offset) override;
 
+  size_t size() override { return getBufferSize(); }
+  void requestStop() override { stop = true; }
+  void close() override { ByteInputCallback::close(); }
+
   std::atomic<bool> stop = false;
   std::atomic<size_t> pos = 0;
+};
+
+class HTTPUploadStreamContentsCallback : public HTTPUploadCallback {
+ public:
+  HTTPUploadStreamContentsCallback(std::shared_ptr<io::BaseStream> input_stream) : input_stream_{std::move(input_stream)} {}
+
+  size_t getDataChunk(char* data, size_t size) override;
+  size_t setPosition(int64_t offset) override;
+
+ private:
+  size_t size() override { throw std::runtime_error{"HTTPUploadStreamContentsCallback::size() is not implemented"}; }
+  void requestStop() override { throw std::runtime_error{"HTTPUploadStreamContentsCallback::requestStop() is not implemented"}; }
+  void close() override { throw std::runtime_error{"HTTPUploadStreamContentsCallback::close() is not implemented"}; }
+
+  std::shared_ptr<io::BaseStream> input_stream_;
+  std::shared_ptr<core::logging::Logger> logger_ = core::logging::LoggerFactory<HTTPUploadStreamContentsCallback>::getLogger();
 };
 
 class HTTPReadCallback : public ByteOutputCallback {
