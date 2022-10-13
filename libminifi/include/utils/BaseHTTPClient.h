@@ -74,9 +74,9 @@ class HTTPUploadStreamContentsCallback : public HTTPUploadCallback {
   size_t setPosition(int64_t offset) override;
 
  private:
-  size_t size() override { throw std::runtime_error{"HTTPUploadStreamContentsCallback::size() is not implemented"}; }
-  void requestStop() override { throw std::runtime_error{"HTTPUploadStreamContentsCallback::requestStop() is not implemented"}; }
-  void close() override { throw std::runtime_error{"HTTPUploadStreamContentsCallback::close() is not implemented"}; }
+  size_t size() override { return input_stream_->size(); }
+  void requestStop() override {}
+  void close() override {}
 
   std::shared_ptr<io::InputStream> input_stream_;
   std::shared_ptr<core::logging::Logger> logger_ = core::logging::LoggerFactory<HTTPUploadStreamContentsCallback>::getLogger();
