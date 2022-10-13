@@ -248,8 +248,15 @@ size_t HTTPUploadByteArrayInputCallback::setPosition(int64_t offset) {
 }
 
 size_t HTTPUploadStreamContentsCallback::getDataChunk(char *data, size_t size) {
-  // TODO
-  return 0;
+  std::vector<std::byte> buffer(size);
+  size_t num_read = input_stream_->read(buffer);
+  if (io::isError(num_read)) {
+    return 0;
+  }
+
+  gsl_Expects(num_read <= size);
+  memcpy(data, buffer.data(), num_read);
+  return num_read;
 }
 
 size_t HTTPUploadStreamContentsCallback::setPosition(int64_t offset) {
