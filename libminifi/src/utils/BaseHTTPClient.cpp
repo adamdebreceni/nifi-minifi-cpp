@@ -248,11 +248,16 @@ size_t HTTPUploadByteArrayInputCallback::setPosition(int64_t offset) {
 }
 
 size_t HTTPUploadStreamContentsCallback::getDataChunk(char *data, size_t size) {
+  logger_->log_trace("HTTPUploadStreamContentsCallback is asked for up to %zu bytes", size);
+
   std::vector<std::byte> buffer(size);
   size_t num_read = input_stream_->read(buffer);
+
   if (io::isError(num_read)) {
+    logger_->log_error("Error reading the input stream in HTTPUploadStreamContentsCallback");
     return 0;
   }
+  logger_->log_debug("HTTPUploadStreamContentsCallback is returning %zu bytes", num_read);
 
   gsl_Expects(num_read <= size);
   memcpy(data, buffer.data(), num_read);
@@ -260,8 +265,13 @@ size_t HTTPUploadStreamContentsCallback::getDataChunk(char *data, size_t size) {
 }
 
 size_t HTTPUploadStreamContentsCallback::setPosition(int64_t offset) {
-  logger_->log_warn("Cannot seek in HTTPUploadStreamContentsCallback; seek called with offset %" PRId64, offset);
-  return HTTPRequestResponse::SEEKFUNC_FAIL;
+  if (offset == 0) {
+    logger_->log_debug("HTTPUploadStreamContentsCallback is ignoring request to rewind to the beginning");
+  } else {
+    logger_->log_warn("HTTPUploadStreamContentsCallback is ignoring request to seek to position %" PRId64, offset);
+  }
+
+  return HTTPRequestResponse::SEEKFUNC_OK;
 }
 
 }  // namespace org::apache::nifi::minifi::utils
