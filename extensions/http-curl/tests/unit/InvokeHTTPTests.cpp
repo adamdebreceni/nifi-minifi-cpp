@@ -34,8 +34,13 @@
 #include "processors/LogAttribute.h"
 #include "SingleProcessorTestController.h"
 #include "ConnectionCountingServer.h"
+#include "core/logging/LoggerConfiguration.h"
 
 namespace org::apache::nifi::minifi::test {
+
+class InvokeHTTPTests {};
+
+auto logger = core::logging::LoggerFactory<InvokeHTTPTests>::getLogger();
 
 class TestHTTPServer {
  public:
@@ -72,6 +77,7 @@ TestHTTPServer::TestHTTPServer() {
 }
 
 TEST_CASE("HTTPTestsWithNoResourceClaimPOST", "[httptest1]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
   TestController testController;
   TestHTTPServer http_server;
 
@@ -126,6 +132,8 @@ TEST_CASE("HTTPTestsWithNoResourceClaimPOST", "[httptest1]") {
 }
 
 TEST_CASE("HTTPTestsWithResourceClaimPOST", "[httptest1]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
+
   TestController testController;
 
   LogTestController::getInstance().setDebug<org::apache::nifi::minifi::processors::InvokeHTTP>();
@@ -224,6 +232,8 @@ TEST_CASE("HTTPTestsWithResourceClaimPOST", "[httptest1]") {
 }
 
 TEST_CASE("HTTPTestsPostNoResourceClaim", "[httptest1]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
+
   TestController testController;
   TestHTTPServer http_server;
 
@@ -254,6 +264,8 @@ TEST_CASE("HTTPTestsPostNoResourceClaim", "[httptest1]") {
 }
 
 TEST_CASE("HTTPTestsPenalizeNoRetry", "[httptest1]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
+
   using minifi::processors::InvokeHTTP;
 
   TestController testController;
@@ -285,6 +297,8 @@ TEST_CASE("HTTPTestsPenalizeNoRetry", "[httptest1]") {
 }
 
 TEST_CASE("InvokeHTTP fails with when flow contains invalid attribute names in HTTP headers", "[httptest1]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
+
   using minifi::processors::InvokeHTTP;
   TestHTTPServer http_server;
 
@@ -305,6 +319,8 @@ TEST_CASE("InvokeHTTP fails with when flow contains invalid attribute names in H
 
 TEST_CASE("InvokeHTTP succeeds when the flow file contains an attribute that would be invalid as an HTTP header, and the policy is FAIL, but the attribute is not matched",
     "[httptest1][invokehttp][httpheader][attribute]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
+
   using minifi::processors::InvokeHTTP;
   TestHTTPServer http_server;
 
@@ -327,6 +343,8 @@ TEST_CASE("InvokeHTTP succeeds when the flow file contains an attribute that wou
 }
 
 TEST_CASE("InvokeHTTP replaces invalid characters of attributes", "[httptest1]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
+
   using minifi::processors::InvokeHTTP;
   TestHTTPServer http_server;
 
@@ -348,6 +366,8 @@ TEST_CASE("InvokeHTTP replaces invalid characters of attributes", "[httptest1]")
 }
 
 TEST_CASE("InvokeHTTP drops invalid attributes from HTTP headers", "[httptest1]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
+
   using minifi::processors::InvokeHTTP;
   TestHTTPServer http_server;
 
@@ -370,6 +390,8 @@ TEST_CASE("InvokeHTTP drops invalid attributes from HTTP headers", "[httptest1]"
 }
 
 TEST_CASE("InvokeHTTP empty Attributes to Send means no attributes are sent", "[httptest1]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
+
   using minifi::processors::InvokeHTTP;
   TestHTTPServer http_server;
 
@@ -392,6 +414,8 @@ TEST_CASE("InvokeHTTP empty Attributes to Send means no attributes are sent", "[
 }
 
 TEST_CASE("InvokeHTTP DateHeader", "[InvokeHTTP]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
+
   using minifi::processors::InvokeHTTP;
   TestHTTPServer http_server;
 
@@ -422,6 +446,8 @@ TEST_CASE("InvokeHTTP DateHeader", "[InvokeHTTP]") {
 }
 
 TEST_CASE("InvokeHTTP Attributes to Send uses full string matching, not substring", "[httptest1]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
+
   using minifi::processors::InvokeHTTP;
   TestHTTPServer http_server;
 
@@ -445,6 +471,8 @@ TEST_CASE("InvokeHTTP Attributes to Send uses full string matching, not substrin
 }
 
 TEST_CASE("HTTPTestsResponseBodyinAttribute", "[InvokeHTTP]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
+
   using minifi::processors::InvokeHTTP;
 
   auto invoke_http = std::make_shared<InvokeHTTP>("InvokeHTTP");
@@ -470,6 +498,8 @@ TEST_CASE("HTTPTestsResponseBodyinAttribute", "[InvokeHTTP]") {
 }
 
 TEST_CASE("HTTPTestsResponseBody", "[InvokeHTTP]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
+
   using minifi::processors::InvokeHTTP;
 
   auto invoke_http = std::make_shared<InvokeHTTP>("InvokeHTTP");
@@ -493,6 +523,8 @@ TEST_CASE("HTTPTestsResponseBody", "[InvokeHTTP]") {
 }
 
 TEST_CASE("Test Keepalive", "[InvokeHTTP]") {
+  logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
+
   using minifi::processors::InvokeHTTP;
 
   auto invoke_http = std::make_shared<InvokeHTTP>("InvokeHTTP");
