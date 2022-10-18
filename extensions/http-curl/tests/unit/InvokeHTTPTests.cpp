@@ -495,10 +495,12 @@ TEST_CASE("HTTPTestsResponseBodyinAttribute", "[InvokeHTTP]") {
   CHECK(result.at(InvokeHTTP::RelRetry).empty());
   REQUIRE(success_flow_files.size() == 1);
   CHECK(test_controller.plan->getContent(success_flow_files[0]) == "data");
+  logger->log_error("### ### almost at the end");
 
   auto http_type_attribute = success_flow_files[0]->getAttribute("http.body");
   REQUIRE(http_type_attribute);
   CHECK(*http_type_attribute == "atad");
+  logger->log_error("### ### end of test");
 }
 
 TEST_CASE("HTTPTestsResponseBody", "[InvokeHTTP]") {
@@ -526,8 +528,11 @@ TEST_CASE("HTTPTestsResponseBody", "[InvokeHTTP]") {
   CHECK(!result.at(InvokeHTTP::RelResponse).empty());
 
   auto success_flow_files = result.at(InvokeHTTP::RelResponse);
+  logger->log_error("### ### almost at the end");
+
   REQUIRE(success_flow_files.size() == 1);
   REQUIRE(test_controller.plan->getContent(success_flow_files[0]) == "atad");
+  logger->log_error("### ### end of test");
 }
 
 TEST_CASE("Test Keepalive", "[InvokeHTTP]") {
