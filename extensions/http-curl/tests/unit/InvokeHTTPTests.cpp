@@ -483,7 +483,9 @@ TEST_CASE("HTTPTestsResponseBodyinAttribute", "[InvokeHTTP]") {
   invoke_http->setProperty(InvokeHTTP::Method, "POST");
   invoke_http->setProperty(InvokeHTTP::URL, "http://localhost:" + connection_counting_server.getPort()  + "/reverse");
   invoke_http->setProperty(InvokeHTTP::PutResponseBodyInAttribute, "http.body");
+  logger->log_error("### ### before trigger()");
   const auto result = test_controller.trigger("data", {{"header1", "value1"}, {"header", "value2"}});
+  logger->log_error("### ### after trigger()");
   auto success_flow_files = result.at(InvokeHTTP::Success);
   CHECK(result.at(InvokeHTTP::RelFailure).empty());
   CHECK(result.at(InvokeHTTP::RelResponse).empty());

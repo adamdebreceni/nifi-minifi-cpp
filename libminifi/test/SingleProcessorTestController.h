@@ -46,19 +46,29 @@ class SingleProcessorTestController : public TestController {
   {}
 
   auto trigger() {
+    auto logger = core::logging::LoggerFactory<SingleProcessorTestController>::getLogger();
+    logger->log_error("### ### trigger start");
     plan->runProcessor(processor_);
+    logger->log_error("### ### after runProcessor");
     std::unordered_map<core::Relationship, std::vector<std::shared_ptr<core::FlowFile>>> result;
+    logger->log_error("### ### number of connections, %zu", outgoing_connections_.size());
     for (const auto& [relationship, connection]: outgoing_connections_) {
+      logger->log_error("### ### start relationship %s", relationship.getName());
       std::set<std::shared_ptr<core::FlowFile>> expired_flow_files;
       std::vector<std::shared_ptr<core::FlowFile>> output_flow_files;
       while (connection->isWorkAvailable()) {
+        logger->log_error("### ### connection has work available");
         auto output_flow_file = connection->poll(expired_flow_files);
+        logger->log_error("### ### connection has work available; after poll");
         assert(expired_flow_files.empty());
         if (!output_flow_file) continue;
+        logger->log_error("### ### connection has work available; found output flow file");
         output_flow_files.push_back(std::move(output_flow_file));
       }
+      logger->log_error("### ### after connection has work available");
       result.insert_or_assign(relationship, std::move(output_flow_files));
     }
+    logger->log_error("### ### trigger end");
     return result;
   }
 

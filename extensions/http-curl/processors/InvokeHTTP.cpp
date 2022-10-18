@@ -305,6 +305,7 @@ bool InvokeHTTP::appendHeaders(const core::FlowFile& flow_file, /*std::invocable
 }
 
 void InvokeHTTP::onTrigger(const std::shared_ptr<core::ProcessContext>& context, const std::shared_ptr<core::ProcessSession>& session) {
+  logger_->log_error("### >>> onTrigger start");
   gsl_Expects(session && context && client_queue_);
   auto create_client = [&]() -> std::unique_ptr<minifi::extensions::curl::HTTPClient> {
     return createHTTPClientFromPropertiesAndMembers(*context);
@@ -313,6 +314,7 @@ void InvokeHTTP::onTrigger(const std::shared_ptr<core::ProcessContext>& context,
   auto client = client_queue_->getResource(create_client);
 
   onTriggerWithClient(context, session, *client);
+  logger_->log_error("### >>> onTrigger end");
 }
 
 void InvokeHTTP::onTriggerWithClient(const std::shared_ptr<core::ProcessContext>& context, const std::shared_ptr<core::ProcessSession>& session,
@@ -374,9 +376,9 @@ void InvokeHTTP::onTriggerWithClient(const std::shared_ptr<core::ProcessContext>
     return;
   }
 
-  logger_->log_trace("InvokeHTTP -- curl performed");
+  logger_->log_error("### >>> InvokeHTTP -- curl performed");
   if (client.submit()) {
-    logger_->log_trace("InvokeHTTP -- curl successful");
+    logger_->log_error("### >>> InvokeHTTP -- curl successful");
 
     const std::vector<char>& response_body = client.getResponseBody();
     const std::vector<std::string>& response_headers = client.getResponseHeaders();
@@ -422,6 +424,7 @@ void InvokeHTTP::onTriggerWithClient(const std::shared_ptr<core::ProcessContext>
     }
     route(flow_file, response_flow, session, context, is_success, http_code);
   } else {
+    logger_->log_error("### >>> InvokeHTTP -- curl failed");
     session->penalize(flow_file);
     session->transfer(flow_file, RelFailure);
   }
