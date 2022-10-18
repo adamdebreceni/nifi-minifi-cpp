@@ -512,7 +512,9 @@ TEST_CASE("HTTPTestsResponseBody", "[InvokeHTTP]") {
   invoke_http->setProperty(InvokeHTTP::Method, "POST");
   invoke_http->setProperty(InvokeHTTP::URL, "http://localhost:" + connection_counting_server.getPort()  + "/reverse");
   invoke_http->setProperty(InvokeHTTP::SendMessageBody, "true");
+  logger->log_error("### ### before trigger()");
   const auto result = test_controller.trigger("data", {{"header1", "value1"}, {"header", "value2"}});
+  logger->log_error("### ### after trigger()");
   CHECK(result.at(InvokeHTTP::RelFailure).empty());
   CHECK(result.at(InvokeHTTP::RelNoRetry).empty());
   CHECK(result.at(InvokeHTTP::RelRetry).empty());
@@ -538,7 +540,9 @@ TEST_CASE("Test Keepalive", "[InvokeHTTP]") {
   invoke_http->setProperty(InvokeHTTP::URL, "http://localhost:" + connection_counting_server.getPort()  + "/method");
 
   for (auto i = 0; i < 4; ++i) {
+    logger->log_error("### ### before trigger()");
     const auto result = test_controller.trigger(InputFlowFileData{"data"});
+    logger->log_error("### ### after trigger()");
     CHECK(result.at(InvokeHTTP::RelFailure).empty());
     CHECK(result.at(InvokeHTTP::RelNoRetry).empty());
     CHECK(result.at(InvokeHTTP::RelRetry).empty());

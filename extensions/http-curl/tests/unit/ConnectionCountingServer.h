@@ -124,13 +124,24 @@ class ConnectionCountingServer {
   ConnectionCountingServer() {
     server_.addHandler("/method", numbered_method_responder_);
     server_.addHandler("/reverse", reverse_body_post_handler_);
+    logger_->log_error("### @@@ ConnectionCountingServer c'tor");
   }
 
-  size_t getConnectionCounter() { return connections_.size(); }
+  ~ConnectionCountingServer() {
+    logger_->log_error("### @@@ ConnectionCountingServer d'tor");
+  }
+
+  size_t getConnectionCounter() {
+    logger_->log_error("### @@@ ConnectionCountingServer getConnectionCounter");
+    logger_->log_error("### @@@ ConnectionCountingServer getConnectionCounter returning %zu", connections_.size());
+    return connections_.size();
+  }
 
   std::string getPort() {
+    logger_->log_error("### @@@ ConnectionCountingServer getPort");
     const auto& listening_ports = server_.getListeningPorts();
     assert(!listening_ports.empty());
+    logger_->log_error("### @@@ ConnectionCountingServer getPort returning %d", listening_ports[0]);
     return std::to_string(listening_ports[0]);
   }
 
@@ -146,6 +157,7 @@ class ConnectionCountingServer {
   CivetServer server_{options, &add_id_to_user_connection_data_};
   details::ReverseBodyPostHandler reverse_body_post_handler_{connections_};
   details::NumberedMethodResponder numbered_method_responder_{connections_};
+  std::shared_ptr<core::logging::Logger> logger_{core::logging::LoggerFactory<ConnectionCountingServer>::getLogger()};
 };
 
 }  // namespace org::apache::nifi::minifi::extensions::curl::testing
