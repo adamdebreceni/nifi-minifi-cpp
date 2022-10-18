@@ -474,6 +474,8 @@ TEST_CASE("HTTPTestsResponseBodyinAttribute", "[InvokeHTTP]") {
   logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
 
   using minifi::processors::InvokeHTTP;
+  LogTestController::getInstance().setTrace<InvokeHTTP>();
+  LogTestController::getInstance().setTrace<minifi::utils::HTTPUploadStreamContentsCallback>();
 
   auto invoke_http = std::make_shared<InvokeHTTP>("InvokeHTTP");
   test::SingleProcessorTestController test_controller{invoke_http};
@@ -503,6 +505,8 @@ TEST_CASE("HTTPTestsResponseBody", "[InvokeHTTP]") {
   logger->log_error("### running test: %s", Catch::getResultCapture().getCurrentTestName());
 
   using minifi::processors::InvokeHTTP;
+  LogTestController::getInstance().setTrace<InvokeHTTP>();
+  LogTestController::getInstance().setTrace<minifi::utils::HTTPUploadStreamContentsCallback>();
 
   auto invoke_http = std::make_shared<InvokeHTTP>("InvokeHTTP");
   test::SingleProcessorTestController test_controller{invoke_http};
