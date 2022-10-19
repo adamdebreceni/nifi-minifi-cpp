@@ -333,6 +333,11 @@ class TestController {
  public:
   TestController();
 
+  virtual ~TestController() {
+    auto logger = core::logging::LoggerFactory<TestController>::getLogger();
+    logger->log_error("### ### TestController d'tor");
+  }
+
   std::shared_ptr<TestPlan> createPlan(std::shared_ptr<minifi::Configure> configuration = nullptr, const char* state_dir = nullptr,
       std::shared_ptr<minifi::core::ContentRepository> content_repo = std::make_shared<minifi::core::repository::VolatileContentRepository>());
 

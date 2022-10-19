@@ -617,6 +617,9 @@ TestController::TestController()
   log.reset();
   minifi::utils::IdGenerator::getIdGenerator()->initialize(std::make_shared<minifi::Properties>());
   flow_version_ = std::make_shared<minifi::state::response::FlowVersion>("test", "test", "test");
+
+  auto logger = core::logging::LoggerFactory<TestController>::getLogger();
+  logger->log_error("### ### TestController c'tor");
 }
 
 std::shared_ptr<TestPlan> TestController::createPlan(std::shared_ptr<minifi::Configure> configuration, const char* state_dir, std::shared_ptr<minifi::core::ContentRepository> content_repo) {

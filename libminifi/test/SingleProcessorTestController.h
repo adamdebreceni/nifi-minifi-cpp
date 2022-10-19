@@ -43,7 +43,15 @@ class SingleProcessorTestController : public TestController {
  public:
   explicit SingleProcessorTestController(const std::shared_ptr<core::Processor>& processor)
       : processor_{plan->addProcessor(processor, processor->getName())}
-  {}
+  {
+    auto logger = core::logging::LoggerFactory<SingleProcessorTestController>::getLogger();
+    logger->log_error("### ### SingleProcessorTestController c'tor");
+  }
+
+  ~SingleProcessorTestController() override {
+    auto logger = core::logging::LoggerFactory<SingleProcessorTestController>::getLogger();
+    logger->log_error("### ### SingleProcessorTestController d'tor");
+  }
 
   auto trigger() {
     auto logger = core::logging::LoggerFactory<SingleProcessorTestController>::getLogger();
