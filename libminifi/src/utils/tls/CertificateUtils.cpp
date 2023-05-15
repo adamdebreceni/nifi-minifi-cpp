@@ -22,6 +22,8 @@
 #include <openssl/err.h>
 
 #ifdef WIN32
+#include <winsock2.h>
+
 #pragma comment(lib, "ncrypt.lib")
 #pragma comment(lib, "Ws2_32.lib")
 #endif  // WIN32

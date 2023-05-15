@@ -24,10 +24,14 @@ set(CIVETWEB_ENABLE_LUA "OFF" CACHE STRING "" FORCE)
 set(CIVETWEB_ENABLE_CXX "ON" CACHE STRING "" FORCE)
 set(CIVETWEB_ALLOW_WARNINGS "ON" CACHE STRING "" FORCE)
 set(CIVETWEB_ENABLE_ASAN "OFF" CACHE STRING "" FORCE)
+set(PATCH_FILE "${CMAKE_SOURCE_DIR}/thirdparty/civetweb/openssl3.patch")
+set(PC ${Bash_EXECUTABLE}  -c "set -x &&\
+        (\\\"${Patch_EXECUTABLE}\\\" -p1 -R -s -f --dry-run -i \\\"${PATCH_FILE}\\\" || \\\"${Patch_EXECUTABLE}\\\" -p1 -N -i \\\"${PATCH_FILE}\\\")")
 
 FetchContent_Declare(civetweb
     GIT_REPOSITORY "https://github.com/civetweb/civetweb.git"
     GIT_TAG "4447b6501d5c568b4c6c0940eac801ec690b2250" # commit containing fix for MSVC issue https://github.com/civetweb/civetweb/issues/1024
+    PATCH_COMMAND "${PC}"
 )
 
 FetchContent_MakeAvailable(civetweb)

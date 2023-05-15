@@ -18,18 +18,17 @@
 function(use_openssl SOURCE_DIR BINARY_DIR)
     message("Using bundled OpenSSL")
 
-    if(APPLE OR CMAKE_SIZEOF_VOID_P EQUAL 4)
+    if(APPLE OR WIN32 OR CMAKE_SIZEOF_VOID_P EQUAL 4)
         set(LIBDIR "lib")
     else()
         set(LIBDIR "lib64")
     endif()
 
     # Define byproducts
+    set(BYPRODUCT_PREFIX "lib" CACHE STRING "" FORCE)
     if (WIN32)
-        set(BYPRODUCT_PREFIX "" CACHE STRING "" FORCE)
         set(BYPRODUCT_SUFFIX ".lib" CACHE STRING "" FORCE)
     else()
-        set(BYPRODUCT_PREFIX "lib" CACHE STRING "" FORCE)
         set(BYPRODUCT_SUFFIX ".a" CACHE STRING "" FORCE)
     endif()
 
@@ -55,23 +54,30 @@ function(use_openssl SOURCE_DIR BINARY_DIR)
             )
 
     if (WIN32)
-        set(CONFIGURE_EXE perl Configure)
+        ExternalProject_Add(
+                openssl-external
+                URL https://github.com/openssl/openssl/releases/download/openssl-3.1.0/openssl-3.1.0.tar.gz
+                URL_HASH "SHA256=aaa925ad9828745c4cad9d9efeb273deca820f2cdcf2c3ac7d7c1212b7c497b4"
+                SOURCE_DIR "${BINARY_DIR}/thirdparty/openssl-src"
+                BUILD_IN_SOURCE true
+                CONFIGURE_COMMAND perl Configure "CFLAGS=${PASSTHROUGH_CMAKE_C_FLAGS} -fPIC" "CXXFLAGS=${PASSTHROUGH_CMAKE_CXX_FLAGS} -fPIC" "no-shared" "--prefix=${OPENSSL_BIN_DIR}" "--openssldir=${OPENSSL_BIN_DIR}"
+                BUILD_BYPRODUCTS ${OPENSSL_LIBRARIES_LIST}
+                EXCLUDE_FROM_ALL TRUE
+                BUILD_COMMAND nmake
+                INSTALL_COMMAND nmake install
+            )
     else()
-        set(CONFIGURE_EXE ./Configure)
-    endif()
-
-    set(CONFIGURE_COMMAND ${CONFIGURE_EXE} "CFLAGS=${PASSTHROUGH_CMAKE_C_FLAGS} -fPIC" "CXXFLAGS=${PASSTHROUGH_CMAKE_CXX_FLAGS} -fPIC" "--prefix=${OPENSSL_BIN_DIR}" "--openssldir=${OPENSSL_BIN_DIR}")
-
-    ExternalProject_Add(
-            openssl-external
-            URL https://github.com/openssl/openssl/releases/download/openssl-3.1.0/openssl-3.1.0.tar.gz
-            URL_HASH "SHA256=aaa925ad9828745c4cad9d9efeb273deca820f2cdcf2c3ac7d7c1212b7c497b4"
-            SOURCE_DIR "${BINARY_DIR}/thirdparty/openssl-src"
-            BUILD_IN_SOURCE true
-            CONFIGURE_COMMAND "${CONFIGURE_COMMAND}"
-            BUILD_BYPRODUCTS ${OPENSSL_LIBRARIES_LIST}
-            EXCLUDE_FROM_ALL TRUE
+        ExternalProject_Add(
+                openssl-external
+                URL https://github.com/openssl/openssl/releases/download/openssl-3.1.0/openssl-3.1.0.tar.gz
+                URL_HASH "SHA256=aaa925ad9828745c4cad9d9efeb273deca820f2cdcf2c3ac7d7c1212b7c497b4"
+                SOURCE_DIR "${BINARY_DIR}/thirdparty/openssl-src"
+                BUILD_IN_SOURCE true
+                CONFIGURE_COMMAND ./Configure "CFLAGS=${PASSTHROUGH_CMAKE_C_FLAGS} -fPIC" "CXXFLAGS=${PASSTHROUGH_CMAKE_CXX_FLAGS} -fPIC" "no-shared" "--prefix=${OPENSSL_BIN_DIR}" "--openssldir=${OPENSSL_BIN_DIR}"
+                BUILD_BYPRODUCTS ${OPENSSL_LIBRARIES_LIST}
+                EXCLUDE_FROM_ALL TRUE
         )
+    endif()
 
     # Set variables
     set(OPENSSL_FOUND "YES" CACHE STRING "" FORCE)
@@ -106,4 +112,9 @@ function(use_openssl SOURCE_DIR BINARY_DIR)
             IMPORTED_LOCATION "${OPENSSL_BIN_DIR}/${LIBDIR}/${BYPRODUCT_PREFIX}ssl${BYPRODUCT_SUFFIX}")
     add_dependencies(OpenSSL::SSL openssl-external)
     set_property(TARGET OpenSSL::SSL APPEND PROPERTY INTERFACE_LINK_LIBRARIES OpenSSL::Crypto)
+
+    if(WIN32)
+        set_property(TARGET OpenSSL::Crypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES crypt32.lib )
+        set_property(TARGET OpenSSL::SSL APPEND PROPERTY INTERFACE_LINK_LIBRARIES crypt32.lib)
+    endif()
 endfunction(use_openssl)
