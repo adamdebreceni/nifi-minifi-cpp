@@ -151,6 +151,10 @@ and rebuild.
 * Lua and development headers -- Required if Lua support is enabled
 * libgps-dev -- Required if building libGPS support
 * Zlib headers
+* perl -- Required for OpenSSL configuration
+* NASM -- Required for OpenSSL only on Windows
+
+**NOTE** On Windows if Strawberry Perl is used the `${StrawberryPerlRoot}\c\bin` directory should not be part of the %PATH% variable as Strawberry Perl's patch.exe will be found as the patch executable in the configure phase instead if the git patch executable.
 
 #### CentOS 7
 
