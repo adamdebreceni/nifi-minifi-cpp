@@ -85,6 +85,8 @@ build_deps(){
             INSTALLED+=("liblzma-dev")
           elif [ "$FOUND_VALUE" = "libssh2" ]; then
             INSTALLED+=("libssh2-1-dev")
+          elif [ "$FOUND_VALUE" = "opensslbuild" ]; then
+            INSTALLED+=("perl")
           fi
         fi
       done

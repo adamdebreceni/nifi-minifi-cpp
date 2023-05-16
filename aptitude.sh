@@ -97,6 +97,8 @@ build_deps(){
                         INSTALLED+=("libgps-dev")
                     elif [ "$FOUND_VALUE" = "libarchive" ]; then
                         INSTALLED+=("liblzma-dev")
+                    elif [ "$FOUND_VALUE" = "opensslbuild" ]; then
+                        INSTALLED+=("perl")
                     fi
                 fi
             done
