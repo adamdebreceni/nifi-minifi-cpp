@@ -17,8 +17,6 @@
 # under the License.
 #
 
-message(FATAL_ERROR "Architecture: ${CMAKE_SYSTEM_PROCESSOR}")
-
 cmake_minimum_required(VERSION 3.17)
 cmake_policy(SET CMP0096 NEW) # policy to preserve the leading zeros in PROJECT_VERSION_{MAJOR,MINOR,PATCH,TWEAK}
 cmake_policy(SET CMP0065 OLD) # default export policy, required for self-dlopen
@@ -683,3 +681,5 @@ add_custom_target(
     COMMAND java -jar ${CMAKE_SOURCE_DIR}/thirdparty/apache-rat/apache-rat-0.13/apache-rat-0.13.jar -E ${CMAKE_SOURCE_DIR}/thirdparty/apache-rat/.rat-excludes -d ${CMAKE_SOURCE_DIR} | grep -B 1 -A 15 Summary )
 
 feature_summary(WHAT ALL FILENAME ${CMAKE_BINARY_DIR}/all.log)
+
+message(FATAL_ERROR "Architecture: ${CMAKE_SYSTEM_PROCESSOR}")
