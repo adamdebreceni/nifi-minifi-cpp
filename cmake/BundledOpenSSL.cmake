@@ -28,8 +28,16 @@ function(use_openssl SOURCE_DIR BINARY_DIR)
     set(BYPRODUCT_PREFIX "lib" CACHE STRING "" FORCE)
     if (WIN32)
         set(BYPRODUCT_SUFFIX ".lib" CACHE STRING "" FORCE)
+    elseif (APPLE AND (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64"))
+        set(BYPRODUCT_SUFFIX ".dylib" CACHE STRING "" FORCE)
     else()
         set(BYPRODUCT_SUFFIX ".a" CACHE STRING "" FORCE)
+    endif()
+
+    if (APPLE AND (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64"))
+        set(OPENSSL_SHARED_FLAG "" CACHE STRING "" FORCE)
+    else()
+        set(OPENSSL_SHARED_FLAG "no-shared" CACHE STRING "" FORCE)
     endif()
 
     set(BYPRODUCTS
@@ -60,7 +68,7 @@ function(use_openssl SOURCE_DIR BINARY_DIR)
                 URL_HASH "SHA256=aaa925ad9828745c4cad9d9efeb273deca820f2cdcf2c3ac7d7c1212b7c497b4"
                 SOURCE_DIR "${BINARY_DIR}/thirdparty/openssl-src"
                 BUILD_IN_SOURCE true
-                CONFIGURE_COMMAND perl Configure "CFLAGS=${PASSTHROUGH_CMAKE_C_FLAGS} -fPIC" "CXXFLAGS=${PASSTHROUGH_CMAKE_CXX_FLAGS} -fPIC" "no-shared" "--prefix=${OPENSSL_BIN_DIR}" "--openssldir=${OPENSSL_BIN_DIR}"
+                CONFIGURE_COMMAND perl Configure "CFLAGS=${PASSTHROUGH_CMAKE_C_FLAGS} -fPIC" "CXXFLAGS=${PASSTHROUGH_CMAKE_CXX_FLAGS} -fPIC" ${OPENSSL_SHARED_FLAG} "--prefix=${OPENSSL_BIN_DIR}" "--openssldir=${OPENSSL_BIN_DIR}"
                 BUILD_BYPRODUCTS ${OPENSSL_LIBRARIES_LIST}
                 EXCLUDE_FROM_ALL TRUE
                 BUILD_COMMAND nmake
@@ -73,7 +81,7 @@ function(use_openssl SOURCE_DIR BINARY_DIR)
                 URL_HASH "SHA256=aaa925ad9828745c4cad9d9efeb273deca820f2cdcf2c3ac7d7c1212b7c497b4"
                 SOURCE_DIR "${BINARY_DIR}/thirdparty/openssl-src"
                 BUILD_IN_SOURCE true
-                CONFIGURE_COMMAND ./Configure "CFLAGS=${PASSTHROUGH_CMAKE_C_FLAGS} -fPIC" "CXXFLAGS=${PASSTHROUGH_CMAKE_CXX_FLAGS} -fPIC" "no-shared" "--prefix=${OPENSSL_BIN_DIR}" "--openssldir=${OPENSSL_BIN_DIR}"
+                CONFIGURE_COMMAND ./Configure "CFLAGS=${PASSTHROUGH_CMAKE_C_FLAGS} -fPIC" "CXXFLAGS=${PASSTHROUGH_CMAKE_CXX_FLAGS} -fPIC" ${OPENSSL_SHARED_FLAG} "--prefix=${OPENSSL_BIN_DIR}" "--openssldir=${OPENSSL_BIN_DIR}"
                 BUILD_BYPRODUCTS ${OPENSSL_LIBRARIES_LIST}
                 EXCLUDE_FROM_ALL TRUE
         )
