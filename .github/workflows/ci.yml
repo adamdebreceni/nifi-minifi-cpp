@@ -36,6 +36,8 @@ jobs:
         run: |
           brew info sqliteodbc
           brew info sqlite3
+          brew --prefix
+          ls -l /usr/local/lib
           which sqlite3
           ls -l /usr/local/Cellar/sqliteodbc/0.99991/lib
           printf "#include <dlfcn.h>\n#include <iostream>\nint main() {if (!dlopen(\"libsqlite3odbc.so\", RTLD_LAZY)) std::cerr << \"Error loading library: \" << dlerror() << std::endl;}" > main.cpp
