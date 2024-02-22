@@ -49,5 +49,9 @@ jobs:
           sudo xcode-select -s /Applications/Xcode_14.3.1.app
           xcode-select -p
           DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
+          echo "Rebuilding exe"
           g++ main.cpp -o load_sqliteodbc
+          DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
+          sudo xcode-select -s /Applications/Xcode_15.0.1.app
+          xcode-select -p
           DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
