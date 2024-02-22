@@ -41,10 +41,13 @@ jobs:
           which sqlite3
           # ls -l /usr/local/Cellar/sqliteodbc/0.99991/lib
           printf "#include <dlfcn.h>\n#include <iostream>\nint main() {if (!dlopen(\"libsqlite3odbc.so\", RTLD_LAZY)) std::cerr << \"Error loading library: \" << dlerror() << std::endl;}" > main.cpp
+          sudo xcode-select -s /Applications/Xcode_15.0.1.app
+          xcode-select -p
           g++ main.cpp -o load_sqliteodbc
           # otool -l load_sqliteodbc
-          xcode-select -p
           DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
           sudo xcode-select -s /Applications/Xcode_14.3.1.app
           xcode-select -p
+          DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
+          g++ main.cpp -o load_sqliteodbc
           DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
