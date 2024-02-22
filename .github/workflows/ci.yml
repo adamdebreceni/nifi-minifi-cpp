@@ -34,6 +34,11 @@ jobs:
           echo -e "127.0.0.1\t$HOSTNAME" | sudo tee -a /etc/hosts > /dev/null
       - name: check environment
         run: |
+          xcode-select -p
+          xcode-select -v
+          xcode-select -s /Applications/Xcode_14.3.1.app
+          xcode-select -p
+          xcode-select -v
           brew info sqliteodbc
           brew info sqlite3
           brew --prefix
