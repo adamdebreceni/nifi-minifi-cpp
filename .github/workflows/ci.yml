@@ -45,17 +45,21 @@ jobs:
           xcode-select -p
           g++ main.cpp -o load_sqliteodbc
           # otool -l load_sqliteodbc
-          grep "/usr/local" load_sqliteodbc || true
+          grep "/usr/local" ./load_sqliteodbc || true
+          otool -l ./load_sqliteodbc
           DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
           sudo xcode-select -s /Applications/Xcode_14.3.1.app
           xcode-select -p
-          grep "/usr/local" load_sqliteodbc || true
+          grep "/usr/local" ./load_sqliteodbc || true
+          otool -l ./load_sqliteodbc
           DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
           echo "Rebuilding exe"
-          g++ main.cpp -o load_sqliteodbc
+          g++ main.cpp -o ./load_sqliteodbc
           grep "/usr/local" load_sqliteodbc || true
+          otool -l ./load_sqliteodbc
           DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
           sudo xcode-select -s /Applications/Xcode_15.0.1.app
           xcode-select -p
-          grep "/usr/local" load_sqliteodbc || true
+          grep "/usr/local" ./load_sqliteodbc || true
+          otool -l ./load_sqliteodbc
           DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
