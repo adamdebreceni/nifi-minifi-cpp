@@ -34,18 +34,17 @@ jobs:
           echo -e "127.0.0.1\t$HOSTNAME" | sudo tee -a /etc/hosts > /dev/null
       - name: check environment
         run: |
-          xcode-select -p
-          xcode-select -v
-          sudo xcode-select -s /Applications/Xcode_14.3.1.app
-          xcode-select -p
-          xcode-select -v
           brew info sqliteodbc
           brew info sqlite3
           brew --prefix
-          ls -l /usr/local/lib
+          # ls -l /usr/local/lib
           which sqlite3
-          ls -l /usr/local/Cellar/sqliteodbc/0.99991/lib
+          # ls -l /usr/local/Cellar/sqliteodbc/0.99991/lib
           printf "#include <dlfcn.h>\n#include <iostream>\nint main() {if (!dlopen(\"libsqlite3odbc.so\", RTLD_LAZY)) std::cerr << \"Error loading library: \" << dlerror() << std::endl;}" > main.cpp
           g++ main.cpp -o load_sqliteodbc
-          otool -l load_sqliteodbc
+          # otool -l load_sqliteodbc
+          xcode-select -p
+          DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
+          sudo xcode-select -s /Applications/Xcode_14.3.1.app
+          xcode-select -p
           DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
