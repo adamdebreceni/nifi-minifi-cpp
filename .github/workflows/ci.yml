@@ -36,7 +36,7 @@ jobs:
         run: |
           xcode-select -p
           xcode-select -v
-          xcode-select -s /Applications/Xcode_14.3.1.app
+          sudo xcode-select -s /Applications/Xcode_14.3.1.app
           xcode-select -p
           xcode-select -v
           brew info sqliteodbc
