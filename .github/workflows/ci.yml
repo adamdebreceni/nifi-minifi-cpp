@@ -47,4 +47,5 @@ jobs:
           ls -l /usr/local/Cellar/sqliteodbc/0.99991/lib
           printf "#include <dlfcn.h>\n#include <iostream>\nint main() {if (!dlopen(\"libsqlite3odbc.so\", RTLD_LAZY)) std::cerr << \"Error loading library: \" << dlerror() << std::endl;}" > main.cpp
           g++ main.cpp -o load_sqliteodbc
+          otool -l load_sqliteodbc
           DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
