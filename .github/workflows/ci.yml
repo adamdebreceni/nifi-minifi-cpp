@@ -34,6 +34,8 @@ jobs:
           echo -e "127.0.0.1\t$HOSTNAME" | sudo tee -a /etc/hosts > /dev/null
       - name: check environment
         run: |
+          mkdir build
+          cd build
           brew info sqliteodbc
           brew info sqlite3
           brew --prefix
@@ -43,23 +45,22 @@ jobs:
           printf "#include <dlfcn.h>\n#include <iostream>\nint main() {if (!dlopen(\"libsqlite3odbc.so\", RTLD_LAZY)) std::cerr << \"Error loading library: \" << dlerror() << std::endl;}" > main.cpp
           sudo xcode-select -s /Applications/Xcode_15.0.1.app
           xcode-select -p
-          g++ main.cpp -o load_sqliteodbc
-          # otool -l load_sqliteodbc
-          grep "/usr/local" ./load_sqliteodbc || true
-          otool -l ./load_sqliteodbc
-          DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
+          g++ main.cpp -o load_sqliteodbc_15.0.1
+          grep "/usr/local" ./load_sqliteodbc_15.0.1 || true
+          otool -l ./load_sqliteodbc_15.0.1
+          DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc_15.0.1
           sudo xcode-select -s /Applications/Xcode_14.3.1.app
           xcode-select -p
-          grep "/usr/local" ./load_sqliteodbc || true
-          otool -l ./load_sqliteodbc
-          DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
+          DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc_15.0.1
           echo "Rebuilding exe"
-          g++ main.cpp -o ./load_sqliteodbc
-          grep "/usr/local" load_sqliteodbc || true
-          otool -l ./load_sqliteodbc
-          DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
+          g++ main.cpp -o ./load_sqliteodbc_14.3.1
+          grep "/usr/local" load_sqliteodbc_14.3.1 || true
+          otool -l ./load_sqliteodbc_14.3.1
+          DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc_14.3.1
           sudo xcode-select -s /Applications/Xcode_15.0.1.app
           xcode-select -p
-          grep "/usr/local" ./load_sqliteodbc || true
-          otool -l ./load_sqliteodbc
-          DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc
+          DYLD_PRINT_LIBRARIES=YES ./load_sqliteodbc_14.3.1
+      - uses: actions/upload-artifact@v3.1.2
+        with:
+          name: test-binaries
+          path: build
