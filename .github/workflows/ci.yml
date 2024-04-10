@@ -15,7 +15,7 @@ jobs:
       LUA_DIR: D:\a\nifi-minifi-cpp\nifi-minifi-cpp\.lua
       WINDOWS_MINIFI_OPTIONS: >-
         -DCMAKE_BUILD_TYPE=Release
-        -DBUILD_ROCKSDB=OFF
+        -DBUILD_ROCKSDB=ON
         -DBUILD_SHARED_LIBS=OFF
         -DCI_BUILD=ON
         -DCUSTOM_MALLOC=OFF
@@ -54,7 +54,7 @@ jobs:
         -DENABLE_PDH=OFF
         -DENABLE_PROMETHEUS=OFF
         -DENABLE_PYTHON_SCRIPTING=OFF
-        -DENABLE_ROCKSDB=OFF
+        -DENABLE_ROCKSDB=ON
         -DENABLE_SENSORS=OFF
         -DENABLE_SFTP=OFF
         -DENABLE_SMB=OFF
