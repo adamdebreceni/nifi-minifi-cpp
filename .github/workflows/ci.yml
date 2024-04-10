@@ -118,6 +118,7 @@ jobs:
           path: ~/AppData/Local/Mozilla/sccache/cache
           key: ${{ runner.os }}-2022-sccache-${{ github.ref }}-${{ github.sha }}
       - name: Upload artifact
+        if: always()
         uses: actions/upload-artifact@v3
         with:
           name: cpack_log
