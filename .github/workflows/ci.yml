@@ -89,9 +89,8 @@ jobs:
             ${{ runner.os }}-2022-sccache
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.4
-      - name: Install wixv5
+      - name: Install wix v5
         run: |
-          wix --version
           dotnet tool install --global wix
           wix --version
         shell: powershell
