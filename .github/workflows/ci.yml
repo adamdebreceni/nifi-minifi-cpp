@@ -94,7 +94,7 @@ jobs:
           wix --version
           dotnet tool install --global wix
           wix --version
-        shell: cmd
+        shell: powershell
       - name: Set up Python
         run: choco -y install python & refreshenv
         shell: cmd
