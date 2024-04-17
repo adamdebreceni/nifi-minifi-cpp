@@ -18,6 +18,7 @@
 #
 
 cmake_minimum_required(VERSION 3.24)
+message(INFO "CMake version: ${CMAKE_VERSION}")
 cmake_policy(SET CMP0096 NEW) # policy to preserve the leading zeros in PROJECT_VERSION_{MAJOR,MINOR,PATCH,TWEAK}
 cmake_policy(SET CMP0065 OLD) # default export policy, required for self-dlopen
 cmake_policy(SET CMP0135 NEW) # policy to set the timestamps of extracted contents to the time of extraction
