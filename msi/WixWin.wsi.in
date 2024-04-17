@@ -18,6 +18,7 @@ Licensed to the Apache Software Foundation (ASF) under one or more
 <?include "cpack_variables.wxi"?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+    RequiredVersion="5.0.0.0"
     xmlns:Util="http://schemas.microsoft.com/wix/UtilExtension">
 
   <Product Id="$(var.CPACK_WIX_PRODUCT_GUID)"
