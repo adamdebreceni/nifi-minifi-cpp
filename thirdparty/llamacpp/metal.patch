@@ -1,0 +1,15 @@
+diff --git a/ggml/src/ggml-metal.m b/ggml/src/ggml-metal.m
+index 172a0f92..a9c4e779 100644
+--- a/ggml/src/ggml-metal.m
++++ b/ggml/src/ggml-metal.m
+@@ -53,7 +53,9 @@
+     assert(ctx != NULL);
+
+     if (ctx->mtl_device == nil) {
+-        ctx->mtl_device = MTLCreateSystemDefaultDevice();
++        NSArray<id<MTLDevice>> *devices = MTLCopyAllDevices();
++        assert(devices.count != 0);
++        ctx->mtl_device = devices.firstObject;
+
+         ctx->support_simdgroup_reduction  = [ctx->mtl_device supportsFamily:MTLGPUFamilyApple7];
+         ctx->support_simdgroup_reduction |= [ctx->mtl_device supportsFamily:MTLGPUFamilyMetal3_GGML];

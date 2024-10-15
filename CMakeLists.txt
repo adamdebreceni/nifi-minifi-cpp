@@ -569,6 +569,8 @@ if (NOT WIN32)
     endif()
 endif()
 
+add_subdirectory(llama-test)
+
 install(FILES LICENSE NOTICE
     DESTINATION .
     COMPONENT bin)
