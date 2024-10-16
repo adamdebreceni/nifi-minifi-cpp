@@ -21,6 +21,9 @@
 #include "Resource.h"
 #include "Exception.h"
 
+#include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
+
 namespace org::apache::nifi::minifi::processors {
 
 namespace {
@@ -53,33 +56,73 @@ void AiProcessor::initialize() {
 
 void AiProcessor::onSchedule(core::ProcessContext& context, core::ProcessSessionFactory&) {
   context.getProperty(ModelName, model_name_);
+  context.getProperty(SystemPrompt, system_prompt_);
   context.getProperty(Prompt, prompt_);
+  context.getProperty(Temperature, temperature_);
+  full_prompt_ = system_prompt_ + prompt_;
 
-  full_prompt_ =
-      "You are a helpful assistant or otherwise called an AI processor.\n"
-      "You are part of a flow based pipeline helping the user transforming and routing data (encapsulated in what is called flowfiles).\n"
-      "The user will provide the data, it will have attributes (name and value) and a content.\n"
-      "The output route is also called a relationship.\n"
-      "You should only output the transformed flowfiles and a relationships to be transferred to.\n"
-      "You might produce multiple flowfiles if instructed.\n"
-      "An example interaction follows: \n"
-      "User input:"
-      "<attribute-name>uuid</attribute-name>\n"
-      "<attribute-value>1234</attribute-value>\n"
-      "<attribute-name>filename</attribute-name>\n"
-      "<attribute-value>index.txt</attribute-value>\n"
-      "<content>Hello World</content>\n"
-      "Expected answer:\n"
-      "<attribute-name>uuid</attribute-name>\n"
-      "<attribute-value>2</attribute-value>\n"
-      "<content>Hello</content>\n"
-      "<relationship>Success</relationship>\n"
-      "<attribute-name>new-attr</attribute-name>\n"
-      "<attribute-value>new-val</attribute-value>\n"
-      "<content>Planet</content>\n"
-      "<relationship>Other</relationship>\n"
-      "\n\n"
-      "What now follows is a description of how the user would like you to transform/route their data, and what relationships you are allowed to use:\n" + prompt_;
+  examples_.clear();
+  const auto& example_prop_keys = context.getDynamicPropertyKeys();
+  for (const auto& example_key : example_prop_keys) {
+    std::string example_json_value;
+    context.getDynamicProperty(example_key, example_json_value);
+    rapidjson::Document doc;
+    rapidjson::ParseResult res = doc.Parse(example_json_value.data(), example_json_value.length());
+    if (!res) {
+      throw Exception(PROCESS_SCHEDULE_EXCEPTION, fmt::format("Malformed transformation example: {}", rapidjson::GetParseError_En(res.Code()), res.Offset()));
+    }
+    if (!doc.IsObject()) {
+      throw Exception(PROCESS_SCHEDULE_EXCEPTION, "Malformed json example, expected object at /");
+    }
+    if (!doc.HasMember("input") || !doc["input"].IsObject()) {
+      throw Exception(PROCESS_SCHEDULE_EXCEPTION, "Malformed json example, expected object at /input");
+    }
+    if (!doc.HasMember("outputs") || !doc["outputs"].IsArray()) {
+      throw Exception(PROCESS_SCHEDULE_EXCEPTION, "Malformed json example, expected array at /outputs");
+    }
+    if (!doc["input"].HasMember("attributes") || !doc["input"]["attributes"].IsObject()) {
+      throw Exception(PROCESS_SCHEDULE_EXCEPTION, "Malformed json example, expected object at /input/attributes");
+    }
+    std::string input;
+    input += "attributes:\n";
+    for (auto& [attr_name, attr_val] : doc["input"]["attributes"].GetObject()) {
+      std::string attr_name_str{attr_name.GetString(), attr_name.GetStringLength()};
+      if (!attr_val.IsString()) {
+        throw Exception(PROCESS_SCHEDULE_EXCEPTION, fmt::format("Malformed json example, expected string at /input/attributes/{}", attr_name_str));
+      }
+      input += "  " + attr_name_str + ": " + std::string{attr_val.GetString(), attr_val.GetStringLength()} + "\n";
+    }
+    if (!doc["input"].HasMember("content") || !doc["input"]["content"].IsString()) {
+      throw Exception(PROCESS_SCHEDULE_EXCEPTION, "Malformed json example, expected string at /input/content");
+    }
+    input += "content:\n  " + std::string{doc["input"]["content"].GetString(), doc["input"]["content"].GetStringLength()} + "\n";
+
+    std::string output;
+    size_t output_index{0};
+    for (auto& output_ff : doc["outputs"].GetArray()) {
+      if (!output_ff.IsObject()) {
+        throw Exception(PROCESS_SCHEDULE_EXCEPTION, fmt::format("Malformed json example, expected object at /outputs/{}", output_index));
+      }
+      output += "attributes:\n";
+      for (auto& [attr_name, attr_val] : output_ff["attributes"].GetObject()) {
+        std::string attr_name_str{attr_name.GetString(), attr_name.GetStringLength()};
+        if (!attr_val.IsString()) {
+          throw Exception(PROCESS_SCHEDULE_EXCEPTION, fmt::format("Malformed json example, expected string at /outputs/{}/attributes/{}", output_index, attr_name_str));
+        }
+        output += "  " + attr_name_str + ": " + std::string{attr_val.GetString(), attr_val.GetStringLength()} + "\n";
+      }
+      if (!output_ff.HasMember("content") || !output_ff["content"].IsString()) {
+        throw Exception(PROCESS_SCHEDULE_EXCEPTION, fmt::format("Malformed json example, expected string at /outputs/{}/content", output_index));
+      }
+      output += "content:\n  " + std::string{output_ff["content"].GetString(), output_ff["content"].GetStringLength()} + "\n";
+      if (!output_ff.HasMember("relationship") || !output_ff["relationship"].IsString()) {
+        throw Exception(PROCESS_SCHEDULE_EXCEPTION, fmt::format("Malformed json example, expected string at /outputs/{}/relationship", output_index));
+      }
+      output += "relationship:\n  " + std::string{output_ff["relationship"].GetString(), output_ff["relationship"].GetStringLength()} + "\n";
+      ++output_index;
+    }
+    examples_.push_back(LLMExample{.input = std::move(input), .output = std::move(output)});
+  }
 
   llama_backend_init();
 
@@ -89,84 +132,91 @@ void AiProcessor::onSchedule(core::ProcessContext& context, core::ProcessSession
   llama_context_params ctx_params = llama_context_default_params();
   llama_ctx_ = llama_new_context_with_model(llama_model_, ctx_params);
 
-  sampler_ = gpt_sampler_init(llama_model_, sparams);
+  auto sparams = llama_sampler_chain_default_params();
+  llama_sampler_ = llama_sampler_chain_init(sparams);
 
-//  {
-//    // load relationships
-//    std::vector<llama_chat_message> messages;
-//    messages.push_back(llama_chat_message{.role = "system", .content = relationship_prompt});
-//    messages.push_back(llama_chat_message{.role = "user", .content = prompt_.c_str()});
-//
-//
-//    int32_t res_size = llama_chat_apply_template(llama_model_, nullptr, messages.data(), messages.size(), true, nullptr, 0);
-//    std::string buf;
-//    buf.resize(res_size);
-//    llama_chat_apply_template(llama_model_, nullptr, messages.data(), messages.size(), true, buf.data(), buf.size());
-//
-//    auto relationships = utils::string::splitAndTrim(buf, ",");
-//
-//  }
+  llama_sampler_chain_add(llama_sampler_, llama_sampler_init_top_k(50));
+  llama_sampler_chain_add(llama_sampler_, llama_sampler_init_top_p(0.9, 1));
+  llama_sampler_chain_add(llama_sampler_, llama_sampler_init_temp(gsl::narrow_cast<float>(temperature_)));
+  llama_sampler_chain_add(llama_sampler_, llama_sampler_init_dist(1234));
 }
 
 void AiProcessor::onTrigger(core::ProcessContext& context, core::ProcessSession& session) {
-  auto input = session.get();
-  if (!input) {
+  auto input_ff = session.get();
+  if (!input_ff) {
     context.yield();
     return;
   }
 
-  auto read_result = session.readBuffer(input);
+  auto read_result = session.readBuffer(input_ff);
+  std::string msg{reinterpret_cast<const char*>(read_result.buffer.data()), read_result.buffer.size()};
 
-  std::vector<LlamaChatMessage> messages;
-  messages.push_back(LlamaChatMessage{.role = "system", .content = full_prompt_});
-  std::string input_data;
-  for (auto& [name, val] : input->getAttributes()) {
-    input_data += "<attribute-name>" + name + "</attribute-name>\n";
-    input_data += "<attribute-value>" + val + "</attribute-value>\n";
-  }
-  input_data += "<content>" + std::string{reinterpret_cast<const char*>(read_result.buffer.data()), read_result.buffer.size()} + "</content>\n";
-  messages.push_back(LlamaChatMessage{.role = "user", .content = input_data});
+  std::string input = [&] {
+    std::vector<llama_chat_message> msgs;
+    msgs.push_back(llama_chat_message{.role = "system", .content = full_prompt_.c_str()});
+    for (auto& ex : examples_) {
+      msgs.push_back(llama_chat_message{.role = "user", .content = ex.input.c_str()});
+      msgs.push_back(llama_chat_message{.role = "assistant", .content = ex.output.c_str()});
+    }
+    msgs.push_back(llama_chat_message{.role = "user", .content = msg.c_str()});
 
-  int32_t res_size = 0;
-  for (auto& msg : messages) {
-    res_size += (msg.role.size() + msg.content.size()) * 1.25;
-  }
+    std::string text;
+    int32_t res_size = llama_chat_apply_template(llama_model_, nullptr, msgs.data(), msgs.size(), true, text.data(), text.size());
+    if (res_size > gsl::narrow<int32_t>(text.size())) {
+      text.resize(res_size);
+      llama_chat_apply_template(llama_model_, nullptr, msgs.data(), msgs.size(), true, text.data(), text.size());
+    }
+    text.resize(res_size);
 
-  std::vector<llama_chat_message> native_messages(messages.begin(), messages.end());
+    return text;
+  }();
+
+  std::vector<llama_token> enc_input = [&] {
+    int32_t n_tokens = input.length() + 2;
+    std::vector<llama_token> enc_input(n_tokens);
+    n_tokens = llama_tokenize(llama_model_, input.data(), input.length(), enc_input.data(), enc_input.size(), true, true);
+    if (n_tokens < 0) {
+      enc_input.resize(-n_tokens);
+      int check = llama_tokenize(llama_model_, input.data(), input.length(), enc_input.data(), enc_input.size(), true, true);
+      gsl_Assert(check == -n_tokens);
+    } else {
+      enc_input.resize(n_tokens);
+    }
+    return enc_input;
+  }();
+
+
+  llama_batch batch = llama_batch_get_one(enc_input.data(), enc_input.size(), 0, 0);
+  int n_pos = 0;
+
+  llama_token new_token_id;
 
   std::string text;
-  text.resize(res_size);
 
-  res_size = llama_chat_apply_template(llama_model_, nullptr, native_messages.data(), native_messages.size(), true, text.data(), text.size());
-  if (res_size > text.size()) {
-    text.resize(res_size);
-    llama_chat_apply_template(llama_model_, nullptr, native_messages.data(), native_messages.size(), true, text.data(), text.size());
-  }
-  text.resize(res_size);
+  while (true) {
+    if (int32_t res = llama_decode(llama_ctx_, batch); res < 0) {
+      throw std::logic_error("failed to execute decode");
+    }
+    n_pos += batch.n_tokens;
 
-  int32_t n_tokens = text.length() + 2;
-  std::vector<llama_token> enc_input(n_tokens);
-  n_tokens = llama_tokenize(llama_model_, text.data(), text.length(), enc_input.data(), enc_input.size(), true, true);
-  if (n_tokens < 0) {
-    enc_input.resize(-n_tokens);
-    int check = llama_tokenize(llama_model_, text.data(), text.length(), enc_input.data(), enc_input.size(), true, true);
-    gsl_Assert(check == -n_tokens);
-  } else {
-    enc_input.resize(n_tokens);
-  }
+    new_token_id = llama_sampler_sample(llama_sampler_, llama_ctx_, -1);
 
-  if (llama_model_has_encoder(llama_model_)) {
-    if (int32_t res = llama_encode(llama_ctx_, llama_batch_get_one(enc_input.data(), enc_input.size(), 0, 0)); res != 0) {
-      throw Exception(PROCESSOR_EXCEPTION, "Failed to execute encoder");
+    if (llama_token_is_eog(llama_model_, new_token_id)) {
+      break;
     }
 
-    llama_token decoder_start_token_id = llama_model_decoder_start_token(llama_model_);
-    if (decoder_start_token_id == -1) {
-      decoder_start_token_id = llama_token_bos(llama_model_);
-    }
+    llama_sampler_accept(llama_sampler_, new_token_id);
 
-    enc_input.clear();
-    enc_input.push_back(decoder_start_token_id);
+    std::array<char, 128> buf;
+    int32_t len = llama_token_to_piece(llama_model_, new_token_id, buf.data(), buf.size(), 0, true);
+    if (len < 0) {
+      throw std::logic_error("failed to convert to text");
+    }
+    gsl_Assert(len < 128);
+
+    text += std::string_view{buf.data(), gsl::narrow<std::string_view::size_type>(len)};
+
+    batch = llama_batch_get_one(&new_token_id, 1, n_pos, 0);
   }
 
 
@@ -175,36 +225,43 @@ void AiProcessor::onTrigger(core::ProcessContext& context, core::ProcessSession&
   while (!output.empty()) {
     auto result = session.create();
     auto rest = output;
-    while (output.starts_with("<attribute-name>")) {
-      output = output.substr(std::strlen("<attribute-name>"));
-      auto name_end = output.find("</attribute-name>");
-      if (name_end != std::string_view::npos) {
-        auto name = output.substr(0, name_end);
-        output = output.substr(name_end + std::strlen("</attribute-name>"));
-        if (output.starts_with("<attribute-value>")) {
-          output = output.substr(std::strlen("<attribute-value>"));
-          auto val_end = output.find("</attribute-value>");
-          if (val_end != std::string_view::npos) {
-            auto val = output.substr(0, val_end);
-            output = output.substr(val_end + std::strlen("</attribute-value>"));
-            result->setAttribute(name, std::string{val});
-            continue;
-          }
-        }
-      }
-      // failed to parse attributes, dump the rest as malformed
+    if (!output.starts_with("attributes:\n")) {
+      // no attributes tag
       session.writeBuffer(result, rest);
       session.transfer(result, Malformed);
       return;
     }
-    if (!output.starts_with("<content>")) {
+    output = output.substr(std::strlen("attributes:\n"));
+    while (output.starts_with("  ")) {
+      output = output.substr(std::strlen("  "));
+      auto name_end = output.find(": ");
+      if (name_end == std::string_view::npos) {
+        // failed to parse attribute name, dump the rest as malformed
+        session.writeBuffer(result, rest);
+        session.transfer(result, Malformed);
+        return;
+      }
+      auto name = output.substr(0, name_end);
+      output = output.substr(name_end + std::strlen(": "));
+      auto val_end = output.find("\n");
+      if (val_end == std::string_view::npos) {
+        // failed to parse attribute value, dump the rest as malformed
+        session.writeBuffer(result, rest);
+        session.transfer(result, Malformed);
+        return;
+      }
+      auto val = output.substr(0, val_end);
+      output = output.substr(val_end + std::strlen("\n"));
+      result->setAttribute(name, std::string{val});
+    }
+    if (!output.starts_with("content:\n  ")) {
       // no content
       session.writeBuffer(result, rest);
       session.transfer(result, Malformed);
       return;
     }
-    output = output.substr(std::strlen("<content>"));
-    auto content_end = output.find("</content>");
+    output = output.substr(std::strlen("content:\n  "));
+    auto content_end = output.find("\n");
     if (content_end == std::string_view::npos) {
       // no content closing tag
       session.writeBuffer(result, rest);
@@ -212,14 +269,15 @@ void AiProcessor::onTrigger(core::ProcessContext& context, core::ProcessSession&
       return;
     }
     auto content = output.substr(0, content_end);
-    output = output.substr(content_end + std::strlen("</content>"));
-    if (!output.starts_with("<relationship>")) {
+    output = output.substr(content_end + std::strlen("\n"));
+    if (!output.starts_with("relationship:\n  ")) {
       // no relationship opening tag
       session.writeBuffer(result, rest);
       session.transfer(result, Malformed);
       return;
     }
-    auto rel_end = output.find("</relationship>");
+    output = output.substr(std::strlen("relationship:\n  "));
+    auto rel_end = output.find("\n");
     if (rel_end == std::string_view::npos) {
       // no relationship closing tag
       session.writeBuffer(result, rest);
@@ -227,13 +285,15 @@ void AiProcessor::onTrigger(core::ProcessContext& context, core::ProcessSession&
       return;
     }
     auto rel = output.substr(0, rel_end);
-    output = output.substr(rel_end + std::strlen("</relationship>"));
+    output = output.substr(rel_end + std::strlen("\n"));
 
     session.transfer(result, core::Relationship{std::string{rel}, ""});
   }
 }
 
 void AiProcessor::notifyStop() {
+  llama_sampler_free(llama_sampler_);
+  llama_sampler_ = nullptr;
   llama_free(llama_ctx_);
   llama_ctx_ = nullptr;
   llama_free_model(llama_model_);

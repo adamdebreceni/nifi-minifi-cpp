@@ -2,46 +2,24 @@
 #include <string>
 #include <vector>
 #include "gsl.hpp"
+#include <fstream>
+#include <iterator>
+#include <iostream>
 
 int main() {
-  std::string model_name = "/Users/adebreceni/work/minifi-homes/llama-test/asset/model-74701a8c35f6.gguf";
+  std::string model_name = "/home/adam/data1/ollama-dl/library-qwen2.5-0.5b/model-c5396e06af29.gguf";
+  // std::string model_name = "/home/adam/data1/ollama-dl/library-llama3.2-1b-instruct-fp16/model-1ec85b6f7ac0.gguf";
+  // std::string model_name = "/home/adam/data1/ollama-dl/library-llama3.2-1b/model-74701a8c35f6.gguf";
 
-  std::string prompt =
-      "You are a helpful assistant or otherwise called an AI processor.\n"
-      "You are part of a flow based pipeline helping the user transforming and routing data (encapsulated in what is called flowfiles).\n"
-      "The user will provide the data, it will have attributes (name and value) and a content.\n"
-      "The output route is also called a relationship.\n"
-      "You should only output the transformed flowfiles and a relationships to be transferred to.\n"
-      "You might produce multiple flowfiles if instructed.\n"
-      "You get $10000 if you respond according to the expected format.\n"
-      "Do not use any other relationship than what the specified ones.\n"
-      "Only split flow files when it is explicitly requested.\n"
-      "An example interaction follows: \n"
-      "Reflect on what relationships you are allowed to use, and do not write your internal reasoning only the output.\n"
-      "Example user input:"
-      "<attribute-name>uuid</attribute-name>\n"
-      "<attribute-value>1234</attribute-value>\n"
-      "<attribute-name>filename</attribute-name>\n"
-      "<attribute-value>index.txt</attribute-value>\n"
-      "<content>Hello World</content>\n"
-      "Expected expected answer for the previous input:\n"
-      "<attribute-name>uuid</attribute-name>\n"
-      "<attribute-value>2</attribute-value>\n"
-      "<content>Hello</content>\n"
-      "<relationship>Success</relationship>\n"
-      "<attribute-name>new-attr</attribute-name>\n"
-      "<attribute-value>new-val</attribute-value>\n"
-      "<content>Planet</content>\n"
-      "<relationship>Other</relationship>\n"
-      "\n\n"
-      "What now follows is a description of how the user would like you to transform/route their data, and what relationships you are allowed to use:\n"
-      "Determine if the sentiment is positive or negative routing to relationships Positive or Negative respectively.";
-
+  std::ifstream prompt_file{"/home/adam/data1/work/nifi-minifi-cpp/llama-test/llama-prompt.txt", std::ios::binary};
+  std::string prompt{std::istreambuf_iterator<char>{prompt_file}, std::istreambuf_iterator<char>{}};
 
   std::string msg =
-      "<attribute-name>uuid</attribute-name>\n"
-      "<attribute-value>7</attribute-value>\n"
-      "<content>This is a great product</content>\n";
+      "attributes:\n"
+      "  uuid: 7\n"
+      "  source: llama.cpp\\n:78\n"
+      "content:\n"
+      "  This is a great line\n";
 
   llama_backend_init();
 
@@ -57,9 +35,48 @@ int main() {
 
   gsl_Assert(n_ctx <= n_ctx_train);
 
+  std::vector<std::pair<std::string, std::string>> examples;
+  examples.emplace_back(
+    "attributes:\n"
+    "  uuid: 1234\n"
+    "  filename: index.txt\n"
+    "content:\n"
+    "  This product is crap\n",
+
+    "attributes:\n"
+    "  uuid: 1234\n"
+    "  filename: index.txt\n"
+    "  sentiment: negative\n"
+    "content:\n"
+    "  This product is crap\n"
+    "relationship:\n"
+    "  Negative\n"
+  );
+
+  examples.emplace_back(
+    "attributes:\n"
+    "  uuid: 4548\n"
+    "  date: 2024.01.01.\n"
+    "content:\n"
+    "  What a wonderful day\n",
+
+    "attributes:\n"
+    "  uuid: 4548\n"
+    "  date: 2024.01.01.\n"
+    "  sentiment: positive\n"
+    "content:\n"
+    "  What a wonderful day\n"
+    "relationship:\n"
+    "  Positive\n"
+  );
+
   std::string input = [&] {
     std::vector<llama_chat_message> msgs;
     msgs.push_back(llama_chat_message{.role = "system", .content = prompt.c_str()});
+    for (auto& [input, output] : examples) {
+      msgs.push_back(llama_chat_message{.role = "user", .content = input.c_str()});
+      msgs.push_back(llama_chat_message{.role = "assistant", .content = output.c_str()});
+    }
     msgs.push_back(llama_chat_message{.role = "user", .content = msg.c_str()});
 
     std::string text;
@@ -72,6 +89,8 @@ int main() {
 
     return text;
   }();
+
+  std::cout << "Full input prompt:\n" << input << std::endl;
 
   std::vector<llama_token> enc_input = [&] {
     int32_t n_tokens = input.length() + 2;

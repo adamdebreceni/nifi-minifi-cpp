@@ -25,6 +25,25 @@
 namespace org::apache::nifi::minifi::processors {
 
 class AiProcessor : public core::Processor {
+    static constexpr const char* DEFAULT_SYSTEM_PROMPT = R"(You are a helpful assistant or otherwise called an AI processor.
+You are part of a flow based pipeline helping the user transforming and routing data (encapsulated in what is called flowfiles).
+The user will provide the data, it will have attributes (name and value) and a content.
+The output route is also called a relationship.
+You should only output the transformed flowfiles and a relationships to be transferred to.
+You might produce multiple flowfiles if instructed.
+You get $10000 if you respond according to the expected format.
+Do not use any other relationship than what the specified ones.
+Only split flow files when it is explicitly requested.
+Do not add extra attributes only when it is requested.
+
+What now follows is a description of how the user would like you to transform/route their data, and what relationships you are allowed to use:
+)";
+
+  struct LLMExample {
+    std::string input;
+    std::string output;
+  };
+
  public:
   explicit AiProcessor(std::string_view name, const utils::Identifier& uuid = {})
       : core::Processor(name, uuid) {
@@ -33,24 +52,42 @@ class AiProcessor : public core::Processor {
 
   EXTENSIONAPI static constexpr const char* Description = "AI processor";
 
-  EXTENSIONAPI static constexpr auto ModelName = core::PropertyDefinitionBuilder<>::createProperty("AI Model Name")
-      .withDescription("The name of the AI model")
+  EXTENSIONAPI static constexpr auto ModelName = core::PropertyDefinitionBuilder<>::createProperty("Model Name")
+      .withDescription("The name of the model")
       .isRequired(true)
       .build();
-  EXTENSIONAPI static constexpr auto Prompt = core::PropertyDefinitionBuilder<>::createProperty("AI Prompt")
-      .withDescription("The prompt for the AI model")
+  EXTENSIONAPI static constexpr auto Temperature = core::PropertyDefinitionBuilder<>::createProperty("Temperature")
+      .withDescription("The inference temperature")
+      .isRequired(true)
+      .withDefaultValue("0.8")
+      .build();
+  EXTENSIONAPI static constexpr auto SystemPrompt = core::PropertyDefinitionBuilder<>::createProperty("System Prompt")
+      .withDescription("The setup system prompt for the model")
+      .isRequired(true)
+      .withDefaultValue(DEFAULT_SYSTEM_PROMPT)
+      .build();
+  EXTENSIONAPI static constexpr auto Prompt = core::PropertyDefinitionBuilder<>::createProperty("Prompt")
+      .withDescription("The prompt for the model")
       .isRequired(true)
       .build();
   EXTENSIONAPI static constexpr auto Properties = std::to_array<core::PropertyReference>({
-                                                                                             ModelName,
-                                                                                             Prompt,
+                                                                                            ModelName,
+                                                                                            Temperature,
+                                                                                            SystemPrompt,
+                                                                                            Prompt,
                                                                                          });
 
 
   EXTENSIONAPI static constexpr auto Malformed = core::RelationshipDefinition{"malformed", "Malformed output that could not be parsed"};
   EXTENSIONAPI static constexpr auto Relationships = std::array{Malformed};
 
-  EXTENSIONAPI static constexpr bool SupportsDynamicProperties = false;
+  EXTENSIONAPI static constexpr bool SupportsDynamicProperties = true;
+  EXTENSIONAPI static constexpr auto Example = core::DynamicProperty{"example.<index>",
+      "Serialized json in the format {input: {attributes: {<attribute-name>: <attribute-value>}, content: <content>}, outputs: [{attributes: {<attribute-name>: <attribute-value>}, content: <content>, relationship: <relationship>}]}.",
+      "These examples will be included in the model promopt to improve inference.",
+      false};
+  EXTENSIONAPI static constexpr auto DynamicProperties = std::array{Example};
+
   EXTENSIONAPI static constexpr bool SupportsDynamicRelationships = true;
   EXTENSIONAPI static constexpr core::annotation::Input InputRequirement = core::annotation::Input::INPUT_REQUIRED;
   EXTENSIONAPI static constexpr bool IsSingleThreaded = true;
@@ -65,10 +102,14 @@ class AiProcessor : public core::Processor {
  private:
   std::shared_ptr<core::logging::Logger> logger_ = core::logging::LoggerFactory<AiProcessor>::getLogger(uuid_);
 
+  double temperature_{0};
   std::string model_name_;
+  std::string system_prompt_;
   std::string prompt_;
   std::string full_prompt_;
+  std::vector<LLMExample> examples_;
 
+  llama_sampler* llama_sampler_{nullptr};
   llama_model* llama_model_{nullptr};
   llama_context* llama_ctx_{nullptr};
 };
