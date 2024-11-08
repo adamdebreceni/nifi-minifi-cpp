@@ -115,6 +115,25 @@ class Pausable {
 
 class StateController : public Pausable {
  public:
+  using ProcessorState = std::unordered_map<std::string, std::string>;
+  struct FlowFileData {
+    std::map<std::string, std::string> attributes;
+    std::string content;
+  };
+  struct TriggerResult {
+    std::map<core::Relationship, std::vector<FlowFileData>> output;
+    std::optional<ProcessorState> end_state;
+    size_t processed_input{0};
+  };
+  struct RunResult {
+    std::optional<std::string> schedule_error;
+    std::vector<TriggerResult> results;
+    std::optional<std::string> trigger_error;
+  };
+  struct TriggerInput {
+    std::vector<FlowFileData> inputs;
+  };
+
   ~StateController() override = default;
 
   [[nodiscard]] virtual std::string getComponentName() const = 0;
@@ -128,6 +147,8 @@ class StateController : public Pausable {
    * Stop the client
    */
   virtual int16_t stop() = 0;
+
+  virtual RunResult run(const std::optional<ProcessorState>& state, const std::vector<TriggerInput>& triggers) = 0;
 
   virtual bool isRunning() const = 0;
 };

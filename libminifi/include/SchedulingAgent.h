@@ -116,6 +116,10 @@ class SchedulingAgent {
 
   std::chrono::milliseconds getAdminYieldDuration() const { return admin_yield_duration_; }
 
+  std::shared_ptr<core::ProcessContext> buildProcessContext(core::Processor* processor);
+
+  std::shared_ptr<core::ProcessContext> buildProcessContext(core::Processor* processor, std::shared_ptr<core::ContentRepository> content_repo, std::shared_ptr<core::Repository> flow_repo, std::shared_ptr<core::Repository> prov_repo);
+
  protected:
   std::mutex mutex_;
   std::atomic<bool> running_;

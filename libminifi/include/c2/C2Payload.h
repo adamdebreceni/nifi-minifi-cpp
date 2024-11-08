@@ -45,7 +45,8 @@ enum class Operation : uint8_t {
   transfer,
   pause,
   resume,
-  sync
+  sync,
+  trigger
 };
 
 enum class DescribeOperand : uint8_t {
@@ -117,6 +118,12 @@ class C2Value {
 
   C2Value& operator=(C2Value&&) = default;
 
+  bool hasValue() const {
+    if (auto* val_node = get_if<state::response::ValueNode>(&value_)) {
+      return val_node->hasValue();
+    }
+    return true;
+  }
 
   bool empty() const {
     if (auto* val_node = get_if<state::response::ValueNode>(&value_)) {

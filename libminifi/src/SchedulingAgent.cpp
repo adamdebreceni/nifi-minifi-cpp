@@ -24,6 +24,7 @@
 #include <memory>
 #include "core/Processor.h"
 #include "utils/gsl.h"
+#include "core/ProcessContextBuilder.h"
 
 using namespace std::literals::chrono_literals;
 
@@ -148,6 +149,21 @@ void SchedulingAgent::watchDogFunc() {
       info.last_alert_time_ = now;
     }
   }
+}
+
+std::shared_ptr<core::ProcessContext> SchedulingAgent::buildProcessContext(core::Processor* processor) {
+  return buildProcessContext(processor, content_repo_, flow_repo_, repo_);
+}
+
+std::shared_ptr<core::ProcessContext> SchedulingAgent::buildProcessContext(core::Processor* processor, std::shared_ptr<core::ContentRepository> content_repo, std::shared_ptr<core::Repository> flow_repo, std::shared_ptr<core::Repository> prov_repo) {
+  std::shared_ptr<core::ProcessorNode> processor_node = std::make_shared<core::ProcessorNode>(processor);
+
+  std::shared_ptr<core::ProcessContextBuilder> contextBuilder = core::ClassLoader::getDefaultClassLoader().instantiate<core::ProcessContextBuilder>("ProcessContextBuilder", "ProcessContextBuilder");
+
+  contextBuilder = contextBuilder->withContentRepository(content_repo)->withFlowFileRepository(flow_repo)->withProvider(controller_service_provider_)->withProvenanceRepository(prov_repo)
+      ->withConfiguration(configure_);
+
+  return contextBuilder->build(processor_node);
 }
 
 }  // namespace org::apache::nifi::minifi

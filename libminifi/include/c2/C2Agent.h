@@ -122,6 +122,8 @@ class C2Agent : public state::UpdateController {
 
   void handle_clear(const C2ContentResponse &resp);
 
+  void handle_trigger(const C2ContentResponse& resp);
+
   /**
    * Handles an update request
    * @param C2ContentResponse response

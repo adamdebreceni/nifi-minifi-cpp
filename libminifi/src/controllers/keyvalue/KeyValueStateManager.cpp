@@ -52,14 +52,14 @@ bool KeyValueStateManager::set(const core::StateManager::State& kvs) {
 }
 
 bool KeyValueStateManager::get(core::StateManager::State& kvs) {
-  if (!state_) {
-    return false;
+  if (change_type_ == ChangeType::NONE) {
+    if (!state_) {
+      return false;
+    }
+    kvs = *state_;
+  } else {
+    kvs = state_to_set_;
   }
-  // not allowed, if there were modifications (dirty read)
-  if (change_type_ != ChangeType::NONE) {
-    return false;
-  }
-  kvs = *state_;
   return true;
 }
 

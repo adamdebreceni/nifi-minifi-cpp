@@ -193,6 +193,8 @@ class ConfigurableComponent {
   virtual void initialize() {
   }
 
+  void copyPropertiesFrom(const ConfigurableComponent& other);
+
  protected:
   void setAcceptAllProperties() {
     accept_all_properties_ = true;

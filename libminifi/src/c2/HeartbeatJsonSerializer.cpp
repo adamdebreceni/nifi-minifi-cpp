@@ -114,7 +114,7 @@ static void mergePayloadContent(rapidjson::Value& target, const C2Payload& paylo
   const bool all_empty = [&] {
     for (const auto& payload_content : content) {
       for (const auto& op_arg : payload_content.operation_arguments) {
-        if (!op_arg.second.empty()) {
+        if (op_arg.second.hasValue()) {
           return false;
         }
       }
@@ -136,7 +136,7 @@ static void mergePayloadContent(rapidjson::Value& target, const C2Payload& paylo
   for (const auto& payload_content : content) {
     if (payload_content.op == payload.getOperation()) {
       for (const auto& op_arg : payload_content.operation_arguments) {
-        if (!op_arg.second.empty()) {
+        if (op_arg.second.hasValue()) {
           setJsonStr(op_arg.first, op_arg.second, target, alloc);
         }
       }

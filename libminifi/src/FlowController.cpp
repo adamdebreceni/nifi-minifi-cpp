@@ -497,4 +497,8 @@ std::unique_ptr<core::ProcessGroup> FlowController::updateFromPayload(const std:
   return root;
 }
 
+FlowController::RunResult FlowController::run(const std::optional<ProcessorState>& /*state*/, const std::vector<TriggerInput>& /*input*/) {
+  return {};
+}
+
 }  // namespace org::apache::nifi::minifi

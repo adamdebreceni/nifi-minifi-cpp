@@ -63,10 +63,10 @@ std::string detail::to_string(const detail::ReadBufferResult& read_buffer_result
 
 std::shared_ptr<utils::IdGenerator> ProcessSession::id_generator_ = utils::IdGenerator::getIdGenerator();
 
-ProcessSession::ProcessSession(std::shared_ptr<ProcessContext> processContext)
+ProcessSession::ProcessSession(std::shared_ptr<ProcessContext> processContext, StateManager* state_manager)
         : process_context_(std::move(processContext)),
           logger_(logging::LoggerFactory<ProcessSession>::getLogger()),
-          stateManager_(process_context_->hasStateManager() ? process_context_->getStateManager() : nullptr) {
+          stateManager_(state_manager) {
   logger_->log_trace("ProcessSession created for {}", process_context_->getProcessorNode()->getName());
   auto repo = process_context_->getProvenanceRepository();
   provenance_report_ = std::make_shared<provenance::ProvenanceReporter>(repo, process_context_->getProcessorNode()->getName(), process_context_->getProcessorNode()->getName());
@@ -76,6 +76,9 @@ ProcessSession::ProcessSession(std::shared_ptr<ProcessContext> processContext)
     throw Exception(PROCESS_SESSION_EXCEPTION, "State manager transaction could not be initiated.");
   }
 }
+
+ProcessSession::ProcessSession(std::shared_ptr<ProcessContext> processContext)
+  : ProcessSession(processContext, processContext->hasStateManager() ? processContext->getStateManager() : nullptr) {}
 
 ProcessSession::~ProcessSession() {
   if (stateManager_ && stateManager_->isTransactionInProgress()) {

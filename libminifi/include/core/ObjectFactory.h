@@ -102,14 +102,18 @@ class DefaultObjectFactory : public ObjectFactory {
    * Create a unique pointer to a new processor.
    */
   std::unique_ptr<CoreComponent> create(const std::string &name) override {
-    return std::make_unique<T>(name);
+    auto result = std::make_unique<T>(name);
+    result->setClassName(className);
+    return result;
   }
 
   /**
    * Create a unique pointer to a new processor.
    */
   std::unique_ptr<CoreComponent> create(const std::string &name, const utils::Identifier &uuid) override {
-    return std::make_unique<T>(name, uuid);
+    auto result = std::make_unique<T>(name, uuid);
+    result->setClassName(className);
+    return result;
   }
 
   /**
@@ -117,6 +121,7 @@ class DefaultObjectFactory : public ObjectFactory {
    */
   CoreComponent* createRaw(const std::string &name) override {
     T *ptr = new T(name);
+    ptr->setClassName(className);
     return dynamic_cast<CoreComponent*>(ptr);
   }
 
@@ -125,6 +130,7 @@ class DefaultObjectFactory : public ObjectFactory {
    */
   CoreComponent* createRaw(const std::string &name, const utils::Identifier &uuid) override {
     T *ptr = new T(name, uuid);
+    ptr->setClassName(className);
     return dynamic_cast<CoreComponent*>(ptr);
   }
 

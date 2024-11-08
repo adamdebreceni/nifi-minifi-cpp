@@ -62,6 +62,8 @@ class ProcessorController : public StateController {
 
   int16_t resume() override;
 
+  RunResult run(const std::optional<ProcessorState>& state, const std::vector<TriggerInput>& triggers) override;
+
  protected:
   gsl::not_null<core::Processor*> processor_;
   gsl::not_null<SchedulingAgent*> scheduler_;

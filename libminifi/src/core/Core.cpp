@@ -51,4 +51,12 @@ std::string CoreComponent::getName() const {
   return name_;
 }
 
+void CoreComponent::setClassName(std::string class_name) {
+  class_name_ = std::move(class_name);
+}
+
+std::optional<std::string> CoreComponent::getClassName() const {
+  return class_name_;
+}
+
 } /* namespace org::apache::nifi::minifi::core */

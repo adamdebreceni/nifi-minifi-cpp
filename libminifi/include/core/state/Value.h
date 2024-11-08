@@ -547,6 +547,10 @@ class ValueNode {
     return value_ == nullptr || value_->empty();
   }
 
+  [[nodiscard]] bool hasValue() const noexcept {
+    return value_ != nullptr;
+  }
+
  protected:
   std::shared_ptr<Value> value_;
 };

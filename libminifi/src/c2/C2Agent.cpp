@@ -394,6 +394,9 @@ void C2Agent::handle_c2_server_response(const C2ContentResponse &resp) {
     case Operation::sync:
       handle_sync(resp);
       break;
+    case Operation::trigger:
+      handle_trigger(resp);
+      break;
     default:
       break;
       // do nothing
@@ -447,7 +450,9 @@ void C2Agent::handle_clear(const C2ContentResponse &resp) {
       for (const auto& corecomponent : resp.operation_arguments) {
         auto state_storage = core::ProcessContext::getStateStorage(logger_, controller_, configuration_);
         if (state_storage != nullptr) {
-          update_sink_->executeOnComponent(corecomponent.second.to_string(), [this, &state_storage] (state::StateController& component) {
+          bool found_component = false;
+          update_sink_->executeOnComponent(corecomponent.second.to_string(), [&] (state::StateController& component) {
+            found_component = true;
             logger_->log_debug("Clearing state for component {}", component.getComponentName());
             auto state_manager = state_storage->getStateManager(component.getComponentUUID());
             if (state_manager != nullptr) {
@@ -459,6 +464,20 @@ void C2Agent::handle_clear(const C2ContentResponse &resp) {
               logger_->log_warn("Failed to get StateManager for component {}", component.getComponentUUID().to_string());
             }
           });
+          if (!found_component) {
+            // component is not part of the flow, try to clear it directly by uuid
+            auto uuid = utils::Identifier::parse(corecomponent.second.to_string());
+            if (!uuid) {
+              logger_->log_warn("To clear a component state that is not part of the flow, provide the uuid");
+            } else {
+              if (auto state_manager = state_storage->getStateManager(uuid.value())) {
+                state_manager->clear();
+                state_manager->persist();
+              } else {
+                logger_->log_warn("Failed to get StateManager for component {}", corecomponent.second.to_string());
+              }
+            }
+          }
         } else {
           logger_->log_error("Failed to get StateStorage");
         }
@@ -1150,6 +1169,174 @@ void C2Agent::enqueue_c2_server_response(C2Payload &&resp) {
   logger_->log_trace("Server response: {}", [&] { return resp.str(); });
 
   responses.enqueue(std::move(resp));
+}
+
+void C2Agent::handle_trigger(const org::apache::nifi::minifi::c2::C2ContentResponse &resp) {
+  auto send_error = [&] (std::string_view error) {
+    logger_->log_error("{}", error);
+    C2Payload response(Operation::acknowledge, state::UpdateState::SET_ERROR, resp.ident, true);
+    response.setRawData(as_bytes(std::span(error.begin(), error.end())));
+    enqueue_c2_response(std::move(response));
+  };
+  std::optional<state::StateController::ProcessorState> state;
+  std::vector<state::StateController::TriggerInput> triggers;
+
+  auto triggers_it = resp.operation_arguments.find("triggers");
+  if (triggers_it == resp.operation_arguments.end()) {
+    send_error("Malformed request, missing 'triggers' argument");
+    return;
+  }
+
+  const rapidjson::Document* triggers_doc = triggers_it->second.json();
+  if (!triggers_doc) {
+    send_error("Argument 'triggers' is malformed");
+    return;
+  }
+
+  if (!triggers_doc->IsArray()) {
+    send_error("Malformed request, 'triggers' is not an array");
+    return;
+  }
+  for (rapidjson::SizeType resource_idx = 0; resource_idx < triggers_doc->Size(); ++resource_idx) {
+    triggers.emplace_back();
+    auto& inputs = triggers.back().inputs;
+    auto& trigger = triggers_doc->GetArray()[resource_idx];
+    if (!trigger.IsArray()) {
+      send_error(fmt::format("Malformed request, 'triggers[{}]' is not an array", resource_idx));
+      return;
+    }
+    for (rapidjson::SizeType input_idx = 0; input_idx < trigger.Size(); ++input_idx) {
+      inputs.emplace_back();
+      auto& input = trigger.GetArray()[input_idx];
+      if (!input.IsObject()) {
+        send_error(fmt::format("Malformed request, 'triggers[{}][{}]' is not an object", resource_idx, input_idx));
+        return;
+      }
+      if (!input.HasMember("attributes")) {
+        send_error(fmt::format("Malformed request, 'triggers[{}][{}]' has no member 'attributes'", resource_idx, input_idx));
+        return;
+      }
+      if (!input["attributes"].IsObject()) {
+        send_error(fmt::format("Malformed request, 'triggers[{}][{}].attributes' is not an object", resource_idx, input_idx));
+        return;
+      }
+      for (auto &[key, val]: input["attributes"].GetObject()) {
+        std::string_view key_str{key.GetString(), key.GetStringLength()};
+        if (!val.IsString()) {
+          send_error(fmt::format("Malformed request, 'inputs[{}].attributes[{}]' is not a string", resource_idx, key_str));
+          return;
+        }
+        inputs.back().attributes[std::string{key_str}] = std::string_view{val.GetString(), val.GetStringLength()};
+      }
+      if (!input["content"].IsString()) {
+        send_error(fmt::format("Malformed request, 'inputs[{}].content' is not a string", resource_idx));
+        return;
+      }
+      inputs.back().content = std::string{input["content"].GetString(), input["content"].GetStringLength()};
+    }
+  }
+
+  auto state_it = resp.operation_arguments.find("state");
+  if (state_it != resp.operation_arguments.end()) {
+    state.emplace();
+    const rapidjson::Document* state_doc = state_it->second.json();
+    if (!state_doc) {
+      send_error("Argument 'state' is malformed");
+      return;
+    }
+    if (!state_doc->IsObject()) {
+      send_error("Malformed request, 'state' is not an object");
+      return;
+    }
+    for (auto& [key, val] : state_doc->GetObject()) {
+      std::string_view key_str{key.GetString(), key.GetStringLength()};
+      if (!val.IsString()) {
+        send_error(fmt::format("Malformed request, 'state[{}]' is not a string", key_str));
+        return;
+      }
+      state.value()[std::string{key_str}] = std::string{val.GetString(), val.GetStringLength()};
+    }
+  }
+
+  state::StateController::RunResult run_result;
+
+  update_sink_->executeOnComponent(resp.name, [&] (state::StateController& component) {
+    logger_->log_debug("Triggering component {}", resp.name);
+    run_result = component.run(state, triggers);
+  });
+
+  C2Payload response(Operation::acknowledge, resp.ident, false);
+  {
+    if (run_result.schedule_error) {
+      C2ContentResponse schedule_error(Operation::acknowledge);
+      schedule_error.operation_arguments["schedule_error"] = C2Value{run_result.schedule_error.value()};
+      response.addContent(std::move(schedule_error));
+    }
+    if (run_result.trigger_error) {
+      C2ContentResponse trigger_error(Operation::acknowledge);
+      trigger_error.operation_arguments["trigger_error"] = C2Value{run_result.trigger_error.value()};
+      response.addContent(std::move(trigger_error));
+    }
+    C2Payload trigger_results(Operation::acknowledge, false);
+    trigger_results.setLabel("results");
+    trigger_results.setContainer(true);
+    for (auto& result : run_result.results) {
+      C2Payload trigger_result(Operation::acknowledge, false);
+      {
+        C2Payload output(Operation::acknowledge, false);
+        output.setLabel("output");
+        for (auto& [rel, ffs] : result.output) {
+          C2Payload rel_output(Operation::acknowledge, false);
+          rel_output.setLabel(rel.getName());
+          rel_output.setContainer(true);
+
+          for (auto& ff : ffs) {
+            C2Payload ff_data(Operation::acknowledge, false);
+            {
+              C2Payload attributes(Operation::acknowledge, false);
+              attributes.setLabel("attributes");
+              for (auto& [attr_name, attr_val] : ff.attributes) {
+                C2ContentResponse attr(Operation::acknowledge);
+                attr.operation_arguments[attr_name] = C2Value{attr_val};
+                attributes.addContent(std::move(attr));
+              }
+              ff_data.addPayload(std::move(attributes));
+            }
+            {
+              C2ContentResponse content(Operation::acknowledge);
+              content.operation_arguments["content"] = C2Value{ff.content};
+              ff_data.addContent(std::move(content));
+            }
+
+            rel_output.addPayload(std::move(ff_data));
+          }
+
+          output.addPayload(std::move(rel_output));
+        }
+        trigger_result.addPayload(std::move(output));
+      }
+      if (result.end_state) {
+        C2Payload end_state(Operation::acknowledge, false);
+        end_state.setLabel("end_state");
+        for (auto& [key, val] : result.end_state.value()) {
+          C2ContentResponse kv(Operation::acknowledge);
+          kv.operation_arguments[key] = C2Value{val};
+          end_state.addContent(std::move(kv));
+        }
+        trigger_result.addPayload(std::move(end_state));
+      }
+      {
+        C2ContentResponse processed_input(Operation::acknowledge);
+        processed_input.operation_arguments["processed_input"] = C2Value{result.processed_input};
+        trigger_result.addContent(std::move(processed_input));
+      }
+
+      trigger_results.addPayload(std::move(trigger_result));
+    }
+    response.addPayload(std::move(trigger_results));
+  }
+
+  enqueue_c2_response(std::move(response));
 }
 
 }  // namespace org::apache::nifi::minifi::c2

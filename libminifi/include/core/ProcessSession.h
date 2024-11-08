@@ -64,9 +64,9 @@ class ProcessSession : public ReferenceContainer {
   virtual ~ProcessSession();
 
   // Commit the session
-  void commit();
+  virtual void commit();
   // Roll Back the session
-  void rollback();
+  virtual void rollback();
 
   nonstd::expected<void, std::exception_ptr> rollbackNoThrow() noexcept;
   // Get Provenance Report
@@ -161,6 +161,8 @@ class ProcessSession : public ReferenceContainer {
   ProcessSession &operator=(const ProcessSession &parent) = delete;
 
  protected:
+  ProcessSession(std::shared_ptr<ProcessContext> processContext, StateManager* state_manager);
+
   struct FlowFileUpdate {
     std::shared_ptr<FlowFile> modified;
     std::shared_ptr<FlowFile> snapshot;

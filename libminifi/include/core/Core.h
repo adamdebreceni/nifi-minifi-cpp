@@ -185,12 +185,18 @@ class CoreComponent {
   void loadComponent() {
   }
 
+  void setClassName(std::string class_name);
+
+  std::optional<std::string> getClassName() const;
+
  protected:
   // A global unique identifier
   utils::Identifier uuid_;
 
   // CoreComponent's name
   std::string name_;
+
+  std::optional<std::string> class_name_;
 };
 
 }  // namespace org::apache::nifi::minifi::core

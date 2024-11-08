@@ -356,4 +356,9 @@ bool ConfigurableComponent::isPropertyExplicitlySet(const PropertyReference& sea
   return getProperty(std::string(searched_prop.name), prop) && !prop.getValues().empty();
 }
 
+void ConfigurableComponent::copyPropertiesFrom(const ConfigurableComponent& other) {
+  properties_ = other.properties_;
+  dynamic_properties_ = other.dynamic_properties_;
+}
+
 }  // namespace org::apache::nifi::minifi::core
