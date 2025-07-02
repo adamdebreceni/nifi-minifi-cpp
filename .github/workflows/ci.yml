@@ -24,6 +24,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           artifact-ids: 3450585219
+          github-token: ${{ secrets.GH_PAT }}
+          run-id: 16026535159
           path: build
       - name: Load Docker image
         run: |
