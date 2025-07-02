@@ -110,7 +110,7 @@ class PrometheusChecker:
         labels['agent_identifier'] = "Agent1"
         result = self.prometheus_client.get_current_metric_value(metric_name=metric_name, label_config=labels)
         print(f"result = {result}")
-        return result > 0
+        return len(result) > 0
 
     def verify_metrics_exist(self, metric_names, metric_class, labels={}):
         return all((self.verify_metric_exists(metric_name, metric_class, labels) for metric_name in metric_names))
