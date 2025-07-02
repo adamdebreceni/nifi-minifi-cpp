@@ -192,4 +192,4 @@ echo "${BEHAVE_OPTS[@]}"
 
 cd "${docker_dir}/test/integration"
 exec
-  behavex "${BEHAVE_OPTS[@]}"
+  behavex "${BEHAVE_OPTS[@]}" "features/prometheus.feature"

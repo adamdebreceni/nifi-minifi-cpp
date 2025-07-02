@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import requests
+import logging
 from prometheus_api_client import PrometheusConnect
 from utils import wait_for
 
@@ -105,21 +106,21 @@ class PrometheusChecker:
             self.verify_metric_exists('minifi_agent_cpu_utilization', 'AgentStatus')
 
     def verify_metric_exists(self, metric_name, metric_class, labels={}):
-        print(f"metric_name = {metric_name}, metric_class = {metric_class}, labels = {labels}")
+        logging.info(f"metric_name = {metric_name}, metric_class = {metric_class}, labels = {labels}")
         labels['metric_class'] = metric_class
         labels['agent_identifier'] = "Agent1"
         result = self.prometheus_client.get_current_metric_value(metric_name=metric_name, label_config=labels)
-        print(f"result = {result}")
+        logging.info(f"result = {result}")
         return len(result) > 0
 
     def verify_metrics_exist(self, metric_names, metric_class, labels={}):
         return all((self.verify_metric_exists(metric_name, metric_class, labels) for metric_name in metric_names))
 
     def verify_metric_larger_than_zero(self, metric_name, metric_class, labels={}):
-        print(f"metric_name = {metric_name}, metric_class = {metric_class}, labels = {labels}")
+        logging.info(f"metric_name = {metric_name}, metric_class = {metric_class}, labels = {labels}")
         labels['metric_class'] = metric_class
         result = self.prometheus_client.get_current_metric_value(metric_name=metric_name, label_config=labels)
-        print(f"result = {result}")
+        logging.info(f"result = {result}")
         return len(result) > 0 and int(result[0]['value'][1]) > 0
 
     def verify_metrics_larger_than_zero(self, metric_names, metric_class, labels={}):
