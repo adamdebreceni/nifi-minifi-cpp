@@ -31,6 +31,7 @@ jobs:
         run: |
           ls -l .
           ls -l ./build
+          ls -l ./build/minifi_docker
           docker load --input ./build/minifi_docker.tar
       - id: install_deps
         name: Install dependencies for Docker Verify
