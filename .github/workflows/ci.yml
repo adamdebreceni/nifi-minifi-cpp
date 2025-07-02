@@ -26,7 +26,7 @@ jobs:
           artifact-ids: 3450585219
           github-token: ${{ secrets.GH_PAT }}
           run-id: 16026535159
-          path: build
+          path: build/minifi_docker.tar
       - name: Load Docker image
         run: |
           docker load --input ./build/minifi_docker.tar
