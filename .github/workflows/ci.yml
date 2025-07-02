@@ -26,9 +26,11 @@ jobs:
           artifact-ids: 3450585219
           github-token: ${{ secrets.GH_PAT }}
           run-id: 16026535159
-          path: build/minifi_docker.tar
+          path: build
       - name: Load Docker image
         run: |
+          ls -l .
+          ls -l ./build
           docker load --input ./build/minifi_docker.tar
       - id: install_deps
         name: Install dependencies for Docker Verify
