@@ -109,7 +109,7 @@ class PrometheusChecker:
         logging.info(f"metric_name = {metric_name}, metric_class = {metric_class}, labels = {labels}")
         labels['metric_class'] = metric_class
         labels['agent_identifier'] = "Agent1"
-        result = self.prometheus_client.get_current_metric_value(metric_name=metric_name, label_config=labels)
+        result = self.prometheus_client.get_current_metric_value(metric_name=metric_name, label_config={})
         logging.info(f"result = {result}")
         return len(result) > 0
 
@@ -119,7 +119,7 @@ class PrometheusChecker:
     def verify_metric_larger_than_zero(self, metric_name, metric_class, labels={}):
         logging.info(f"metric_name = {metric_name}, metric_class = {metric_class}, labels = {labels}")
         labels['metric_class'] = metric_class
-        result = self.prometheus_client.get_current_metric_value(metric_name=metric_name, label_config=labels)
+        result = self.prometheus_client.get_current_metric_value(metric_name=metric_name, label_config={})
         logging.info(f"result = {result}")
         return len(result) > 0 and int(result[0]['value'][1]) > 0
 
