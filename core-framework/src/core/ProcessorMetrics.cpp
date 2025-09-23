@@ -26,20 +26,25 @@ using namespace std::literals::chrono_literals;
 namespace org::apache::nifi::minifi::core {
 
 namespace {
-class StandardProcessorInfoProvider : public ProcessorMetricsImpl::ProcessorInfoProvider {
+class StandardProcessorInfoProvider final : public ProcessorMetricsImpl::ProcessorInfoProvider {
  public:
-  StandardProcessorInfoProvider(const ProcessorImpl& source_processor): source_processor_(source_processor) {}
+  explicit StandardProcessorInfoProvider(const ProcessorImpl& source_processor): source_processor_(source_processor) {}
 
-  std::string getProcessorType() const override {
+  [[nodiscard]] std::string getProcessorType() const override {
     return source_processor_.getProcessorType();
   }
-  std::string getName() const override {
+  [[nodiscard]] std::string getName() const override {
     return source_processor_.getName();
   }
-  utils::SmallString<36> getUUIDStr() const override {
+  [[nodiscard]] utils::SmallString<36> getUUIDStr() const override {
     return source_processor_.getUUIDStr();
   }
 
+  StandardProcessorInfoProvider() = delete;
+  StandardProcessorInfoProvider(const StandardProcessorInfoProvider&) = delete;
+  StandardProcessorInfoProvider(StandardProcessorInfoProvider&&) = delete;
+  StandardProcessorInfoProvider& operator=(const StandardProcessorInfoProvider&) = delete;
+  StandardProcessorInfoProvider& operator=(StandardProcessorInfoProvider&&) = delete;
   ~StandardProcessorInfoProvider() override = default;
 
  private:
