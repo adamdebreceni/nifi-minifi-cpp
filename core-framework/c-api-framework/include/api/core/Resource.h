@@ -131,7 +131,7 @@ void useProcessorClassDescription(Fn&& fn) {
         try {
           static_cast<Class*>(self)->onTrigger(context_wrapper, session_wrapper);
           return MINIFI_SUCCESS;
-        } catch (std::exception&) {
+        } catch (...) {
           return MINIFI_UNKNOWN_ERROR;
         }
       },
@@ -140,7 +140,7 @@ void useProcessorClassDescription(Fn&& fn) {
         try {
           static_cast<Class*>(self)->onSchedule(context_wrapper);
           return MINIFI_SUCCESS;
-        } catch (std::exception&) {
+        } catch (...) {
           return MINIFI_UNKNOWN_ERROR;
         }
       },
