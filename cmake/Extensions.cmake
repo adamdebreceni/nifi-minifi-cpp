@@ -115,7 +115,8 @@ macro(register_c_api_extension extension-name extension-display-name extension-g
     if(WIN32)
         set_target_properties(${extension-name} PROPERTIES
                 RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-                ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+                ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+                WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
     else()
         set_target_properties(${extension-name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
     endif()
