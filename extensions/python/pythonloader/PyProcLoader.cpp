@@ -31,7 +31,8 @@ static minifi::extensions::python::PythonCreator& getPythonCreator() {
 // the symbols of the python library
 extern "C" const int LOAD_MODULE_AS_GLOBAL = 1;
 
-extern "C" minifi::core::extension::ExtensionInitializer InitExtension = [] (const std::shared_ptr<minifi::Configure>& config) -> std::optional<minifi::core::extension::ExtensionInfo> {
+extern "C" {
+minifi::core::extension::ExtensionInitializer InitExtension = [] (const std::shared_ptr<minifi::Configure>& config) -> std::optional<minifi::core::extension::ExtensionInfo> {
   getPythonCreator().configure(config);
   return minifi::core::extension::ExtensionInfo{
     .name = "PythonExtension",
@@ -40,3 +41,4 @@ extern "C" minifi::core::extension::ExtensionInitializer InitExtension = [] (con
     .ctx = nullptr
   };
 };
+}  // extern "C"

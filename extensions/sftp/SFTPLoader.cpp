@@ -23,7 +23,8 @@
 
 namespace minifi = org::apache::nifi::minifi;
 
-extern "C" minifi::core::extension::ExtensionInitializer InitExtension = [] (const std::shared_ptr<minifi::Configure>& /*config*/) -> std::optional<minifi::core::extension::ExtensionInfo> {
+extern "C" {
+minifi::core::extension::ExtensionInitializer InitExtension = [] (const std::shared_ptr<minifi::Configure>& /*config*/) -> std::optional<minifi::core::extension::ExtensionInfo> {
   if (libssh2_init(0) != 0) {
     return std::nullopt;
   }
@@ -41,3 +42,4 @@ extern "C" minifi::core::extension::ExtensionInitializer InitExtension = [] (con
     .ctx = nullptr
   };
 };
+}  // extern "C"
