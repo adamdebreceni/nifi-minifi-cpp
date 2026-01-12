@@ -859,3 +859,12 @@ if (MINIFI_ADVANCED_CODE_COVERAGE)
 endif()
 
 add_subdirectory(packaging)
+
+add_custom_target(
+    test_image_from_package
+    COMMAND docker build
+    --build-arg MINIFI_VERSION=${MINIFI_VERSION_STR}
+    --build-arg ARCHIVE_LOCATION=nifi-minifi-cpp-${MINIFI_VERSION_STR}.tar.gz
+    -t apacheminificpp:${MINIFI_VERSION_STR}
+    -f ${CMAKE_SOURCE_DIR}/docker/test/Dockerfile
+    ${CMAKE_BINARY_DIR})

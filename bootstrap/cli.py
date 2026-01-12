@@ -50,7 +50,7 @@ def do_package(minifi_options: MinifiOptions, package_manager: PackageManager):
 
 
 def do_docker_build(minifi_options: MinifiOptions, package_manager: PackageManager):
-    build_cmd = f"cmake --build {str(minifi_options.build_dir)} --target docker"
+    build_cmd = f"cmake --build {str(minifi_options.build_dir)} --target test_image_from_package"
     return package_manager.run_cmd(build_cmd)
 
 
