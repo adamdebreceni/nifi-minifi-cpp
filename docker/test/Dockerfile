@@ -36,16 +36,18 @@ ENV MINIFI_VERSIONED_HOME=${MINIFI_BASE_DIR}/nifi-minifi-cpp-${MINIFI_VERSION}
 
 RUN addgroup -g ${GID} ${USER} && adduser -u ${UID} -D -G ${USER} -g "" ${USER} && \
     install -d -o ${USER} -g ${USER} ${MINIFI_BASE_DIR} && ln -s ${MINIFI_VERSIONED_HOME} ${MINIFI_HOME} && \
-    apk add --no-cache libstdc++ tzdata alpine-conf libc6-compat && \
+    apk add --no-cache libstdc++ tzdata alpine-conf && \
     if echo "$MINIFI_OPTIONS" | grep -q "ENABLE_PYTHON_SCRIPTING=ON"; then apk add --no-cache python3; fi && \
     setup-timezone -z UTC && \
     apk del alpine-conf
 
 ADD ${ARCHIVE_LOCATION} ${MINIFI_BASE_DIR}
 
+RUN chown -R ${USER}:${USER} ${MINIFI_BASE_DIR}
+
 USER ${USER}
 WORKDIR ${MINIFI_HOME}
 
 # Start MiNiFi CPP in the foreground
-# CMD ["./bin/minifi.sh", "run"]
-CMD ["/bin/sh"]
+CMD ["./bin/minifi.sh", "run"]
+# CMD ["/bin/sh", "-c", "sleep 1d"]
